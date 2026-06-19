@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { Logo } from '@/components/Logo'
 
 type State = 'connecting' | 'done' | 'error' | 'badcode'
 
@@ -42,34 +43,38 @@ export function LinkConnect() {
   }, [code])
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-neutral-950 px-6 text-neutral-100">
-      <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center">
-        <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-white/5 text-2xl">
-          ◆
+    <main className="flex min-h-screen items-center justify-center bg-background px-6">
+      <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
+        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary text-primary">
+          <Logo className="h-7 w-7" />
         </div>
-        <h1 className="text-lg font-semibold">Connect Prism</h1>
+
+        <h1 className="text-xl font-semibold text-foreground">Connect Prism</h1>
 
         {state === 'connecting' && (
-          <p className="mt-3 text-sm text-neutral-400">Linking this device to your account…</p>
+          <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-primary" />
+            Linking this device to your account…
+          </div>
         )}
 
         {state === 'done' && (
           <>
-            <p className="mt-3 text-sm text-green-400">✓ Connected.</p>
-            <p className="mt-1 text-sm text-neutral-400">
+            <p className="mt-4 text-sm font-medium text-green-600">✓ Connected</p>
+            <p className="mt-1.5 text-sm text-muted-foreground">
               You can close this tab and return to Prism — live ads are now enabled.
             </p>
           </>
         )}
 
         {state === 'error' && (
-          <p className="mt-3 text-sm text-red-400">
+          <p className="mt-4 text-sm text-red-600">
             Something went wrong. Reopen the link from Prism and try again.
           </p>
         )}
 
         {state === 'badcode' && (
-          <p className="mt-3 text-sm text-red-400">
+          <p className="mt-4 text-sm text-red-600">
             Missing or invalid pairing code. Start from the Prism app’s “Connect account”.
           </p>
         )}
