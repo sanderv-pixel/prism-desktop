@@ -1,4 +1,5 @@
 #import "PrismOnboarding.h"
+#import "PrismAuth.h"
 #import <ApplicationServices/ApplicationServices.h>
 
 static NSString *const kDoneKey = @"PrismOnboardingDone";
@@ -8,9 +9,9 @@ static NSString *const kApiKeyKey = @"PrismApiKey";
 @property(strong) NSWindow *window;
 @property(strong) NSTextField *axStatus;
 @property(strong) NSButton *axButton;
-@property(strong) NSTextField *keyField;
 @property(strong) NSTextField *keyStatus;
 @property(strong) NSTimer *timer;
+@property(strong) PrismAuth *auth;
 @end
 
 @implementation PrismOnboarding
@@ -73,15 +74,12 @@ static NSString *const kApiKeyKey = @"PrismApiKey";
     [cv addSubview:self.axButton];
     [cv addSubview:[self label:@"Grants Accessibility — the one permission Prism needs." frame:NSMakeRect(40, 206, 390, 16) size:11 weight:NSFontWeightRegular color:NSColor.tertiaryLabelColor]];
 
-    // 2 — Account (optional)
+    // 2 — Connect account (CLI-style: opens the browser, links automatically).
     [cv addSubview:[self card:NSMakeRect(24, 72, 432, 108)]];
     [cv addSubview:[self label:@"2.  Connect your account  (optional)" frame:NSMakeRect(40, 148, 360, 18) size:13 weight:NSFontWeightSemibold color:NSColor.labelColor]];
-    [cv addSubview:[self button:@"Open Prism" frame:NSMakeRect(330, 126, 108, 28) action:@selector(openDashboard)]];
-    self.keyField = [[NSTextField alloc] initWithFrame:NSMakeRect(40, 98, 286, 24)];
-    [self.keyField.cell setPlaceholderString:@"Paste your Prism key"];
-    [cv addSubview:self.keyField];
-    [cv addSubview:[self button:@"Save key" frame:NSMakeRect(334, 96, 104, 28) action:@selector(saveKey)]];
-    self.keyStatus = [self label:@"No account? Prism runs on demo ads until you connect one." frame:NSMakeRect(40, 78, 396, 16) size:11 weight:NSFontWeightRegular color:NSColor.tertiaryLabelColor];
+    [cv addSubview:[self button:@"Connect account" frame:NSMakeRect(40, 112, 162, 30) action:@selector(connectAccount)]];
+    self.keyStatus = [self label:@"Opens your browser to sign in or create an account — nothing to copy. Without it, Prism shows demo ads."
+        frame:NSMakeRect(40, 78, 400, 30) size:11 weight:NSFontWeightRegular color:NSColor.tertiaryLabelColor];
     [cv addSubview:self.keyStatus];
 
     NSButton *done = [self button:@"Done" frame:NSMakeRect(360, 20, 96, 32) action:@selector(finish)];
@@ -95,7 +93,10 @@ static NSString *const kApiKeyKey = @"PrismApiKey";
 
 - (void)show {
     NSString *saved = [[NSUserDefaults standardUserDefaults] stringForKey:kApiKeyKey];
-    if (saved.length) self.keyField.stringValue = saved;
+    if (saved.length) {
+        self.keyStatus.stringValue = @"✓ Account connected — live ads enabled.";
+        self.keyStatus.textColor = [NSColor systemGreenColor];
+    }
     [self refreshStatus];
     [self.window center];
     [NSApp activateIgnoringOtherApps:YES];
@@ -129,20 +130,18 @@ static NSString *const kApiKeyKey = @"PrismApiKey";
         [NSURL URLWithString:@"x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"]];
 }
 
-- (void)openDashboard {
-    [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"https://goprism.dev/dashboard"]];
-}
-
-- (void)saveKey {
-    NSString *k = [self.keyField.stringValue stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    [[NSUserDefaults standardUserDefaults] setObject:k forKey:kApiKeyKey];
-    if (k.length) {
-        self.keyStatus.stringValue = @"✓ Key saved — live ads enabled.";
-        self.keyStatus.textColor = [NSColor systemGreenColor];
-    } else {
-        self.keyStatus.stringValue = @"Key cleared — using demo ads.";
-        self.keyStatus.textColor = NSColor.tertiaryLabelColor;
-    }
+- (void)connectAccount {
+    if (!self.auth) self.auth = [PrismAuth new];
+    self.keyStatus.textColor = NSColor.secondaryLabelColor;
+    self.keyStatus.stringValue = @"Opening your browser…";
+    __weak PrismOnboarding *weakSelf = self;
+    [self.auth connectWithStatus:^(NSString *msg, BOOL done, BOOL success) {
+        PrismOnboarding *self = weakSelf;
+        if (!self) return;
+        self.keyStatus.stringValue = msg;
+        self.keyStatus.textColor = success ? [NSColor systemGreenColor]
+                                  : (done ? [NSColor systemRedColor] : NSColor.secondaryLabelColor);
+    }];
 }
 
 - (void)finish {
