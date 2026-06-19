@@ -6,19 +6,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         PrismLog.write("applicationDidFinishLaunching")
-        let alert = NSAlert()
-        alert.messageText = "Prism Test"
-        alert.informativeText = "If you can see this alert, Prism can show UI."
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
+        NSApp.activate(ignoringOtherApps: true)
 
         let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "PrismOnboardingCompleted")
 
         if hasCompletedOnboarding {
             showStatusBar()
         } else {
-            showOnboarding()
+            showTestWindow()
         }
+    }
+
+    private func showTestWindow() {
+        PrismLog.write("showTestWindow")
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 400, height: 300),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "Prism Test Window"
+        window.center()
+        window.contentView = NSView()
+        window.contentView?.wantsLayer = true
+        window.contentView?.layer?.backgroundColor = NSColor.red.cgColor
+        window.makeKeyAndOrderFront(nil)
+        window.orderFrontRegardless()
+        PrismLog.write("showTestWindow visible=\(window.isVisible)")
     }
 
     private func showOnboarding() {
