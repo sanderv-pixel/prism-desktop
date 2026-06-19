@@ -36,7 +36,11 @@ final class OnboardingWindowController: NSWindowController {
     }
 
     private func setupContent() {
-        guard let contentView = window?.contentView else { return }
+        PrismLog.write("setupContent start")
+        guard let contentView = window?.contentView else {
+            PrismLog.write("setupContent: no contentView")
+            return
+        }
 
         let stack = NSStackView()
         stack.orientation = .vertical
@@ -63,6 +67,7 @@ final class OnboardingWindowController: NSWindowController {
         stack.addArrangedSubview(bodyLabel)
 
         stack.setCustomSpacing(24, after: bodyLabel)
+        PrismLog.write("setupContent: header done")
 
         // Accessibility step
         let accessRow = stepRow(
@@ -84,7 +89,9 @@ final class OnboardingWindowController: NSWindowController {
         editorSubtitle.textColor = NSColor.secondaryLabelColor
         stack.addArrangedSubview(editorSubtitle)
 
+        PrismLog.write("setupContent: detecting editors")
         editors = PrismInstaller.detectedEditors()
+        PrismLog.write("setupContent: found \(editors.count) editors")
         if editors.isEmpty {
             let noneLabel = NSTextField(wrappingLabelWithString: "No supported editor CLI found. You can install the extension manually from the Prism dashboard later.")
             noneLabel.font = .systemFont(ofSize: 12)
@@ -96,6 +103,8 @@ final class OnboardingWindowController: NSWindowController {
                 stack.addArrangedSubview(row)
             }
         }
+
+        PrismLog.write("setupContent: editor section done")
 
         // Launch at login
         let loginRow = NSStackView()
