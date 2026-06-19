@@ -12,8 +12,11 @@ final class AccessibilityMonitor {
         "com.anthropic.claude",
         "com.anthropic.Claude",
     ]
-    private let thinkingKeywords = ["thinking", "claude is thinking", "generating"]
-    private let maxSearchDepth = 12
+    private let thinkingKeywords = [
+        "thinking", "claude is thinking", "generating",
+        "loading", "processing", "stop", "cancel"
+    ]
+    private let maxSearchDepth = 20
 
     var isRunning: Bool {
         timer != nil
@@ -84,6 +87,10 @@ final class AccessibilityMonitor {
     }
 
     private func matchesThinkingIndicator(_ element: AXUIElement) -> Bool {
+        if matchesProgressIndicator(element) {
+            return true
+        }
+
         let candidates = [
             stringValue(for: element, attribute: kAXValueAttribute),
             stringValue(for: element, attribute: kAXTitleAttribute),
@@ -101,6 +108,13 @@ final class AccessibilityMonitor {
             }
         }
         return false
+    }
+
+    private func matchesProgressIndicator(_ element: AXUIElement) -> Bool {
+        let role = stringValue(for: element, attribute: kAXRoleAttribute)?.lowercased() ?? ""
+        let subrole = stringValue(for: element, attribute: kAXSubroleAttribute)?.lowercased() ?? ""
+        return role.contains("progress") || role.contains("busy") ||
+               subrole.contains("progress") || subrole.contains("busy")
     }
 
     private func stringValue(for element: AXUIElement, attribute: String) -> String? {
