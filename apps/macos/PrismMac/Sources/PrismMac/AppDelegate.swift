@@ -17,13 +17,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func showOnboarding() {
         PrismLog.write("showOnboarding")
-        NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
         onboardingController = OnboardingWindowController()
         onboardingController?.onComplete = { [weak self] in
             UserDefaults.standard.set(true, forKey: "PrismOnboardingCompleted")
             self?.onboardingController = nil
-            NSApp.setActivationPolicy(.accessory)
             self?.showStatusBar()
         }
         onboardingController?.showWindow(nil)

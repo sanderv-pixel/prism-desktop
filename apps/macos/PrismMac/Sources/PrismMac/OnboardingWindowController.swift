@@ -24,6 +24,7 @@ final class OnboardingWindowController: NSWindowController {
         setupContent()
         window.makeKeyAndOrderFront(nil)
         window.orderFrontRegardless()
+        PrismLog.write("OnboardingWindowController window front ordered, visible=\(window.isVisible)")
     }
 
     required init?(coder: NSCoder) {
@@ -126,6 +127,7 @@ final class OnboardingWindowController: NSWindowController {
         startButton.bezelStyle = .rounded
         startButton.keyEquivalent = "\r"
         stack.addArrangedSubview(startButton)
+        PrismLog.write("setupContent complete")
     }
 
     private func stepRow(title: String, subtitle: String, actionTitle: String, action: Selector) -> NSView {
