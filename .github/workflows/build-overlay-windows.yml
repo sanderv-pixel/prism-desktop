@@ -1,0 +1,45 @@
+name: build-overlay-windows
+
+on:
+  push:
+    paths:
+      - 'apps/overlay-windows/**'
+      - '.github/workflows/build-overlay-windows.yml'
+  pull_request:
+    paths:
+      - 'apps/overlay-windows/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: apps/overlay-windows
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build (Release)
+        run: dotnet build -c Release --no-restore
+
+      - name: Publish self-contained single-file .exe
+        run: >
+          dotnet publish -c Release -r win-x64 --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true
+          -o publish
+
+      - name: Upload PrismOverlay.exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: PrismOverlay-win-x64
+          path: apps/overlay-windows/publish/PrismOverlay.exe
+          if-no-files-found: error
