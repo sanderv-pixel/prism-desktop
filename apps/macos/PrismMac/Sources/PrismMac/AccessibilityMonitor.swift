@@ -20,12 +20,14 @@ final class AccessibilityMonitor {
     }
 
     static func isTrusted() -> Bool {
-        let options = [kAXTrustedCheckOptionPrompt as String: false]
+        let key = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
+        let options = [key: false]
         return AXIsProcessTrustedWithOptions(options as CFDictionary)
     }
 
     static func promptForAccessibility() {
-        let options = [kAXTrustedCheckOptionPrompt as String: true]
+        let key = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
+        let options = [key: true]
         AXIsProcessTrustedWithOptions(options as CFDictionary)
     }
 
@@ -101,9 +103,9 @@ final class AccessibilityMonitor {
         return false
     }
 
-    private func stringValue(for element: AXUIElement, attribute: CFString) -> String? {
+    private func stringValue(for element: AXUIElement, attribute: String) -> String? {
         var value: AnyObject?
-        let result = AXUIElementCopyAttributeValue(element, attribute, &value)
+        let result = AXUIElementCopyAttributeValue(element, attribute as CFString, &value)
         guard result == .success else { return nil }
         return value as? String
     }
@@ -121,14 +123,14 @@ final class AccessibilityMonitor {
 
         var positionValue: AnyObject?
         guard AXUIElementCopyAttributeValue(element, kAXPositionAttribute as CFString, &positionValue) == .success,
-              let pos = positionValue as? AXValue,
+              let pos = positionValue as! AXValue?,
               AXValueGetValue(pos, .cgPoint, &position) else {
             return nil
         }
 
         var sizeValue: AnyObject?
         guard AXUIElementCopyAttributeValue(element, kAXSizeAttribute as CFString, &sizeValue) == .success,
-              let sz = sizeValue as? AXValue,
+              let sz = sizeValue as! AXValue?,
               AXValueGetValue(sz, .cgSize, &size) else {
             return nil
         }
