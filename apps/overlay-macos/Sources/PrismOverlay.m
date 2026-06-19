@@ -111,8 +111,6 @@ static const CGFloat kGapFromRow = 10.0;            // px to the right of the ro
 #pragma mark - PrismController
 
 @interface PrismController ()
-@property(nonatomic, assign) AXUIElementRef app;
-@property(nonatomic, assign) pid_t pid;
 @property(nonatomic, strong) PrismOverlayWindow *pill;
 @property(nonatomic, strong) PrismAdClient *ads;
 @property(nonatomic, strong) PrismAd *currentAd;
@@ -148,17 +146,6 @@ static const CGFloat kGapFromRow = 10.0;            // px to the right of the ro
                                                 userInfo:nil repeats:YES];
 }
 
-- (void)dealloc {
-    if (_app) CFRelease(_app);
-}
-
-- (void)ensureConnection {
-    if (self.pid != 0 && kill(self.pid, 0) == 0) return;  // still alive
-    self.pid = [PrismAX findClaudePid];
-    if (self.app) { CFRelease(self.app); self.app = NULL; }
-    if (self.pid) self.app = AXUIElementCreateApplication(self.pid);
-}
-
 - (void)poll {
     self.tick++;
 
@@ -168,10 +155,8 @@ static const CGFloat kGapFromRow = 10.0;            // px to the right of the ro
         return;
     }
 
-    [self ensureConnection];
-    if (self.app) [PrismAX wakeAccessibility:self.app];  // must run while trusted
-
-    PrismDetection *d = [PrismAX detectWorkRow:self.app];
+    // Scan all supported surfaces (Claude Desktop + terminals), frontmost first.
+    PrismDetection *d = [PrismAX detect];
     if (d.found) {
         self.missStreak = 0;
         [self showNextTo:d.frame];
