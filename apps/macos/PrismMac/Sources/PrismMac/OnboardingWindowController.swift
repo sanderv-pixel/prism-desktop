@@ -9,6 +9,7 @@ final class OnboardingWindowController: NSWindowController {
     private var loginCheckbox: NSButton?
 
     init() {
+        PrismLog.write("OnboardingWindowController init")
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 520, height: 440),
             styleMask: [.titled, .closable],
@@ -17,8 +18,12 @@ final class OnboardingWindowController: NSWindowController {
         )
         window.title = "Welcome to Prism"
         window.center()
+        window.isReleasedWhenClosed = false
+        window.collectionBehavior = [.canJoinAllSpaces, .moveToActiveSpace]
         super.init(window: window)
         setupContent()
+        window.makeKeyAndOrderFront(nil)
+        window.orderFrontRegardless()
     }
 
     required init?(coder: NSCoder) {
