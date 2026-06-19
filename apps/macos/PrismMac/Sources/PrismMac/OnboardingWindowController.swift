@@ -66,19 +66,19 @@ final class OnboardingWindowController: NSWindowController {
         // Editor extension step
         let editorTitle = NSTextField(labelWithString: "2. Install the editor extension (optional)")
         editorTitle.font = .systemFont(ofSize: 14, weight: .semibold)
-        editorTitle.textColor = .label
+        editorTitle.textColor = NSColor.labelColor
         stack.addArrangedSubview(editorTitle)
 
         let editorSubtitle = NSTextField(wrappingLabelWithString: "Install Prism directly into VS Code, Cursor, or Insiders if they are on this Mac.")
         editorSubtitle.font = .systemFont(ofSize: 12)
-        editorSubtitle.textColor = .secondaryLabel
+        editorSubtitle.textColor = NSColor.secondaryLabelColor
         stack.addArrangedSubview(editorSubtitle)
 
         editors = PrismInstaller.detectedEditors()
         if editors.isEmpty {
             let noneLabel = NSTextField(wrappingLabelWithString: "No supported editor CLI found. You can install the extension manually from the Prism dashboard later.")
             noneLabel.font = .systemFont(ofSize: 12)
-            noneLabel.textColor = .secondaryLabel
+            noneLabel.textColor = NSColor.secondaryLabelColor
             stack.addArrangedSubview(noneLabel)
         } else {
             for editor in editors {
@@ -147,7 +147,7 @@ final class OnboardingWindowController: NSWindowController {
 
         let status = NSTextField(labelWithString: "")
         status.font = .systemFont(ofSize: 12)
-        status.textColor = .secondaryLabel
+        status.textColor = NSColor.secondaryLabelColor
         statusLabels[editor.name] = status
 
         container.addArrangedSubview(button)
