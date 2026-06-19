@@ -21,7 +21,6 @@ static NSColor *ColorHex(uint32_t rgb) {
 @interface PrismAdClient ()
 @property(nonatomic, copy) NSString *baseURL;
 @property(nonatomic, copy) NSString *sessionId;
-@property(nonatomic, copy) NSString *apiKey;
 @property(nonatomic, strong) NSArray<PrismAd *> *queue;   // immutable; replaced wholesale
 @property(nonatomic, assign) NSUInteger cursor;
 @end
@@ -32,10 +31,10 @@ static NSColor *ColorHex(uint32_t rgb) {
     if ((self = [super init])) {
         NSDictionary *env = [NSProcessInfo processInfo].environment;
         NSString *url = env[@"PRISM_API_URL"];
+        if (!url.length) url = [[NSUserDefaults standardUserDefaults] stringForKey:@"PrismApiUrl"];
         _baseURL = (url.length ? url : @"https://goprism.dev/api");
         // strip a trailing slash for consistent joins
         if ([_baseURL hasSuffix:@"/"]) _baseURL = [_baseURL substringToIndex:_baseURL.length - 1];
-        _apiKey = env[@"PRISM_API_KEY"] ?: @"";
         _sessionId = [[NSUUID UUID].UUIDString stringByReplacingOccurrencesOfString:@"-" withString:@""];
         _queue = [self builtinAds];
         _cursor = 0;
@@ -68,12 +67,22 @@ static NSColor *ColorHex(uint32_t rgb) {
 
 #pragma mark - Networking (best-effort)
 
+// Read the key fresh each request so a key saved during onboarding takes effect
+// immediately. Env wins (dev), then the value saved by the onboarding window.
+- (NSString *)currentApiKey {
+    NSString *env = [NSProcessInfo processInfo].environment[@"PRISM_API_KEY"];
+    if (env.length) return env;
+    NSString *saved = [[NSUserDefaults standardUserDefaults] stringForKey:@"PrismApiKey"];
+    return saved.length ? saved : @"";
+}
+
 - (NSMutableURLRequest *)postTo:(NSString *)path body:(NSDictionary *)body {
     NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@/%@", self.baseURL, path]];
     NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL:url];
     req.HTTPMethod = @"POST";
     [req setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
-    if (self.apiKey.length) [req setValue:self.apiKey forHTTPHeaderField:@"X-Prism-Api-Key"];
+    NSString *key = [self currentApiKey];
+    if (key.length) [req setValue:key forHTTPHeaderField:@"X-Prism-Api-Key"];
     req.HTTPBody = [NSJSONSerialization dataWithJSONObject:body options:0 error:nil];
     req.timeoutInterval = 4.0;
     return req;

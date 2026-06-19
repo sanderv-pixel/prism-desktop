@@ -25,17 +25,48 @@ it. The ad disappears the moment Claude is idle.
 > Recording. Cowork/Code both expose the work row, so this app stays
 > Accessibility-only.
 
-## Build & run
+## Install (end user)
+
+```bash
+curl -fsSL https://goprism.dev/install.sh | sh
+```
+
+That's it. Files fetched with `curl` aren't quarantined, so the app launches
+with **no Gatekeeper prompt and no Apple Developer account required**. On first
+run a small **Welcome** window walks you through:
+
+1. **Enable** — one click grants Accessibility (the only permission).
+2. **Connect your account** (optional) — for live ads + earnings. Without it,
+   Prism shows demo ads.
+
+The menu-bar item (◆) has **Pause/Resume**, **Setup…**, and **Quit**.
+Uninstall: `curl -fsSL https://goprism.dev/uninstall.sh | sh`.
+
+## Build & run (developer)
 
 ```bash
 make            # build + ad-hoc sign  ->  build/PrismOverlay.app
 make run        # build and (re)launch
 ```
 
-On first launch it prompts for **Accessibility**. Grant it in
-System Settings → Privacy & Security → Accessibility, then relaunch.
+During dev, ad-hoc builds lose their Accessibility grant on each rebuild;
+`make reset` + relaunch gives a clean re-grant.
 
-The menu-bar item (◆) lets you **Pause/Resume** or **Quit**.
+## Release & distribute (no Apple account)
+
+```bash
+scripts/setup-signing.sh                      # one-time: self-signed identity
+make release SIGN_ID="Prism Overlay Signing"  # -> build/PrismOverlay.zip
+```
+
+Host `build/PrismOverlay.zip` where `install.sh`'s `PRISM_ZIP_URL` points
+(default `https://goprism.dev/download/PrismOverlay.zip`), and serve `install.sh`
+/ `uninstall.sh` from `goprism.dev`.
+
+Signing with the stable self-signed identity (instead of ad-hoc, `make release`
+with no `SIGN_ID`) means the user's Accessibility grant **survives updates**. A
+real **Developer ID** is only needed if you later want a double-click `.dmg` for
+non-technical users.
 
 ## Live ads, views & clicks
 
