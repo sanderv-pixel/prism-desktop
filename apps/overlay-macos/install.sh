@@ -24,12 +24,32 @@ ditto -x -k "$TMP/prism.zip" /Applications
 # Belt-and-suspenders: strip quarantine if any tooling added it.
 xattr -dr com.apple.quarantine "$DEST" 2>/dev/null || true
 
+echo "→ Enabling launch-at-login…"
+PLIST="$HOME/Library/LaunchAgents/dev.goprism.overlay.plist"
+mkdir -p "$HOME/Library/LaunchAgents"
+cat > "$PLIST" <<PL
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>dev.goprism.overlay</string>
+  <key>ProgramArguments</key>
+  <array><string>$DEST/Contents/MacOS/PrismOverlay</string></array>
+  <key>RunAtLoad</key><true/>
+  <key>ProcessType</key><string>Interactive</string>
+  <key>LimitLoadToSessionType</key><string>Aqua</string>
+</dict>
+</plist>
+PL
+
 echo "→ Launching Prism…"
-open "$DEST"
+# launchd starts it now (RunAtLoad) and at every login. Reload to pick up updates.
+launchctl bootout "gui/$(id -u)/dev.goprism.overlay" 2>/dev/null || true
+launchctl bootstrap "gui/$(id -u)" "$PLIST" 2>/dev/null || open "$DEST"
 
 cat <<'DONE'
 
-✓ Prism is installed and running (look for ◆ in your menu bar).
+✓ Prism is installed and runs automatically at login (look for ◆ in your menu bar).
 
 Next: when it asks, click "Enable" to grant Accessibility — that's the one
 permission it needs to place the sponsored line next to Claude's activity.
