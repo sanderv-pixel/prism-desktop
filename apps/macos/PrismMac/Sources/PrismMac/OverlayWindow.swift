@@ -47,7 +47,7 @@ final class OverlayWindow: NSWindow {
 
         if !isVisible {
             setFrame(rect, display: false)
-            orderFrontRegardless(nil)
+            orderFrontRegardless()
         } else {
             setFrame(rect, display: true)
         }
