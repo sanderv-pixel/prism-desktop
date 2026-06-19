@@ -25,6 +25,10 @@ final class OnboardingWindowController: NSWindowController {
         fatalError("init(coder:) has not been implemented")
     }
 
+    private var isInApplications: Bool {
+        Bundle.main.bundleURL.path.hasPrefix("/Applications/")
+    }
+
     private func setupContent() {
         guard let contentView = window?.contentView else { return }
 
@@ -96,12 +100,20 @@ final class OnboardingWindowController: NSWindowController {
         checkbox.state = .on
         loginCheckbox = checkbox
         loginRow.addArrangedSubview(checkbox)
-        if #available(macOS 13.0, *) {
+        stack.addArrangedSubview(loginRow)
+
+        if !isInApplications {
+            checkbox.isEnabled = false
+            checkbox.state = .off
+            let note = NSTextField(wrappingLabelWithString: "Launch at login requires Prism.app to be in the Applications folder. Move it there, then reopen Prism to enable this option.")
+            note.font = .systemFont(ofSize: 12)
+            note.textColor = NSColor.secondaryLabelColor
+            stack.addArrangedSubview(note)
+        } else if #available(macOS 13.0, *) {
             if LoginItemManager.isEnabled {
                 checkbox.state = .on
             }
         }
-        stack.addArrangedSubview(loginRow)
 
         stack.setCustomSpacing(24, after: loginRow)
 
@@ -178,7 +190,7 @@ final class OnboardingWindowController: NSWindowController {
     }
 
     @objc private func completeOnboarding(_ sender: Any?) {
-        if #available(macOS 13.0, *) {
+        if #available(macOS 13.0, *), isInApplications {
             let wantsLogin = loginCheckbox?.state == .on
             if wantsLogin != LoginItemManager.isEnabled {
                 do {
