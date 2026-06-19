@@ -1,3 +1,0 @@
-#!/usr/bin/env node
-process.argv[2] = 'status'
-require('../out/index.js')

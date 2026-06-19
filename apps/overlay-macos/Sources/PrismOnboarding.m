@@ -1,0 +1,159 @@
+#import "PrismOnboarding.h"
+#import "PrismAuth.h"
+#import <ApplicationServices/ApplicationServices.h>
+
+static NSString *const kDoneKey = @"PrismOnboardingDone";
+static NSString *const kApiKeyKey = @"PrismApiKey";
+
+@interface PrismOnboarding ()
+@property(strong) NSWindow *window;
+@property(strong) NSTextField *axStatus;
+@property(strong) NSButton *axButton;
+@property(strong) NSTextField *keyStatus;
+@property(strong) NSTimer *timer;
+@property(strong) PrismAuth *auth;
+@end
+
+@implementation PrismOnboarding
+
++ (BOOL)shouldShowOnLaunch {
+    if (!AXIsProcessTrusted()) return YES;
+    // Require a connected account — Prism shows nothing without one.
+    if (![[NSUserDefaults standardUserDefaults] stringForKey:kApiKeyKey].length) return YES;
+    return ![[NSUserDefaults standardUserDefaults] boolForKey:kDoneKey];
+}
+
+- (instancetype)init {
+    if ((self = [super init])) [self build];
+    return self;
+}
+
+#pragma mark - View helpers
+
+- (NSTextField *)label:(NSString *)s frame:(NSRect)f size:(CGFloat)sz weight:(NSFontWeight)w color:(NSColor *)c {
+    NSTextField *t = [[NSTextField alloc] initWithFrame:f];
+    t.bezeled = NO; t.editable = NO; t.selectable = NO; t.drawsBackground = NO;
+    t.stringValue = s; t.font = [NSFont systemFontOfSize:sz weight:w]; t.textColor = c;
+    t.lineBreakMode = NSLineBreakByWordWrapping; [t.cell setWraps:YES];
+    return t;
+}
+
+- (NSView *)card:(NSRect)f {
+    NSView *v = [[NSView alloc] initWithFrame:f];
+    v.wantsLayer = YES;
+    v.layer.backgroundColor = [NSColor colorWithWhite:0.5 alpha:0.06].CGColor;
+    v.layer.cornerRadius = 10;
+    v.layer.borderWidth = 1;
+    v.layer.borderColor = [NSColor colorWithWhite:0.5 alpha:0.12].CGColor;
+    return v;
+}
+
+- (NSButton *)button:(NSString *)title frame:(NSRect)f action:(SEL)sel {
+    NSButton *b = [[NSButton alloc] initWithFrame:f];
+    b.title = title; b.bezelStyle = NSBezelStyleRounded; b.target = self; b.action = sel;
+    return b;
+}
+
+- (void)build {
+    self.window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 480, 440)
+        styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable
+        backing:NSBackingStoreBuffered defer:NO];
+    self.window.title = @"Welcome to Prism";
+    self.window.releasedWhenClosed = NO;
+    NSView *cv = self.window.contentView;
+
+    [cv addSubview:[self label:@"Prism" frame:NSMakeRect(28, 392, 424, 30) size:24 weight:NSFontWeightBold color:NSColor.labelColor]];
+    [cv addSubview:[self label:@"Earn while Claude works." frame:NSMakeRect(28, 368, 424, 20) size:13 weight:NSFontWeightRegular color:NSColor.secondaryLabelColor]];
+    [cv addSubview:[self label:@"Prism shows one small sponsored line next to Claude's activity — only while it's working, never otherwise. It reads the macOS Accessibility tree to place the line and never modifies Claude."
+        frame:NSMakeRect(28, 300, 424, 58) size:12 weight:NSFontWeightRegular color:NSColor.secondaryLabelColor]];
+
+    // 1 — Accessibility
+    [cv addSubview:[self card:NSMakeRect(24, 196, 432, 92)]];
+    [cv addSubview:[self label:@"1.  Enable Prism" frame:NSMakeRect(40, 256, 300, 18) size:13 weight:NSFontWeightSemibold color:NSColor.labelColor]];
+    self.axStatus = [self label:@"" frame:NSMakeRect(40, 230, 280, 18) size:12 weight:NSFontWeightRegular color:NSColor.secondaryLabelColor];
+    [cv addSubview:self.axStatus];
+    self.axButton = [self button:@"Enable" frame:NSMakeRect(330, 234, 108, 30) action:@selector(enableAX)];
+    [cv addSubview:self.axButton];
+    [cv addSubview:[self label:@"Grants Accessibility — the one permission Prism needs." frame:NSMakeRect(40, 206, 390, 16) size:11 weight:NSFontWeightRegular color:NSColor.tertiaryLabelColor]];
+
+    // 2 — Connect account (CLI-style: opens the browser, links automatically).
+    [cv addSubview:[self card:NSMakeRect(24, 72, 432, 108)]];
+    [cv addSubview:[self label:@"2.  Connect your account" frame:NSMakeRect(40, 148, 360, 18) size:13 weight:NSFontWeightSemibold color:NSColor.labelColor]];
+    [cv addSubview:[self button:@"Connect account" frame:NSMakeRect(40, 112, 162, 30) action:@selector(connectAccount)]];
+    self.keyStatus = [self label:@"Required — Prism shows ads only once connected. Opens your browser to sign in or create an account; nothing to copy."
+        frame:NSMakeRect(40, 74, 400, 34) size:11 weight:NSFontWeightRegular color:NSColor.tertiaryLabelColor];
+    [cv addSubview:self.keyStatus];
+
+    NSButton *done = [self button:@"Done" frame:NSMakeRect(360, 20, 96, 32) action:@selector(finish)];
+    done.keyEquivalent = @"\r";
+    [cv addSubview:done];
+
+    [self refreshStatus];
+}
+
+#pragma mark - Lifecycle
+
+- (void)show {
+    NSString *saved = [[NSUserDefaults standardUserDefaults] stringForKey:kApiKeyKey];
+    if (saved.length) {
+        self.keyStatus.stringValue = @"✓ Account connected — live ads enabled.";
+        self.keyStatus.textColor = [NSColor systemGreenColor];
+    }
+    [self refreshStatus];
+    [self.window center];
+    [NSApp activateIgnoringOtherApps:YES];
+    [self.window makeKeyAndOrderFront:nil];
+    if (!self.timer) {
+        self.timer = [NSTimer scheduledTimerWithTimeInterval:0.5 target:self
+                                                    selector:@selector(refreshStatus) userInfo:nil repeats:YES];
+    }
+}
+
+- (void)refreshStatus {
+    if (AXIsProcessTrusted()) {
+        self.axStatus.stringValue = @"✓ Enabled";
+        self.axStatus.textColor = [NSColor systemGreenColor];
+        self.axButton.enabled = NO;
+        self.axButton.title = @"Enabled";
+    } else {
+        self.axStatus.stringValue = @"Not enabled yet";
+        self.axStatus.textColor = NSColor.secondaryLabelColor;
+        self.axButton.enabled = YES;
+        self.axButton.title = @"Enable";
+    }
+}
+
+#pragma mark - Actions
+
+- (void)enableAX {
+    // Open the Accessibility pane directly. We deliberately do NOT call
+    // AXIsProcessTrustedWithOptions(prompt:YES): that shows a system dialog that
+    // lingers (with a confusing "Deny" button) even after the user flips the
+    // toggle. The app is already in the list because its detector calls the
+    // Accessibility API — the user just toggles it on.
+    [[NSWorkspace sharedWorkspace] openURL:
+        [NSURL URLWithString:@"x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"]];
+}
+
+- (void)connectAccount {
+    if (!self.auth) self.auth = [PrismAuth new];
+    self.keyStatus.textColor = NSColor.secondaryLabelColor;
+    self.keyStatus.stringValue = @"Opening your browser…";
+    __weak PrismOnboarding *weakSelf = self;
+    [self.auth connectWithStatus:^(NSString *msg, BOOL done, BOOL success) {
+        PrismOnboarding *self = weakSelf;
+        if (!self) return;
+        self.keyStatus.stringValue = msg;
+        self.keyStatus.textColor = success ? [NSColor systemGreenColor]
+                                  : (done ? [NSColor systemRedColor] : NSColor.secondaryLabelColor);
+    }];
+}
+
+- (void)finish {
+    [[NSUserDefaults standardUserDefaults] setBool:YES forKey:kDoneKey];
+    [self.timer invalidate];
+    self.timer = nil;
+    [self.window close];
+}
+
+@end

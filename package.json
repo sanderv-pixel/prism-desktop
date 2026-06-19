@@ -3,25 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "workspaces": [
-    "apps/*",
-    "packages/*"
+    "apps/web"
   ],
   "scripts": {
+    "dev": "npm run dev --workspace=@prism/web",
     "dev:web": "npm run dev --workspace=@prism/web",
+    "build": "npm run build --workspace=@prism/web",
     "build:web": "npm run build --workspace=@prism/web",
-    "build:extension": "npm run compile --workspace=prism",
-    "build:browser-extension": "npm run build --workspace=@prism/browser-extension",
-    "build:shared": "npm run build --workspace=@prism/shared",
-    "build:patcher": "npm run build --workspace=@prism/patcher",
-    "build:cli": "npm run build --workspace=@prism/cli",
-    "build": "npm run build:shared && npm run build:patcher && npm run build:cli && npm run build:extension && npm run build:browser-extension && npm run build:web",
-    "build:prod": "NODE_ENV=production npm run build:shared && NODE_ENV=production npm run build:patcher && NODE_ENV=production npm run build:cli && NODE_ENV=production npm run build:extension && NODE_ENV=production npm run build:browser-extension && NODE_ENV=production npm run build:web",
     "start": "npm run start --workspace=@prism/web",
-    "lint": "npm run lint --workspace=@prism/shared && npm run lint --workspace=@prism/patcher && npm run lint --workspace=@prism/cli && npm run lint --workspace=prism && npm run lint --workspace=@prism/browser-extension && npm run lint --workspace=@prism/web",
+    "lint": "npm run lint --workspace=@prism/web",
     "typecheck": "npm run lint",
-    "test": "npm run test --workspace=@prism/shared && npm run test --workspace=@prism/patcher && npm run test --workspace=prism",
-    "package:extension": "npm run package --workspace=prism",
-    "package:browser-extension": "npm run package --workspace=@prism/browser-extension",
     "deploy:web": "cd apps/web && vercel --prod"
   },
   "devDependencies": {
