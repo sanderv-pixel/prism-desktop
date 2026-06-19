@@ -5,6 +5,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusBarController: StatusBarController?
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
+        PrismLog.write("applicationDidFinishLaunching")
         let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "PrismOnboardingCompleted")
 
         if hasCompletedOnboarding {

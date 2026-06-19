@@ -10,7 +10,7 @@ final class OverlayWindow: NSWindow {
             backing: .buffered,
             defer: false
         )
-        level = .popUpMenu
+        level = .screenSaver
         backgroundColor = .clear
         isOpaque = false
         hasShadow = false
@@ -47,7 +47,7 @@ final class OverlayWindow: NSWindow {
 
         if !isVisible {
             setFrame(rect, display: false)
-            makeKeyAndOrderFront(nil)
+            orderFrontRegardless(nil)
         } else {
             setFrame(rect, display: true)
         }

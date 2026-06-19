@@ -23,15 +23,18 @@ final class AccessibilityMonitor {
     }
 
     static func isTrusted() -> Bool {
-        let key = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
-        let options = [key: false]
-        return AXIsProcessTrustedWithOptions(options as CFDictionary)
+        let key = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as CFString
+        let options: CFDictionary = [key: false] as CFDictionary
+        return AXIsProcessTrustedWithOptions(options)
     }
 
     static func promptForAccessibility() {
-        let key = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
-        let options = [key: true]
-        AXIsProcessTrustedWithOptions(options as CFDictionary)
+        let key = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as CFString
+        let options: CFDictionary = [key: true] as CFDictionary
+        AXIsProcessTrustedWithOptions(options)
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+            NSWorkspace.shared.open(url)
+        }
     }
 
     func startPolling() {
@@ -49,7 +52,9 @@ final class AccessibilityMonitor {
     }
 
     private func tick() {
-        guard AccessibilityMonitor.isTrusted() else {
+        let trusted = AccessibilityMonitor.isTrusted()
+        PrismLog.write("tick: trusted=\(trusted)")
+        guard trusted else {
             onThinkingStopped?()
             return
         }
@@ -57,15 +62,19 @@ final class AccessibilityMonitor {
         guard let frontApp = NSWorkspace.shared.frontmostApplication,
               let bundleID = frontApp.bundleIdentifier,
               possibleBundleIDs.contains(bundleID) else {
+            PrismLog.write("tick: frontmost app not Claude")
             onThinkingStopped?()
             return
         }
 
+        PrismLog.write("tick: scanning Claude (pid=\(frontApp.processIdentifier))")
         let appElement = AXUIElementCreateApplication(frontApp.processIdentifier)
         if let element = findThinkingElement(in: appElement, depth: 0),
            let frame = frame(of: element) {
+            PrismLog.write("tick: detected thinking frame=\(frame)")
             onThinkingDetected?(frame)
         } else {
+            PrismLog.write("tick: no thinking indicator found")
             onThinkingStopped?()
         }
     }
@@ -101,8 +110,10 @@ final class AccessibilityMonitor {
         for text in candidates {
             guard let text = text else { continue }
             let lower = text.lowercased()
+            PrismLog.write("matchesThinkingIndicator: candidate=\"\(text)\"")
             for keyword in thinkingKeywords {
                 if lower.contains(keyword) {
+                    PrismLog.write("matchesThinkingIndicator: matched keyword '\(keyword)'")
                     return true
                 }
             }
@@ -113,6 +124,7 @@ final class AccessibilityMonitor {
     private func matchesProgressIndicator(_ element: AXUIElement) -> Bool {
         let role = stringValue(for: element, attribute: kAXRoleAttribute)?.lowercased() ?? ""
         let subrole = stringValue(for: element, attribute: kAXSubroleAttribute)?.lowercased() ?? ""
+        PrismLog.write("matchesProgressIndicator: role=\(role) subrole=\(subrole)")
         return role.contains("progress") || role.contains("busy") ||
                subrole.contains("progress") || subrole.contains("busy")
     }

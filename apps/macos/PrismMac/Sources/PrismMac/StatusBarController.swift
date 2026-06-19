@@ -91,12 +91,14 @@ final class StatusBarController: NSObject {
     private func setupMonitorCallbacks() {
         monitor.onThinkingDetected = { [weak self] frame in
             guard let self, self.enabled else { return }
+            PrismLog.write("onThinkingDetected: frame=\(frame)")
             DispatchQueue.main.async {
                 self.overlay.show(at: frame)
             }
         }
         monitor.onThinkingStopped = { [weak self] in
             guard let self else { return }
+            PrismLog.write("onThinkingStopped")
             DispatchQueue.main.async {
                 self.overlay.hide()
             }
