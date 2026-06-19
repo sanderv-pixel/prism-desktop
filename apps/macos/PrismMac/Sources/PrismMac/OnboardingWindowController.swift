@@ -44,12 +44,12 @@ final class OnboardingWindowController: NSWindowController {
 
         let titleLabel = NSTextField(labelWithString: "Welcome to Prism")
         titleLabel.font = .systemFont(ofSize: 22, weight: .semibold)
-        titleLabel.textColor = .label
+        titleLabel.textColor = NSColor.labelColor
         stack.addArrangedSubview(titleLabel)
 
         let bodyLabel = NSTextField(wrappingLabelWithString: "Prism shows tiny ads during AI wait states. For Claude Desktop, Prism uses macOS Accessibility to detect the thinking indicator and overlays a single ad line — without modifying Claude.")
         bodyLabel.font = .systemFont(ofSize: 13)
-        bodyLabel.textColor = .secondaryLabel
+        bodyLabel.textColor = NSColor.secondaryLabelColor
         stack.addArrangedSubview(bodyLabel)
 
         stack.setCustomSpacing(24, after: bodyLabel)
@@ -119,12 +119,12 @@ final class OnboardingWindowController: NSWindowController {
 
         let titleLabel = NSTextField(labelWithString: title)
         titleLabel.font = .systemFont(ofSize: 14, weight: .semibold)
-        titleLabel.textColor = .label
+        titleLabel.textColor = NSColor.labelColor
         container.addArrangedSubview(titleLabel)
 
         let subtitleLabel = NSTextField(wrappingLabelWithString: subtitle)
         subtitleLabel.font = .systemFont(ofSize: 12)
-        subtitleLabel.textColor = .secondaryLabel
+        subtitleLabel.textColor = NSColor.secondaryLabelColor
         container.addArrangedSubview(subtitleLabel)
 
         let button = NSButton(title: actionTitle, target: self, action: action)
