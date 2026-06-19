@@ -1,0 +1,22 @@
+{
+  "name": "@prism/patcher",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Patch Claude Code webviews for Prism panel ads",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "tsc --noEmit",
+    "test": "node --import tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@prism/shared": "*"
+  },
+  "devDependencies": {
+    "@electron/asar": "^4.2.0",
+    "@types/node": "^20",
+    "typescript": "^5"
+  }
+}

@@ -1,0 +1,71 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light" />
+  <meta name="supported-color-schemes" content="light" />
+  <title>Confirm your Prism account</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f8f7fb; -webkit-font-smoothing:antialiased; font-family:Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:#0f172a;">
+  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color:#f8f7fb;">
+    <tr>
+      <td align="center" style="padding:48px 16px;">
+        <!-- Logo -->
+        <table role="presentation" border="0" cellspacing="0" cellpadding="0" style="margin-bottom:28px;">
+          <tr>
+            <td style="font-size:22px; font-weight:800; letter-spacing:-0.02em; color:#7c3aed;">
+              Prism
+            </td>
+          </tr>
+        </table>
+
+        <!-- Card -->
+        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width:480px; background-color:#ffffff; border-radius:20px; overflow:hidden; border:1px solid #e2e0eb; box-shadow:0 8px 30px rgba(15,23,42,0.06);">
+          <tr>
+            <td style="padding:40px 32px 28px;">
+              <p style="margin:0 0 10px; font-size:11px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:#7c3aed;">Verify your email</p>
+              <h1 style="margin:0; font-size:26px; font-weight:700; line-height:1.2; color:#0f172a;">Confirm your Prism account</h1>
+              <p style="margin:14px 0 0; font-size:16px; line-height:1.6; color:#475569;">
+                Thanks for signing up. Tap the button below to verify your email address and finish creating your account.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 32px 32px;">
+              <table role="presentation" border="0" cellspacing="0" cellpadding="0" style="margin:0;">
+                <tr>
+                  <td style="border-radius:9999px; background-color:#7c3aed; text-align:center;">
+                    <a href="{{ .ConfirmationURL }}" style="display:inline-block; padding:15px 28px; font-size:15px; font-weight:600; color:#ffffff; text-decoration:none; border-radius:9999px;">Confirm email address</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 32px 40px;">
+              <p style="margin:0 0 10px; font-size:13px; line-height:1.5; color:#64748b;">If the button doesn’t work, paste this link into your browser:</p>
+              <p style="margin:0; font-size:13px; line-height:1.5; word-break:break-all; color:#7c3aed;">
+                <a href="{{ .ConfirmationURL }}" style="color:#7c3aed; text-decoration:none;">{{ .ConfirmationURL }}</a>
+              </p>
+              <p style="margin:24px 0 0; font-size:12px; line-height:1.5; color:#94a3b8;">
+                If you didn’t create a Prism account, you can safely ignore this email.
+              </p>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Footer -->
+        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width:480px; margin-top:24px;">
+          <tr>
+            <td style="text-align:center; font-size:12px; line-height:1.5; color:#94a3b8;">
+              Prism — <a href="https://goprism.dev" style="color:#7c3aed; text-decoration:none;">goprism.dev</a><br />
+              Get paid for every AI wait.
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

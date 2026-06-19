@@ -1,0 +1,22 @@
+{
+  "name": "@prism/cli",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Prism CLI integrations for AI coding assistants",
+  "bin": {
+    "prism-claude": "./bin/prism-claude"
+  },
+  "scripts": {
+    "build": "tsc -p ./",
+    "dev": "tsc -watch -p ./",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@prism/patcher": "*",
+    "@prism/shared": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "typescript": "^5"
+  }
+}

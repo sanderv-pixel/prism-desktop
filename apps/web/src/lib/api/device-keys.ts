@@ -1,0 +1,158 @@
+import { createAdminClient } from '@/utils/supabase/admin'
+import { kvGet, kvSet } from '@/lib/redis'
+
+const DEVICE_KEY_PREFIX = 'prism_live_'
+const KEY_ENTROPY_BYTES = 32
+const CACHE_TTL_SECONDS = 300
+
+function generateRandomString(length: number): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(length))
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+}
+
+export function generateDeviceApiKey(): string {
+  return `${DEVICE_KEY_PREFIX}${generateRandomString(KEY_ENTROPY_BYTES)}`
+}
+
+export async function hashApiKey(key: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const digest = await crypto.subtle.digest('SHA-256', encoder.encode(key))
+  return Buffer.from(digest).toString('hex')
+}
+
+function normalizeFingerprint(input: unknown): string {
+  if (input === null || input === undefined) return ''
+  if (typeof input === 'string') return input.trim()
+  return JSON.stringify(input)
+}
+
+export async function hashFingerprint(input: unknown): Promise<string> {
+  const normalized = normalizeFingerprint(input)
+  if (!normalized) return ''
+  const encoder = new TextEncoder()
+  const digest = await crypto.subtle.digest('SHA-256', encoder.encode(normalized))
+  return Buffer.from(digest).toString('hex')
+}
+
+export interface DeviceCredentialValidation {
+  valid: boolean
+  revoked: boolean
+  anonymousUserId?: string
+  fingerprintHash?: string | null
+}
+
+interface DeviceCredentialRow {
+  id: string
+  anonymous_user_id: string
+  api_key_hash: string
+  fingerprint_hash: string | null
+  revoked: boolean
+}
+
+export async function registerDeviceCredential(input: {
+  anonymousUserId: string
+  apiKey: string
+  fingerprint?: unknown
+  ip?: string
+}): Promise<void> {
+  const supabase = createAdminClient()
+  const [apiKeyHash, fingerprintHash] = await Promise.all([
+    hashApiKey(input.apiKey),
+    input.fingerprint ? hashFingerprint(input.fingerprint) : Promise.resolve(null),
+  ])
+
+  const { error } = await supabase.from('device_credentials').insert({
+    anonymous_user_id: input.anonymousUserId,
+    api_key_hash: apiKeyHash,
+    fingerprint_hash: fingerprintHash,
+    last_seen_ip: input.ip ?? null,
+  })
+
+  if (error) throw error
+}
+
+export async function validateDeviceApiKey(
+  apiKey: string
+): Promise<DeviceCredentialValidation> {
+  if (!apiKey.startsWith(DEVICE_KEY_PREFIX)) {
+    return { valid: false, revoked: false }
+  }
+
+  const hash = await hashApiKey(apiKey)
+  const cacheKey = `prism:device_key:${hash}`
+  const cached = await kvGet(cacheKey)
+
+  if (cached) {
+    try {
+      return JSON.parse(cached) as DeviceCredentialValidation
+    } catch {
+      // Ignore corrupt cache entry and fall through to DB.
+    }
+  }
+
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .from('device_credentials')
+    .select('*')
+    .eq('api_key_hash', hash)
+    .maybeSingle()
+
+  if (error) {
+    throw error
+  }
+
+  if (!data) {
+    const result: DeviceCredentialValidation = { valid: false, revoked: false }
+    return result
+  }
+
+  const row = data as DeviceCredentialRow
+  const result: DeviceCredentialValidation = {
+    valid: true,
+    revoked: row.revoked,
+    anonymousUserId: row.anonymous_user_id,
+    fingerprintHash: row.fingerprint_hash,
+  }
+
+  await kvSet(cacheKey, JSON.stringify(result), { ex: CACHE_TTL_SECONDS })
+
+  // Best-effort refresh of last-used metadata.
+  supabase
+    .from('device_credentials')
+    .update({ last_used_at: new Date().toISOString() })
+    .eq('id', row.id)
+    .then(
+      () => {},
+      () => {}
+    )
+
+  return result
+}
+
+export async function getDeviceCredentialByUserId(
+  anonymousUserId: string
+): Promise<DeviceCredentialRow | null> {
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .from('device_credentials')
+    .select('*')
+    .eq('anonymous_user_id', anonymousUserId)
+    .maybeSingle()
+
+  if (error) throw error
+  return (data as DeviceCredentialRow | null) ?? null
+}
+
+export async function incrementFingerprintMismatchCount(
+  anonymousUserId: string
+): Promise<number> {
+  const supabase = createAdminClient()
+  const { data, error } = await supabase.rpc('increment_fingerprint_mismatch', {
+    p_anonymous_user_id: anonymousUserId,
+  })
+
+  if (error) throw error
+  return (data as number | null) ?? 0
+}

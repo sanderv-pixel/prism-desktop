@@ -1,0 +1,56 @@
+name: Build Prism for Mac
+
+on:
+  push:
+    paths:
+      - 'apps/macos/PrismMac/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          xcode-select -p
+          swift --version
+
+      - name: Build Prism.app
+        working-directory: apps/macos/PrismMac
+        run: make build
+
+      - name: Zip Prism.app for distribution
+        working-directory: apps/macos/PrismMac/build
+        run: ditto -c -k --keepParent Prism.app Prism-Mac.zip
+
+      - name: Create Prism-Mac.dmg
+        working-directory: apps/macos/PrismMac/build
+        run: |
+          mkdir -p dmg
+          cp -R Prism.app dmg/Prism.app
+          ln -s /Applications dmg/Applications
+          hdiutil create -volname "Prism Installer" -srcfolder dmg -ov -format UDZO Prism-Mac.dmg
+
+      - name: Upload Prism.app artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Prism-Mac-app
+          path: apps/macos/PrismMac/build/Prism.app
+          if-no-files-found: error
+
+      - name: Upload Prism-Mac.zip artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Prism-Mac-zip
+          path: apps/macos/PrismMac/build/Prism-Mac.zip
+          if-no-files-found: error
+
+      - name: Upload Prism-Mac.dmg artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Prism-Mac-dmg
+          path: apps/macos/PrismMac/build/Prism-Mac.dmg
+          if-no-files-found: error

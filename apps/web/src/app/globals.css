@@ -1,0 +1,136 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 215 16% 47%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --border: 220 13% 91%;
+    --input: 220 14% 96%;
+    --primary: 262 83% 58%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --accent: 262 83% 58%;
+    --accent-foreground: 0 0% 100%;
+    --ring: 262 83% 58%;
+    --radius: 0.75rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased overflow-x-hidden;
+  }
+
+  ::selection {
+    background: rgba(124, 58, 237, 0.2);
+    color: inherit;
+  }
+}
+
+@layer components {
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-violet-600 via-fuchsia-600 to-blue-600;
+  }
+
+  .surface {
+    @apply bg-card border border-border rounded-2xl shadow-sm;
+  }
+
+  .surface-elevated {
+    @apply bg-card border border-border rounded-2xl shadow-md;
+  }
+
+  .section-padding {
+    @apply py-20 md:py-28 lg:py-32 px-4 sm:px-6 lg:px-8;
+  }
+
+  .container-tight {
+    @apply relative max-w-6xl mx-auto;
+  }
+
+  .container-narrow {
+    @apply relative max-w-2xl mx-auto;
+  }
+
+  .text-hero {
+    @apply text-[2.25rem] sm:text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tight leading-[1.08] text-balance text-foreground;
+  }
+
+  .text-section {
+    @apply text-2xl md:text-4xl lg:text-5xl font-semibold tracking-tight text-balance text-foreground;
+  }
+
+  .eyebrow {
+    @apply inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary;
+  }
+
+  .card {
+    @apply bg-card border border-border rounded-2xl shadow-sm;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-violet-600 via-fuchsia-600 to-blue-600;
+  }
+
+  .gradient-text-subtle {
+    @apply bg-clip-text text-transparent bg-gradient-to-br from-foreground via-foreground to-muted-foreground;
+  }
+
+  .glass {
+    @apply bg-white/80 backdrop-blur-xl border border-white/20 shadow-lg;
+  }
+
+  .glass-dark {
+    @apply bg-black/40 backdrop-blur-xl border border-white/10 shadow-xl;
+  }
+
+  .glow {
+    box-shadow: 0 0 80px -20px rgba(124, 58, 237, 0.25);
+  }
+
+  .glow-sm {
+    box-shadow: 0 0 40px -12px rgba(124, 58, 237, 0.3);
+  }
+
+  .premium-card {
+    @apply bg-card border border-border rounded-2xl shadow-sm;
+    @apply relative overflow-hidden;
+  }
+
+  .premium-card::before {
+    content: '';
+    @apply absolute inset-0 rounded-2xl pointer-events-none;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.03) 0%, transparent 50%);
+  }
+
+  .gradient-border {
+    position: relative;
+    background: linear-gradient(var(--card), var(--card)) padding-box,
+      linear-gradient(135deg, rgba(124, 58, 237, 0.25), rgba(6, 182, 212, 0.15), transparent) border-box;
+    border: 1px solid transparent;
+  }
+
+  .bg-noise {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  }
+}
+
