@@ -1,8 +1,9 @@
 import Cocoa
 
-final class OnboardingWindowController: NSWindowController {
+final class OnboardingWindowController {
     var onComplete: (() -> Void)?
 
+    private let window: NSWindow
     private var editorButtons: [NSButton] = []
     private var editors: [Editor] = []
     private var statusLabels: [String: NSTextField] = [:]
@@ -10,7 +11,7 @@ final class OnboardingWindowController: NSWindowController {
 
     init() {
         PrismLog.write("OnboardingWindowController init")
-        let window = NSWindow(
+        window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 520, height: 440),
             styleMask: [.titled, .closable],
             backing: .buffered,
@@ -19,16 +20,19 @@ final class OnboardingWindowController: NSWindowController {
         window.title = "Welcome to Prism"
         window.center()
         window.isReleasedWhenClosed = false
-        window.collectionBehavior = [.canJoinAllSpaces, .moveToActiveSpace]
-        super.init(window: window)
         setupContent()
         window.makeKeyAndOrderFront(nil)
         window.orderFrontRegardless()
-        PrismLog.write("OnboardingWindowController window front ordered, visible=\(window.isVisible)")
+        PrismLog.write("OnboardingWindowController visible=\(window.isVisible)")
     }
 
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+    func showWindow(_ sender: Any?) {
+        window.makeKeyAndOrderFront(nil)
+        window.orderFrontRegardless()
+    }
+
+    func close() {
+        window.close()
     }
 
     private var isInApplications: Bool {
@@ -37,7 +41,7 @@ final class OnboardingWindowController: NSWindowController {
 
     private func setupContent() {
         PrismLog.write("setupContent start")
-        guard let contentView = window?.contentView else {
+        guard let contentView = window.contentView else {
             PrismLog.write("setupContent: no contentView")
             return
         }

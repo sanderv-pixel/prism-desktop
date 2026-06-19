@@ -13,26 +13,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if hasCompletedOnboarding {
             showStatusBar()
         } else {
-            showTestWindow()
+            showOnboarding()
         }
-    }
-
-    private func showTestWindow() {
-        PrismLog.write("showTestWindow")
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 400, height: 300),
-            styleMask: [.titled, .closable],
-            backing: .buffered,
-            defer: false
-        )
-        window.title = "Prism Test Window"
-        window.center()
-        window.contentView = NSView()
-        window.contentView?.wantsLayer = true
-        window.contentView?.layer?.backgroundColor = NSColor.red.cgColor
-        window.makeKeyAndOrderFront(nil)
-        window.orderFrontRegardless()
-        PrismLog.write("showTestWindow visible=\(window.isVisible)")
     }
 
     private func showOnboarding() {
