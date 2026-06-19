@@ -124,8 +124,11 @@ static NSString *const kApiKeyKey = @"PrismApiKey";
 #pragma mark - Actions
 
 - (void)enableAX {
-    NSDictionary *opt = @{ (__bridge NSString *)kAXTrustedCheckOptionPrompt: @YES };
-    AXIsProcessTrustedWithOptions((__bridge CFDictionaryRef)opt);
+    // Open the Accessibility pane directly. We deliberately do NOT call
+    // AXIsProcessTrustedWithOptions(prompt:YES): that shows a system dialog that
+    // lingers (with a confusing "Deny" button) even after the user flips the
+    // toggle. The app is already in the list because its detector calls the
+    // Accessibility API — the user just toggles it on.
     [[NSWorkspace sharedWorkspace] openURL:
         [NSURL URLWithString:@"x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"]];
 }
