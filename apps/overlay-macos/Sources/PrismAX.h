@@ -2,6 +2,8 @@
 // indicator across supported surfaces:
 //   • Claude Desktop (Cowork/Code) — the duration/token counter row, keyed on the
 //     stable container classes `text-assistant-secondary` + `tabular-nums`.
+//   • Cursor — the "Thinking/Generating" indicator, keyed on its CSS-module class
+//     prefix `thinking_` / `thinkingV2_` (same DOM/class mechanism as Claude).
 //   • Terminals (Terminal, iTerm2, Ghostty, Warp, …) running Claude Code CLI — the
 //     live status line `<spinner> Verb… (Ns · N tokens)`, located inside the big
 //     `AXTextArea` buffer and anchored via `AXBoundsForRange`.

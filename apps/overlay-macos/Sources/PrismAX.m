@@ -34,19 +34,29 @@ static CGRect AXFrameOf(AXUIElementRef el) {
     return CGRectMake(p.x, p.y, sz.width, sz.height);
 }
 
-// The work-indicator row holds the live timer + token count and (in Code/Cowork)
-// the thinking verb. It is the only row carrying BOTH of these classes.
-static BOOL IsWorkRow(NSString *classes) {
-    return classes.length > 0 &&
-           [classes containsString:@"tabular-nums"] &&
+// Claude (Cowork/Code): the work-indicator row holds the live timer + token count
+// and the thinking verb. It is the only row carrying BOTH of these classes.
+static BOOL IsClaudeWorkRow(NSString *classes) {
+    return [classes containsString:@"tabular-nums"] &&
            [classes containsString:@"text-assistant-secondary"];
 }
 
-static void Recurse(AXUIElementRef el, int depth, PrismDetection *out) {
+// Cursor: the "Thinking/Generating" indicator is a CSS-module class
+// "thinking_<hash>" / "thinkingV2_<hash>". The hash changes per build, so key on
+// the stable prefix. It exists only while generating and disappears when idle.
+static BOOL IsCursorThinking(NSString *classes) {
+    NSString *low = classes.lowercaseString;
+    return [low containsString:@"thinking_"] || [low containsString:@"thinkingv2"];
+}
+
+// Walk an Electron/Chromium app's AX tree for the narrowest small element whose
+// AXDOMClassList satisfies `classMatch` (the active work indicator). Frame is only
+// fetched on a class hit, keeping the per-node cost to one attribute read.
+static void RecurseClass(AXUIElementRef el, int depth, PrismDetection *out, BOOL (^classMatch)(NSString *)) {
     if (depth > kMaxDepth) return;
 
     NSString *classes = AXClassList(el);
-    if (IsWorkRow(classes)) {
+    if (classes.length > 0 && classMatch(classes)) {
         CGRect f = AXFrameOf(el);
         // Sanity bounds: a single status row, not a big container.
         if (f.size.width > 0 && f.size.height > 0 && f.size.height < 60 && f.size.width < 420) {
@@ -62,10 +72,16 @@ static void Recurse(AXUIElementRef el, int depth, PrismDetection *out) {
     if (AXUIElementCopyAttributeValue(el, kAXChildrenAttribute, &kids) == kAXErrorSuccess && kids) {
         CFArrayRef arr = (CFArrayRef)kids;
         for (CFIndex i = 0; i < CFArrayGetCount(arr); i++) {
-            Recurse((AXUIElementRef)CFArrayGetValueAtIndex(arr, i), depth + 1, out);
+            RecurseClass((AXUIElementRef)CFArrayGetValueAtIndex(arr, i), depth + 1, out, classMatch);
         }
         CFRelease(kids);
     }
+}
+
+static PrismDetection *DetectCursorThinking(AXUIElementRef app) {
+    PrismDetection *d = [PrismDetection new];
+    if (app) RecurseClass(app, 0, d, ^BOOL(NSString *c) { return IsCursorThinking(c); });
+    return d;
 }
 
 #pragma mark - Terminal (Claude Code CLI) detection
@@ -174,10 +190,11 @@ static PrismDetection *DetectTerminalThinking(AXUIElementRef app) {
 
 #pragma mark - Source apps
 
-typedef NS_ENUM(NSInteger, PrismSourceKind) { PrismSourceNone = 0, PrismSourceClaude, PrismSourceTerminal };
+typedef NS_ENUM(NSInteger, PrismSourceKind) { PrismSourceNone = 0, PrismSourceClaude, PrismSourceCursor, PrismSourceTerminal };
 
 static PrismSourceKind SourceKindForBundle(NSString *bundleId) {
     if ([bundleId isEqualToString:@"com.anthropic.claudefordesktop"]) return PrismSourceClaude;
+    if ([bundleId isEqualToString:@"com.todesktop.230313mzl4w4u92"]) return PrismSourceCursor;
     static NSSet *terminals;
     static dispatch_once_t once;
     dispatch_once(&once, ^{
@@ -214,7 +231,7 @@ static PrismSourceKind SourceKindForBundle(NSString *bundleId) {
 
 + (PrismDetection *)detectWorkRow:(AXUIElementRef)app {
     PrismDetection *d = [PrismDetection new];
-    if (app) Recurse(app, 0, d);
+    if (app) RecurseClass(app, 0, d, ^BOOL(NSString *c) { return IsClaudeWorkRow(c); });
     return d;
 }
 
@@ -237,6 +254,7 @@ static PrismSourceKind SourceKindForBundle(NSString *bundleId) {
         PrismDetection *d = nil;
         switch (SourceKindForBundle(a.bundleIdentifier)) {
             case PrismSourceClaude:   d = [self detectWorkRow:app]; break;
+            case PrismSourceCursor:   d = DetectCursorThinking(app); break;
             case PrismSourceTerminal: d = DetectTerminalThinking(app); break;
             default: break;
         }
