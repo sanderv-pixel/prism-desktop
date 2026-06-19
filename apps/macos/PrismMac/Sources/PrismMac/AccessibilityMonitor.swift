@@ -32,9 +32,15 @@ final class AccessibilityMonitor {
         let key = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as CFString
         let options: CFDictionary = [key: true] as CFDictionary
         AXIsProcessTrustedWithOptions(options)
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-            NSWorkspace.shared.open(url)
+
+        if let settingsURL = URL(fileURLWithPath: "/System/Applications/System Settings.app") {
+            NSWorkspace.shared.open(settingsURL)
         }
+
+        let alert = NSAlert()
+        alert.messageText = "Enable Accessibility for Prism"
+        alert.informativeText = "1. In System Settings, search for \"Accessibility\".\n2. Select Accessibility under Privacy & Security.\n3. Turn on Prism.\n4. Return to Prism and click Start Prism."
+        alert.runModal()
     }
 
     func startPolling() {

@@ -76,8 +76,8 @@ final class OnboardingWindowController {
         // Accessibility step
         let accessRow = stepRow(
             title: "1. Grant Accessibility access",
-            subtitle: "Prism needs this to find Claude Desktop's thinking indicator.",
-            actionTitle: "Open Accessibility Settings…",
+            subtitle: "Prism needs this to find Claude Desktop's thinking indicator. Click the button, then in System Settings search for Accessibility (under Privacy & Security) and turn Prism on.",
+            actionTitle: "Open System Settings",
             action: #selector(openAccessibilitySettings(_:))
         )
         stack.addArrangedSubview(accessRow)
