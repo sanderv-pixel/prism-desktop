@@ -27,8 +27,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// available immediately and as a fallback.
 - (void)refresh;
 
-/// The next ad to display (rotates through the queue). Never nil.
-- (PrismAd *)nextAd;
+/// Whether an account is connected (an API key is present). Prism shows nothing
+/// without one.
+- (BOOL)isConnected;
+
+/// The next ad to display, or nil when there is none (no account / no inventory).
+- (nullable PrismAd *)nextAd;
 
 /// Report a validated viewable impression for an ad (best-effort, fire-and-forget).
 - (void)reportImpression:(PrismAd *)ad durationMs:(NSInteger)durationMs;

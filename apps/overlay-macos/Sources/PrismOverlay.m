@@ -162,7 +162,8 @@ static const CGFloat kGapFromRow = 10.0;            // px to the right of the ro
 - (void)poll {
     self.tick++;
 
-    if (self.paused || ![PrismAX isTrustedPrompt:NO]) {
+    // No ads at all without a connected account, when paused, or when untrusted.
+    if (self.paused || ![self.ads isConnected] || ![PrismAX isTrustedPrompt:NO]) {
         [self hide];
         return;
     }
@@ -188,6 +189,7 @@ static const CGFloat kGapFromRow = 10.0;            // px to the right of the ro
         // Prefetch a fresh ad (and a new single-use impression token) for next time.
         [self.ads refresh];
     }
+    if (!self.currentAd) { [self hide]; return; }   // connected but no inventory yet
     [self.pill renderAd:self.currentAd];
 
     // Convert AX (top-left origin) → Cocoa (bottom-left origin). The flip uses the

@@ -36,30 +36,20 @@ static NSColor *ColorHex(uint32_t rgb) {
         // strip a trailing slash for consistent joins
         if ([_baseURL hasSuffix:@"/"]) _baseURL = [_baseURL substringToIndex:_baseURL.length - 1];
         _sessionId = [[NSUUID UUID].UUIDString stringByReplacingOccurrencesOfString:@"-" withString:@""];
-        _queue = [self builtinAds];
+        _queue = @[];   // empty until a connected account's API serves real ads
         _cursor = 0;
     }
     return self;
 }
 
-- (NSArray<PrismAd *> *)builtinAds {
-    return @[
-        [self adWithId:@"demo-railway" name:@"Railway" copy:@"Deploy apps in seconds →" url:@"https://railway.app" color:ColorHex(0x7C50FC)],
-        [self adWithId:@"demo-supabase" name:@"Supabase" copy:@"Postgres backend in minutes →" url:@"https://supabase.com" color:ColorHex(0x2ECC71)],
-        [self adWithId:@"demo-resend" name:@"Resend" copy:@"Email API built for devs →" url:@"https://resend.com" color:ColorHex(0x3380F2)],
-        [self adWithId:@"demo-sentry" name:@"Sentry" copy:@"Catch errors before users do →" url:@"https://sentry.io" color:ColorHex(0xE85745)],
-    ];
+// A connected account = an API key. Prism shows nothing without one.
+- (BOOL)isConnected {
+    return [self currentApiKey].length > 0;
 }
 
-- (PrismAd *)adWithId:(NSString *)i name:(NSString *)n copy:(NSString *)c url:(NSString *)u color:(NSColor *)col {
-    PrismAd *a = [PrismAd new];
-    a.adId = i; a.advertiserName = n; a.tagline = c; a.clickURL = u; a.color = col;
-    return a;
-}
-
-- (PrismAd *)nextAd {
+- (nullable PrismAd *)nextAd {
     NSArray<PrismAd *> *q = self.queue;
-    if (q.count == 0) return [self builtinAds].firstObject;
+    if (q.count == 0) return nil;   // no demo fallback — require a connected account
     PrismAd *ad = q[self.cursor % q.count];
     self.cursor++;
     return ad;

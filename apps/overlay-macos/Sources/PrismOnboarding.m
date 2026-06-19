@@ -18,6 +18,8 @@ static NSString *const kApiKeyKey = @"PrismApiKey";
 
 + (BOOL)shouldShowOnLaunch {
     if (!AXIsProcessTrusted()) return YES;
+    // Require a connected account — Prism shows nothing without one.
+    if (![[NSUserDefaults standardUserDefaults] stringForKey:kApiKeyKey].length) return YES;
     return ![[NSUserDefaults standardUserDefaults] boolForKey:kDoneKey];
 }
 
@@ -76,10 +78,10 @@ static NSString *const kApiKeyKey = @"PrismApiKey";
 
     // 2 — Connect account (CLI-style: opens the browser, links automatically).
     [cv addSubview:[self card:NSMakeRect(24, 72, 432, 108)]];
-    [cv addSubview:[self label:@"2.  Connect your account  (optional)" frame:NSMakeRect(40, 148, 360, 18) size:13 weight:NSFontWeightSemibold color:NSColor.labelColor]];
+    [cv addSubview:[self label:@"2.  Connect your account" frame:NSMakeRect(40, 148, 360, 18) size:13 weight:NSFontWeightSemibold color:NSColor.labelColor]];
     [cv addSubview:[self button:@"Connect account" frame:NSMakeRect(40, 112, 162, 30) action:@selector(connectAccount)]];
-    self.keyStatus = [self label:@"Opens your browser to sign in or create an account — nothing to copy. Without it, Prism shows demo ads."
-        frame:NSMakeRect(40, 78, 400, 30) size:11 weight:NSFontWeightRegular color:NSColor.tertiaryLabelColor];
+    self.keyStatus = [self label:@"Required — Prism shows ads only once connected. Opens your browser to sign in or create an account; nothing to copy."
+        frame:NSMakeRect(40, 74, 400, 34) size:11 weight:NSFontWeightRegular color:NSColor.tertiaryLabelColor];
     [cv addSubview:self.keyStatus];
 
     NSButton *done = [self button:@"Done" frame:NSMakeRect(360, 20, 96, 32) action:@selector(finish)];
