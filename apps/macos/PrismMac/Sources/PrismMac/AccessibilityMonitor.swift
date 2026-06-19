@@ -33,9 +33,7 @@ final class AccessibilityMonitor {
         let options: CFDictionary = [key: true] as CFDictionary
         AXIsProcessTrustedWithOptions(options)
 
-        if let settingsURL = URL(fileURLWithPath: "/System/Applications/System Settings.app") {
-            NSWorkspace.shared.open(settingsURL)
-        }
+        NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/System Settings.app"))
 
         let alert = NSAlert()
         alert.messageText = "Enable Accessibility for Prism"
