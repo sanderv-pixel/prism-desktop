@@ -6,6 +6,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         PrismLog.write("applicationDidFinishLaunching")
+        let alert = NSAlert()
+        alert.messageText = "Prism Test"
+        alert.informativeText = "If you can see this alert, Prism can show UI."
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+
         let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "PrismOnboardingCompleted")
 
         if hasCompletedOnboarding {
