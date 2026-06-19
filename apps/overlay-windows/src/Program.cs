@@ -61,7 +61,8 @@ internal sealed class PrismAppContext : ApplicationContext
         _timer.Tick += (_, _) => Poll();
         _timer.Start();
 
-        if (!Settings.OnboardingDone) ShowOnboarding();
+        // Require a connected account: keep prompting until onboarding is done AND connected.
+        if (!Settings.OnboardingDone || !_ads.IsConnected) ShowOnboarding();
     }
 
     private void TogglePause()
@@ -79,7 +80,8 @@ internal sealed class PrismAppContext : ApplicationContext
 
     private void Poll()
     {
-        if (_paused) { HideOverlay(); return; }
+        // No ads at all without a connected account, or when paused.
+        if (_paused || !_ads.IsConnected) { HideOverlay(); return; }
         _tick++;
         var ind = _detector.Detect();
         if (ind.Found)
@@ -102,7 +104,8 @@ internal sealed class PrismAppContext : ApplicationContext
             ResetDwell();
             _ads.Refresh(); // prefetch a fresh ad + single-use impression token
         }
-        _overlay.ShowAd(_currentAd!, rect);
+        if (_currentAd is null) { HideOverlay(); return; } // connected but no inventory yet
+        _overlay.ShowAd(_currentAd, rect);
         AccrueDwell();
     }
 

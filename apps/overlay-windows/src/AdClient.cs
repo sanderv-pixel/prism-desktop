@@ -26,21 +26,17 @@ public sealed class AdClient
     private List<Ad> _queue;
     private int _cursor;
 
-    public AdClient() => _queue = Builtins();
+    public AdClient() => _queue = new List<Ad>();
 
-    private static List<Ad> Builtins() => new()
-    {
-        new Ad { Id = "demo-railway", AdvertiserName = "Railway", Copy = "Deploy apps in seconds →", ClickUrl = "https://railway.app", Color = Color.FromArgb(124, 80, 252) },
-        new Ad { Id = "demo-supabase", AdvertiserName = "Supabase", Copy = "Postgres backend in minutes →", ClickUrl = "https://supabase.com", Color = Color.FromArgb(46, 204, 113) },
-        new Ad { Id = "demo-resend", AdvertiserName = "Resend", Copy = "Email API built for devs →", ClickUrl = "https://resend.com", Color = Color.FromArgb(51, 128, 242) },
-        new Ad { Id = "demo-sentry", AdvertiserName = "Sentry", Copy = "Catch errors before users do →", ClickUrl = "https://sentry.io", Color = Color.FromArgb(232, 87, 69) },
-    };
+    // A connected account = an API key. Prism shows nothing without one.
+    public bool IsConnected => Settings.ApiKey.Length > 0;
 
-    public Ad NextAd()
+    // The next ad, or null when there's no inventory (no account / nothing served).
+    public Ad? NextAd()
     {
         lock (_lock)
         {
-            if (_queue.Count == 0) return Builtins()[0];
+            if (_queue.Count == 0) return null; // no demo fallback — require a connected account
             var ad = _queue[_cursor % _queue.Count];
             _cursor++;
             return ad;

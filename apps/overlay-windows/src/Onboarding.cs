@@ -36,7 +36,7 @@ public sealed class Onboarding : Form
 
         _status = new Label
         {
-            Text = "Opens your browser to sign in or create an account — nothing to copy. Without it, Prism shows demo ads.",
+            Text = "Required — Prism shows ads only once connected. Opens your browser to sign in or create an account; nothing to copy.",
             AutoSize = false,
             Location = new Point(26, 206),
             Size = new Size(408, 40),
