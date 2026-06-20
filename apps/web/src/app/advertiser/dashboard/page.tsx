@@ -79,6 +79,7 @@ interface AdvertiserStats {
   }
   chartData: { date: string; spend: number; impressions: number; clicks: number }[]
   contextBreakdown: { name: string; impressions: number; spend: number; clicks: number }[]
+  sourceBreakdown: { name: string; impressions: number; spend: number }[]
   campaigns: Campaign[]
 }
 
@@ -483,7 +484,7 @@ export default function AdvertiserDashboardPage() {
     )
   }
 
-  const { advertiser, stats, chartData, contextBreakdown, campaigns } = data
+  const { advertiser, stats, chartData, contextBreakdown, sourceBreakdown, campaigns } = data
   const isActive = advertiser.status === 'active'
 
   const periodSpendCents = chartData.reduce(
@@ -870,6 +871,39 @@ export default function AdvertiserDashboardPage() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Source breakdown — which app each view came from */}
+      <div className="rounded-xl border border-border bg-white p-6">
+        <div className="mb-5">
+          <h3 className="text-base font-semibold text-foreground">Where views came from</h3>
+          <p className="text-sm text-muted-foreground">Impressions by surface (Claude, Cursor, Codex, terminal)</p>
+        </div>
+        {sourceBreakdown.length > 0 ? (
+          <div className="space-y-4">
+            {sourceBreakdown.map((s) => {
+              const pct = stats.totalImpressions > 0 ? (s.impressions / stats.totalImpressions) * 100 : 0
+              return (
+                <div key={s.name}>
+                  <div className="flex items-center justify-between text-sm mb-1.5">
+                    <span className="font-medium text-foreground">{s.name}</span>
+                    <span className="text-muted-foreground">
+                      {s.impressions.toLocaleString()} · {pct.toFixed(0)}%
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-muted overflow-hidden">
+                    <div className="h-full rounded-full" style={{ width: `${pct}%`, background: '#8b5cf6' }} />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center text-muted-foreground gap-3 py-10">
+            <Target size={32} className="opacity-30" />
+            <p>No source data yet</p>
+          </div>
+        )}
       </div>
 
       {/* Campaigns table */}
