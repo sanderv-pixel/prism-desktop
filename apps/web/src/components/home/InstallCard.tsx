@@ -71,7 +71,7 @@ export function InstallCard() {
       {/* Command line */}
       <div className="flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-3 font-mono text-sm">
         <span className="select-none text-violet-400">$</span>
-        <code className="flex-1 overflow-x-auto whitespace-nowrap text-slate-100 [scrollbar-width:none]">
+        <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap text-slate-100 [scrollbar-width:none]">
           {command}
         </code>
         <button
@@ -105,15 +105,17 @@ export function InstallCard() {
       )}
 
       {/* What happens next */}
-      <div className="mt-4 flex items-center gap-1.5 border-t border-border pt-4">
+      <div className="mt-4 flex flex-wrap items-center gap-x-1.5 gap-y-2 border-t border-border pt-4">
         {STEPS.map((step, i) => (
           <div key={step.n} className="flex items-center gap-1.5">
             <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-100 text-[11px] font-bold text-primary">
               {step.n}
             </span>
-            <span className="text-xs text-muted-foreground">{step.label}</span>
+            <span className="whitespace-nowrap text-xs text-muted-foreground">
+              {step.label}
+            </span>
             {i < STEPS.length - 1 && (
-              <span className="mx-1 text-border" aria-hidden="true">
+              <span className="mx-1 hidden text-border sm:inline" aria-hidden="true">
                 ·
               </span>
             )}
