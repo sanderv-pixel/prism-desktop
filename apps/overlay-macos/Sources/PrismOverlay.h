@@ -11,6 +11,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initPill;
 /// Render an ad into the pill and resize to fit. Returns the new content width.
 - (CGFloat)renderAd:(PrismAd *)ad;
+/// Position + animate the pill's entrance (slide-in + fade + glow). Use only on
+/// the hidden→visible transition; reposition directly while it stays visible.
+- (void)animateEntranceAt:(NSPoint)origin;
 /// Invoked when the user clicks the pill.
 @property(nonatomic, copy, nullable) void (^onClick)(void);
 @end

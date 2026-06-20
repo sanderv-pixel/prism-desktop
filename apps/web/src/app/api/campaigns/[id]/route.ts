@@ -14,8 +14,8 @@ const updateCampaignRateLimiter = new RateLimiter(30, 60 * 60 * 1000)
 
 const CampaignUpdateSchema = z.object({
   title: z.string().min(1).max(120).optional(),
-  copy: z.string().min(1).max(160).optional(),
-  brand_name: z.string().max(40).optional().or(z.literal('')),
+  copy: z.string().min(1).max(16).optional(), // CTA — one short action, per ad-unit guidelines
+  brand_name: z.string().max(14).optional().or(z.literal('')), // brand name only, per guidelines
   url: httpUrl().optional(),
   icon_url: iconUrlSchema().optional().or(z.literal('')),
   max_bid_cpm: z.number().int().min(8).max(10000).optional(),

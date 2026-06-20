@@ -108,7 +108,7 @@ static NSColor *ColorHex(uint32_t rgb) {
     // Identifiers the impression token is signed against — report them back verbatim.
     ad.userId = d[@"userId"];
     ad.sessionId = d[@"sessionId"];
-    ad.color = ColorHex(0x7C50FC);
+    ad.color = ColorHex(0x8B5CF6);  // brand violet per ad-unit guidelines
     return ad;
 }
 

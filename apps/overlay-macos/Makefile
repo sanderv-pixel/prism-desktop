@@ -16,7 +16,7 @@ APP        := build/PrismOverlay.app
 BIN        := $(APP)/Contents/MacOS/PrismOverlay
 ZIP        := build/PrismOverlay.zip
 SOURCES    := $(wildcard Sources/*.m)
-FRAMEWORKS := -framework Cocoa -framework ApplicationServices
+FRAMEWORKS := -framework Cocoa -framework ApplicationServices -framework QuartzCore
 CFLAGS     := -fobjc-arc -Wall -O2
 BUNDLE_ID  := dev.goprism.overlay
 SIGN_ID    ?= -   # "-" = ad-hoc. Stable: make SIGN_ID="Prism Overlay Signing"

@@ -14,8 +14,8 @@ const createCampaignRateLimiter = new RateLimiter(20, 60 * 60 * 1000)
 
 const CampaignSchema = z.object({
   title: z.string().min(1).max(120),
-  copy: z.string().min(1).max(160),
-  brandName: z.string().max(40).optional(),
+  copy: z.string().min(1).max(16), // CTA — one short action, per ad-unit guidelines
+  brandName: z.string().max(14).optional(), // brand name only, per ad-unit guidelines
   url: httpUrl(),
   iconUrl: iconUrlSchema().optional().or(z.literal('')),
   objective: z.enum(['awareness', 'performance']).default('awareness'),

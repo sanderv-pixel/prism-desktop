@@ -282,13 +282,18 @@ export default function EditCampaignPage() {
               <label className="block text-sm font-medium text-foreground/80 mb-1.5">
                 Ad copy
               </label>
-              <textarea
+              <input
+                type="text"
                 required
+                maxLength={16}
                 value={copy}
                 onChange={(e) => setCopy(e.target.value)}
-                rows={3}
-                className="w-full rounded-lg border border-border bg-input px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40 resize-none"
+                placeholder="Ship faster →"
+                className="w-full rounded-lg border border-border bg-input px-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
               />
+              <p className="text-xs text-muted-foreground mt-1.5">
+                One short action + optional arrow, ≤16 characters ({copy.length}/16).
+              </p>
             </div>
 
             <div>
@@ -297,14 +302,14 @@ export default function EditCampaignPage() {
               </label>
               <input
                 type="text"
-                maxLength={40}
+                maxLength={14}
                 value={brandName}
                 onChange={(e) => setBrandName(e.target.value)}
-                placeholder="Shown next to your copy — leave blank to show none"
+                placeholder="Brand name — leave blank to show none"
                 className="w-full rounded-lg border border-border bg-input px-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
               />
               <p className="text-xs text-muted-foreground mt-1.5">
-                The name displayed in the ad. Leave empty to show only your icon and copy.
+                Brand name only, ≤14 characters. Leave empty to show just your icon and copy.
               </p>
             </div>
 
