@@ -10,6 +10,7 @@ export function FooterWrapper() {
   // and on the landing page (`/`), which ships its own footer.
   if (
     pathname === '/' ||
+    pathname === '/contact' ||
     pathname?.startsWith('/dashboard') ||
     pathname?.startsWith('/advertiser/') ||
     pathname?.startsWith('/admin/')
