@@ -41,20 +41,6 @@ static BOOL IsClaudeWorkRow(NSString *classes) {
            [classes containsString:@"text-assistant-secondary"];
 }
 
-// Cowork (the VM/agent surface) renders no work row. While the agent generates it
-// shows a bare "Thinking…" status text with no DOM classes. Match a short word
-// ending in a horizontal-ellipsis ("Thinking…"); ordinary message text is longer
-// and uses "..." rather than the U+2026 ellipsis the indicator uses.
-static NSString *AXStringValue(AXUIElementRef el);   // defined in the terminal section
-static BOOL IsThinkingStatus(NSString *value) {
-    // A single short word ending in a horizontal ellipsis ("Thinking…", "Working…").
-    // The single-word + length rules exclude the composer placeholder
-    // ("Write a message…") and other multi-word UI strings.
-    if (value.length == 0 || value.length > 14) return NO;
-    if (![value hasSuffix:@"…"]) return NO;
-    return [value rangeOfString:@" "].location == NSNotFound;
-}
-
 // Does any element in this subtree carry a class containing `needle`?
 static BOOL AXSubtreeHasClass(AXUIElementRef el, NSString *needle, int depth) {
     if (depth > 8) return NO;
@@ -111,18 +97,6 @@ static void RecurseClass(AXUIElementRef el, int depth, PrismDetection *out, BOOL
             if (!out.found || f.size.width < out.frame.size.width) {
                 out.found = YES;
                 out.frame = f;
-            }
-        }
-    } else if (classes.length == 0) {
-        // Cowork fallback: a bare "Thinking…" status text (no DOM classes). Require
-        // a real (uncollapsed) frame to skip the 1px duplicate nodes.
-        if (IsThinkingStatus(AXStringValue(el))) {
-            CGRect f = AXFrameOf(el);
-            if (f.size.width > 0 && f.size.width < 200 && f.size.height >= 10 && f.size.height < 60) {
-                if (!out.foundAlt || f.size.width < out.altFrame.size.width) {
-                    out.foundAlt = YES;
-                    out.altFrame = f;
-                }
             }
         }
     }
@@ -342,12 +316,6 @@ static void DumpRecurse(AXUIElementRef el, int depth, NSMutableString *out) {
 + (PrismDetection *)detectWorkRow:(AXUIElementRef)app {
     PrismDetection *d = [PrismDetection new];
     if (app) RecurseClass(app, 0, d, ^BOOL(NSString *c) { return IsClaudeWorkRow(c); });
-    // Chat/Code expose a work row (preferred). Cowork has none, so fall back to the
-    // "Thinking…" status text only when no work row was found.
-    if (!d.found && d.foundAlt) {
-        d.found = YES;
-        d.frame = d.altFrame;
-    }
     return d;
 }
 
