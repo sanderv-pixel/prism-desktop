@@ -282,6 +282,13 @@ export async function POST(req: NextRequest) {
     const winnerAdvertiserName = advertiserMap.get(winner.advertiser_id)?.name ?? 'Prism'
     await setLastAdvertiserForSession(session, winnerAdvertiserName)
 
+    // The name shown in the ad is advertiser-controlled (campaign.brand_name).
+    // Empty means show no name — the internal account name is never exposed.
+    const displayName =
+      typeof winner.brand_name === 'string' && winner.brand_name.trim()
+        ? winner.brand_name.trim()
+        : ''
+
     const impressionToken = await createImpressionToken({
       campaignId: winner.id,
       userId: resolvedUserId,
@@ -303,7 +310,7 @@ export async function POST(req: NextRequest) {
         url: winner.url,
         clickUrl,
         iconUrl: getIconUrl(winner.url, winner.icon_url),
-        advertiserName: winnerAdvertiserName,
+        advertiserName: displayName,
         impressionToken,
         conversionToken,
         userId: resolvedUserId,

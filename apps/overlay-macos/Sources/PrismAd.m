@@ -97,10 +97,11 @@ static NSColor *ColorHex(uint32_t rgb) {
 - (nullable PrismAd *)parseAd:(id)json {
     if (![json isKindOfClass:[NSDictionary class]]) return nil;
     NSDictionary *d = json;
-    NSString *adId = d[@"id"], *name = d[@"advertiserName"], *copy = d[@"copy"];
-    if (!adId.length || !name.length || !copy.length) return nil;
+    NSString *adId = d[@"id"], *copy = d[@"copy"];
+    if (!adId.length || !copy.length) return nil;  // name is advertiser-controlled and optional
     PrismAd *ad = [PrismAd new];
-    ad.adId = adId; ad.advertiserName = name; ad.tagline = copy;
+    ad.adId = adId; ad.tagline = copy;
+    ad.advertiserName = [d[@"advertiserName"] isKindOfClass:[NSString class]] ? d[@"advertiserName"] : @"";
     ad.iconUrl = [d[@"iconUrl"] isKindOfClass:[NSString class]] ? d[@"iconUrl"] : nil;
     ad.clickURL = d[@"clickUrl"] ?: d[@"url"];
     ad.impressionToken = d[@"impressionToken"];

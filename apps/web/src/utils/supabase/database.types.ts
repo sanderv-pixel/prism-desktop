@@ -322,6 +322,7 @@ export type Database = {
           click_count: number
           contexts: string[]
           copy: string
+          brand_name: string | null
           created_at: string
           daily_budget_cents: number | null
           end_date: string | null
@@ -348,6 +349,7 @@ export type Database = {
           click_count?: number
           contexts?: string[]
           copy: string
+          brand_name?: string | null
           created_at?: string
           daily_budget_cents?: number | null
           end_date?: string | null
@@ -374,6 +376,7 @@ export type Database = {
           click_count?: number
           contexts?: string[]
           copy?: string
+          brand_name?: string | null
           created_at?: string
           daily_budget_cents?: number | null
           end_date?: string | null

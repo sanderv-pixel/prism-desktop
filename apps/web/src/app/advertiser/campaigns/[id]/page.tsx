@@ -23,6 +23,7 @@ interface Campaign {
   id: string
   title: string
   copy: string
+  brand_name: string | null
   url: string
   icon_url: string | null
   budget_cents: number
@@ -45,6 +46,7 @@ export default function EditCampaignPage() {
   const [campaign, setCampaign] = useState<Campaign | null>(null)
   const [title, setTitle] = useState('')
   const [copy, setCopy] = useState('')
+  const [brandName, setBrandName] = useState('')
   const [url, setUrl] = useState('')
   const [iconUrl, setIconUrl] = useState('')
   const [contexts, setContexts] = useState<string[]>([])
@@ -67,6 +69,7 @@ export default function EditCampaignPage() {
       setCampaign(data)
       setTitle(data.title)
       setCopy(data.copy)
+      setBrandName(data.brand_name ?? '')
       setUrl(data.url)
       setIconUrl(data.icon_url ?? '')
       setContexts(data.contexts ?? [])
@@ -100,6 +103,7 @@ export default function EditCampaignPage() {
       const body: Record<string, unknown> = {
         title,
         copy,
+        brand_name: brandName.trim(),
         url,
         icon_url: iconUrl || null,
         contexts,
@@ -289,6 +293,23 @@ export default function EditCampaignPage() {
 
             <div>
               <label className="block text-sm font-medium text-foreground/80 mb-1.5">
+                Brand name <span className="text-muted-foreground font-normal">(optional)</span>
+              </label>
+              <input
+                type="text"
+                maxLength={40}
+                value={brandName}
+                onChange={(e) => setBrandName(e.target.value)}
+                placeholder="Shown next to your copy — leave blank to show none"
+                className="w-full rounded-lg border border-border bg-input px-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
+              />
+              <p className="text-xs text-muted-foreground mt-1.5">
+                The name displayed in the ad. Leave empty to show only your icon and copy.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-foreground/80 mb-1.5">
                 Destination URL
               </label>
               <input
@@ -312,7 +333,7 @@ export default function EditCampaignPage() {
                   error={iconError}
                 />
               </div>
-              <AdPreview copy={copy} url={url} iconUrl={iconUrl || null} />
+              <AdPreview copy={copy} url={url} iconUrl={iconUrl || null} brandName={brandName} />
             </div>
 
             <div>
