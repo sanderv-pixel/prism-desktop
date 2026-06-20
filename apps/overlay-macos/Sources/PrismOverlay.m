@@ -28,6 +28,8 @@ static const CGFloat kGapFromRow = 10.0;            // px to the right of the ro
 @interface PrismOverlayWindow ()
 @property(nonatomic, strong) NSView *badge;
 @property(nonatomic, strong) NSTextField *badgeLabel;
+@property(nonatomic, strong) NSImageView *badgeIcon;
+@property(nonatomic, copy) NSString *loadedIconUrl;
 @property(nonatomic, strong) NSTextField *text;
 @end
 
@@ -67,6 +69,12 @@ static const CGFloat kGapFromRow = 10.0;            // px to the right of the ro
     _badgeLabel.font = [NSFont boldSystemFontOfSize:10];
     _badgeLabel.textColor = [NSColor whiteColor];
     [_badge addSubview:_badgeLabel];
+    // Advertiser icon — shown when the ad has a loadable icon, otherwise we fall
+    // back to the coloured initial badge.
+    _badgeIcon = [[NSImageView alloc] initWithFrame:NSMakeRect(0, 0, 16, 16)];
+    _badgeIcon.imageScaling = NSImageScaleProportionallyUpOrDown;
+    _badgeIcon.hidden = YES;
+    [_badge addSubview:_badgeIcon];
     [cv addSubview:_badge];
 
     _text = [[NSTextField alloc] initWithFrame:NSMakeRect(31, 5, 250, 18)];
@@ -81,9 +89,62 @@ static const CGFloat kGapFromRow = 10.0;            // px to the right of the ro
     f.bezeled = NO; f.editable = NO; f.selectable = NO; f.drawsBackground = NO;
 }
 
+// Decode an icon from a data: URL (handles base64 and SVG — NSImage renders SVG
+// data on macOS 11+).
+static NSImage *PrismImageFromDataURL(NSString *s) {
+    NSRange comma = [s rangeOfString:@","];
+    if (comma.location == NSNotFound) return nil;
+    NSString *meta = [s substringToIndex:comma.location];
+    NSString *payload = [s substringFromIndex:comma.location + 1];
+    NSData *data = [meta containsString:@"base64"]
+        ? [[NSData alloc] initWithBase64EncodedString:payload options:NSDataBase64DecodingIgnoreUnknownCharacters]
+        : [[payload stringByRemovingPercentEncoding] dataUsingEncoding:NSUTF8StringEncoding];
+    if (!data.length) return nil;
+    NSImage *img = [[NSImage alloc] initWithData:data];
+    return (img && img.size.width > 0) ? img : nil;
+}
+
+- (void)showInitialBadge:(NSColor *)color {
+    self.badge.layer.backgroundColor = color.CGColor;
+    self.badgeIcon.hidden = YES;
+    self.badgeIcon.image = nil;
+    self.badgeLabel.hidden = NO;
+}
+
+- (void)applyBadgeIcon:(NSImage *)img color:(NSColor *)color {
+    if (!img) { [self showInitialBadge:color]; return; }
+    self.badgeIcon.image = img;
+    self.badgeIcon.hidden = NO;
+    self.badgeLabel.hidden = YES;
+    self.badge.layer.backgroundColor = [NSColor clearColor].CGColor;
+}
+
+// Load the advertiser icon into the badge; fall back to the coloured initial.
+- (void)loadBadgeIcon:(NSString *)urlStr color:(NSColor *)color {
+    if (urlStr.length == 0) { self.loadedIconUrl = nil; [self showInitialBadge:color]; return; }
+    if ([urlStr isEqualToString:self.loadedIconUrl]) return;  // already showing this icon
+    self.loadedIconUrl = urlStr;
+    if ([urlStr hasPrefix:@"data:"]) {
+        [self applyBadgeIcon:PrismImageFromDataURL(urlStr) color:color];
+    } else if ([urlStr hasPrefix:@"http"]) {
+        [self showInitialBadge:color];  // initial until the download lands
+        NSURL *u = [NSURL URLWithString:urlStr];
+        if (!u) return;
+        [[[NSURLSession sharedSession] dataTaskWithURL:u completionHandler:^(NSData *data, NSURLResponse *r, NSError *e) {
+            NSImage *img = data.length ? [[NSImage alloc] initWithData:data] : nil;
+            if (!(img && img.size.width > 0)) return;
+            dispatch_async(dispatch_get_main_queue(), ^{
+                if ([urlStr isEqualToString:self.loadedIconUrl]) [self applyBadgeIcon:img color:color];
+            });
+        }] resume];
+    } else {
+        [self showInitialBadge:color];
+    }
+}
+
 - (CGFloat)renderAd:(PrismAd *)ad {
-    self.badge.layer.backgroundColor = ad.color.CGColor;
     self.badgeLabel.stringValue = [[ad.advertiserName substringToIndex:1] uppercaseString];
+    [self loadBadgeIcon:ad.iconUrl color:ad.color];
 
     NSMutableAttributedString *as = [NSMutableAttributedString new];
     [as appendAttributedString:[[NSAttributedString alloc] initWithString:ad.advertiserName
