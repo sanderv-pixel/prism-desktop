@@ -21,7 +21,7 @@ export function FinalCTA() {
                 <ArrowRight size={18} className="ml-2" />
               </Button>
               <Button href="/advertisers" size="lg" variant="outline">
-                Advertise to Ai creators
+                Advertise to AI creators
               </Button>
             </div>
           </div>

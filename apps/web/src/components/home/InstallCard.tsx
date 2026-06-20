@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Check, Copy, Download } from 'lucide-react'
+import { Check, Copy, Download, ArrowRight, Terminal } from 'lucide-react'
 
 type Os = 'mac' | 'windows'
 
@@ -10,25 +10,14 @@ const COMMAND: Record<Os, string> = {
   windows: 'irm https://goprism.dev/install.ps1 | iex',
 }
 
-const OS_LABEL: Record<Os, string> = {
-  mac: 'macOS',
-  windows: 'Windows',
-}
-
-const STEPS = [
-  { n: 1, label: 'Run the command' },
-  { n: 2, label: 'Allow access once' },
-  { n: 3, label: 'Connect your account' },
-]
-
 export function InstallCard() {
   const [os, setOs] = useState<Os>('mac')
   const [copied, setCopied] = useState(false)
+  const [showTerminal, setShowTerminal] = useState(false)
 
-  // Best-effort OS detection; the toggle lets the user override.
+  // Best-effort OS detection.
   useEffect(() => {
-    const ua = `${navigator.userAgent} ${navigator.platform}`
-    if (/win/i.test(ua)) setOs('windows')
+    if (/win/i.test(`${navigator.userAgent} ${navigator.platform}`)) setOs('windows')
   }, [])
 
   const command = COMMAND[os]
@@ -39,87 +28,52 @@ export function InstallCard() {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      /* clipboard unavailable — ignore */
+      /* clipboard unavailable, ignore */
     }
   }
 
   return (
-    <div className="w-full rounded-2xl border border-border bg-white/70 backdrop-blur-sm shadow-lg shadow-black/[0.03] p-4 sm:p-5 text-left">
-      {/* OS toggle */}
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Quick install
-        </span>
-        <div className="inline-flex rounded-lg bg-muted p-0.5">
-          {(['mac', 'windows'] as Os[]).map((id) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setOs(id)}
-              className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                os === id
-                  ? 'bg-white text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {OS_LABEL[id]}
-            </button>
-          ))}
-        </div>
-      </div>
+    <div className="w-full max-w-sm">
+      {/* One clear primary action */}
+      <a
+        href={os === 'mac' ? '/download/PrismOverlay.zip' : '/onboarding'}
+        className="group flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-4 text-base font-semibold text-primary-foreground shadow-sm transition-all hover:bg-violet-700 hover:shadow-lg hover:shadow-violet-500/25 active:scale-[0.98]"
+      >
+        <Download size={18} />
+        {os === 'mac' ? 'Download for macOS' : 'Get the Windows build'}
+        <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
+      </a>
 
-      {/* Command line */}
-      <div className="flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-3 font-mono text-sm">
-        <span className="select-none text-violet-400">$</span>
-        <code className="flex-1 overflow-x-auto whitespace-nowrap text-slate-100 [scrollbar-width:none]">
-          {command}
-        </code>
+      {/* Quiet secondary line: reassurance + terminal escape hatch */}
+      <div className="mt-3 flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-xs text-muted-foreground lg:justify-start">
+        <span>Free, signed, uninstall anytime</span>
+        <span className="text-border" aria-hidden="true">·</span>
         <button
           type="button"
-          onClick={copy}
-          aria-label="Copy install command"
-          className="shrink-0 rounded-md p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
+          onClick={() => setShowTerminal((v) => !v)}
+          className="inline-flex items-center gap-1 font-medium hover:text-foreground transition-colors"
         >
-          {copied ? (
-            <Check size={16} className="text-emerald-400" />
-          ) : (
-            <Copy size={16} />
-          )}
+          <Terminal size={12} />
+          {showTerminal ? 'Hide command' : 'Install via terminal'}
         </button>
       </div>
 
-      {/* Download alternative (macOS ready today) */}
-      {os === 'mac' && (
-        <a
-          href="/download/PrismOverlay.zip"
-          className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-violet-700 transition-colors"
-        >
-          <Download size={15} />
-          or download for macOS
-        </a>
+      {showTerminal && (
+        <div className="mt-3 flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-3 font-mono text-sm">
+          <span className="select-none text-violet-400">$</span>
+          <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap text-slate-100 [scrollbar-width:none]">
+            {command}
+          </code>
+          <button
+            type="button"
+            onClick={copy}
+            aria-label="Copy install command"
+            className="shrink-0 rounded-md p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
+          >
+            {copied ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} />}
+          </button>
+        </div>
       )}
-      {os === 'windows' && (
-        <p className="mt-3 text-xs text-muted-foreground">
-          Run in PowerShell. Windows build is in early access.
-        </p>
-      )}
-
-      {/* What happens next */}
-      <div className="mt-4 flex items-center gap-1.5 border-t border-border pt-4">
-        {STEPS.map((step, i) => (
-          <div key={step.n} className="flex items-center gap-1.5">
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-100 text-[11px] font-bold text-primary">
-              {step.n}
-            </span>
-            <span className="text-xs text-muted-foreground">{step.label}</span>
-            {i < STEPS.length - 1 && (
-              <span className="mx-1 text-border" aria-hidden="true">
-                ·
-              </span>
-            )}
-          </div>
-        ))}
-      </div>
     </div>
   )
 }

@@ -52,7 +52,7 @@ export function LogoCloud() {
     <section className="border-y border-border bg-muted/30 py-10">
       <div className="container-tight px-4 sm:px-6 lg:px-8">
         <p className="text-center text-xs font-medium text-muted-foreground mb-7 uppercase tracking-[0.2em]">
-          Works where Ai creators work
+          Works where AI creators work
         </p>
         <div className="flex flex-wrap justify-center gap-x-8 md:gap-x-10 gap-y-5">
           {logos.map((logo) => (

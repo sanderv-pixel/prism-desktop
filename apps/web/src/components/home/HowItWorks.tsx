@@ -20,26 +20,24 @@ const steps = [
     icon: BadgeDollarSign,
     title: 'Earn from wait time',
     description:
-      'When Ai generates a response, a small contextual ad may appear. Verified impressions accrue earnings in your dashboard.',
+      'While your AI thinks, one small, relevant ad appears. Every verified view adds real earnings to your dashboard, in real time.',
   },
   {
     icon: Banknote,
     title: 'Cash out',
     description:
-      'Withdraw your earnings directly into your bank account once you hit the $50 minimum. Payouts are processed after admin review.',
+      'Withdraw straight to your bank once you reach $50. You keep 50% of every dollar advertisers pay.',
   },
 ]
 
 export function HowItWorks() {
   return (
     <section id="how-it-works" className="section-padding bg-background relative overflow-hidden">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-violet-100/30 via-transparent to-transparent blur-3xl" />
-
       <div className="container-tight relative px-4 sm:px-6 lg:px-8">
         <SectionHeader
           eyebrow="How it works"
           title="From install to payout in four steps"
-          description="No complicated setup. Just install, create, and get paid for the attention you already generate."
+          description="No complicated setup. Just install, keep working, and get paid for the attention you already generate."
         />
 
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
@@ -80,8 +78,8 @@ export function HowItWorks() {
         </div>
 
         <div className="mt-16 text-center">
-          <Button href="/onboarding" size="lg">
-            Start installing
+          <Button href="/developers" size="lg" variant="outline">
+            See what you could earn
             <ArrowRight size={18} className="ml-2" />
           </Button>
         </div>

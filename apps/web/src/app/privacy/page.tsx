@@ -58,7 +58,7 @@ export default function PrivacyPage() {
         your device or browser extension, such as:
       </p>
       <ul>
-        <li>The type of editor or Ai tool in use (e.g., VS Code, Cursor, ChatGPT).</li>
+        <li>The type of editor or AI tool in use (e.g., VS Code, Cursor, ChatGPT).</li>
         <li>Programming language mode or rough project category (e.g., TypeScript, SaaS).</li>
         <li>General region or timezone, derived from coarse IP geolocation.</li>
         <li>Time window or day-of-week preferences selected by the advertiser.</li>
@@ -80,7 +80,7 @@ export default function PrivacyPage() {
         </li>
         <li>
           Coarse contextual signals, such as the active programming language
-          mode (e.g., TypeScript, Python) and the type of Ai tool detected (e.g.,
+          mode (e.g., TypeScript, Python) and the type of AI tool detected (e.g.,
           Cursor Tab, Copilot).
         </li>
         <li>

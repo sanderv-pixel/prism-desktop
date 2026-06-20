@@ -12,7 +12,7 @@ import {
 } from 'lucide-react'
 
 export const metadata = {
-  title: 'Prism Hire - Find Talent in Ai Work Sessions',
+  title: 'Prism Hire - Find Talent in AI Work Sessions',
   description:
     'Reach active job seekers and passive candidates while they use ChatGPT, Claude, Cursor, and VS Code.',
 }
@@ -41,7 +41,7 @@ export default function HirePage() {
             </h1>
 
             <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-6 max-w-2xl mx-auto text-balance">
-              Promote your open roles to developers, designers, and Ai builders
+              Promote your open roles to developers, designers, and AI builders
               while they code, design, and research in Cursor, VS Code, ChatGPT,
               and Claude.
             </p>
@@ -70,7 +70,7 @@ export default function HirePage() {
               </div>
               <div className="flex items-center gap-2">
                 <Zap size={16} className="text-primary" />
-                <span>Appear during Ai work sessions</span>
+                <span>Appear during AI work sessions</span>
               </div>
               <div className="flex items-center gap-2">
                 <ShieldCheck size={16} className="text-primary" />

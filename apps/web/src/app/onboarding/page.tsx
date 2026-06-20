@@ -37,7 +37,7 @@ const INSTALL_OPTIONS: InstallOption[] = [
     label: 'VS Code',
     shortLabel: 'VS Code',
     icon: <Monitor size={22} />,
-    description: 'Show ads in your editor status bar while Ai agents work.',
+    description: 'Show ads in your editor status bar while AI agents work.',
     command: 'curl -fsSL https://goprism.dev/install.sh | bash',
     windowsCommand: 'irm https://goprism.dev/install.ps1 | iex',
     manualHref: 'https://goprism.dev/prism-extension.vsix',
@@ -53,7 +53,7 @@ const INSTALL_OPTIONS: InstallOption[] = [
     label: 'Cursor',
     shortLabel: 'Cursor',
     icon: <Monitor size={22} />,
-    description: 'Native Cursor integration for the Ai coding workflow.',
+    description: 'Native Cursor integration for the AI coding workflow.',
     command: 'curl -fsSL https://goprism.dev/install.sh | bash -s -- --cursor',
     windowsCommand: '& ([scriptblock]::Create((irm https://goprism.dev/install.ps1))) -Cursor',
     manualHref: 'https://goprism.dev/prism-extension.vsix',
@@ -142,8 +142,8 @@ export default function OnboardingPage() {
             Install Prism
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Pick the Ai tool you use most. One install, then you start earning
-            from every Ai wait state.
+            Pick the AI tool you use most. One install, then you start earning
+            from every AI wait state.
           </p>
         </div>
 

@@ -13,7 +13,7 @@ const faqs = [
   {
     question: 'How much can I realistically earn?',
     answer:
-      'Earnings depend on how much you use supported Ai tools, fill rates, and advertiser demand. Use the calculator above to estimate. Typical creators using Ai a few hours a day can earn enough to cover a subscription or more.',
+      'Earnings depend on how much you use supported AI tools, fill rates, and advertiser demand. Use the calculator above to estimate. Typical creators using AI a few hours a day can earn enough to cover a subscription or more.',
   },
   {
     question: 'Will this slow down my editor?',
@@ -23,7 +23,7 @@ const faqs = [
   {
     question: 'What data do you collect?',
     answer:
-      'We do not collect prompts, code, conversations, or Ai outputs. Ads are matched using coarse contextual signals like the active Ai tool and broad project type. Read our privacy policy for full details.',
+      'We do not collect prompts, code, conversations, or AI outputs. Ads are matched using coarse contextual signals like the active AI tool and broad project type. Read our privacy policy for full details.',
   },
   {
     question: 'Can I use this at work?',

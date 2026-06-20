@@ -51,7 +51,7 @@ export default function TermsPage() {
 
       <h2>3. Creator program</h2>
       <p>
-        Creators may opt in to display small, labeled ads during Ai-assisted workflows
+        Creators may opt in to display small, labeled ads during AI-assisted workflows
         through Prism extensions or integrations.
       </p>
       <ul>

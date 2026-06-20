@@ -13,7 +13,7 @@ import {
 export const metadata = {
   title: 'Roadmap — Prism',
   description:
-    'Why we built Prism and where we are headed. Public roadmap for the privacy-first ad network for Ai creators.',
+    'Why we built Prism and where we are headed. Public roadmap for the privacy-first ad network for AI creators.',
 }
 
 const storyPoints = [
@@ -21,13 +21,13 @@ const storyPoints = [
     icon: Lightbulb,
     title: 'The problem',
     description:
-      'Ai tools are creating billions of waiting moments every day. Creators pay for these tools out of pocket, yet the attention generated during Ai wait states is captured by no one. Meanwhile, advertisers want to reach Ai-native audiences but have no privacy-safe channel.',
+      'AI tools are creating billions of waiting moments every day. Creators pay for these tools out of pocket, yet the attention generated during AI wait states is captured by no one. Meanwhile, advertisers want to reach AI-native audiences but have no privacy-safe channel.',
   },
   {
     icon: Sparkles,
     title: 'The insight',
     description:
-      'What if a tiny, relevant ad could appear only during genuine Ai wait states, without reading prompts, slowing workflows, or violating privacy? The creator gets paid, the advertiser gets attention, and the user experience stays intact.',
+      'What if a tiny, relevant ad could appear only during genuine AI wait states, without reading prompts, slowing workflows, or violating privacy? The creator gets paid, the advertiser gets attention, and the user experience stays intact.',
   },
   {
     icon: Rocket,
@@ -64,7 +64,7 @@ const roadmap = [
     phase: 'Phase 3 — Ecosystem',
     status: 'upcoming',
     items: [
-      'More Ai tools and IDEs',
+      'More AI tools and IDEs',
       'Context targeting marketplace',
       'Campaign performance API for advertisers',
       'Automated payout scheduling',
@@ -82,7 +82,7 @@ export default function RoadmapPage() {
           <SectionHeader
             eyebrow="Roadmap"
             title="Why we built Prism & where we are going"
-            description="We believe Ai creators should own the value of their attention. This is the plan to make that real."
+            description="We believe AI creators should own the value of their attention. This is the plan to make that real."
             align="center"
           />
         </div>

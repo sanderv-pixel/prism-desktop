@@ -488,7 +488,7 @@ export default function BuilderDashboardPage() {
 
         <div className="rounded-2xl card p-6 hover:shadow-md transition">
           <h3 className="text-lg font-medium text-foreground mb-1">By tool</h3>
-          <p className="text-sm text-muted-foreground mb-6">Earnings per Ai tool</p>
+          <p className="text-sm text-muted-foreground mb-6">Earnings per AI tool</p>
           <div className="h-56">
             {toolBreakdown.length > 0 ? (
               <BarChart

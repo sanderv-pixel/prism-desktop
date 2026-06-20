@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Inter, JetBrains_Mono } from 'next/font/google'
+import { Inter, JetBrains_Mono, Space_Grotesk } from 'next/font/google'
 import './globals.css'
 import { NavbarWrapper } from '@/components/NavbarWrapper'
 import { FooterWrapper } from '@/components/FooterWrapper'
@@ -25,13 +25,19 @@ const jetbrains = JetBrains_Mono({
   display: 'swap',
 })
 
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-display',
+  display: 'swap',
+})
+
 export const metadata: Metadata = {
   title: {
-    default: 'Prism - Get paid for every Ai wait',
+    default: 'Prism - Get paid for every AI wait',
     template: '%s | Prism',
   },
   description:
-    'Prism shows tiny, relevant ads during Ai wait states. Creators keep 50% of every dollar advertisers pay. Works with ChatGPT, Claude, Midjourney, Cursor, VS Code, and more.',
+    'Prism shows tiny, relevant ads during AI wait states. Creators keep 50% of every dollar advertisers pay. Works with ChatGPT, Claude, Midjourney, Cursor, VS Code, and more.',
   keywords: [
     'AI creators',
     'AI users',
@@ -46,18 +52,18 @@ export const metadata: Metadata = {
   ],
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://goprism.dev'),
   openGraph: {
-    title: 'Prism - Get paid for every Ai wait',
+    title: 'Prism - Get paid for every AI wait',
     description:
-      'Show tiny, relevant ads during Ai wait states. Creators keep 50% of every dollar advertisers pay.',
+      'Show tiny, relevant ads during AI wait states. Creators keep 50% of every dollar advertisers pay.',
     type: 'website',
     locale: 'en_US',
     siteName: 'Prism',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Prism - Get paid for every Ai wait',
+    title: 'Prism - Get paid for every AI wait',
     description:
-      'Show tiny, relevant ads during Ai wait states. Creators keep 50% of every dollar advertisers pay.',
+      'Show tiny, relevant ads during AI wait states. Creators keep 50% of every dollar advertisers pay.',
   },
 }
 
@@ -67,7 +73,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrains.variable}`}>
+    <html lang="en" className={`${inter.variable} ${jetbrains.variable} ${spaceGrotesk.variable}`}>
       <body className="font-sans min-h-screen flex flex-col">
         <GoogleAnalytics />
         <VisitTracker />

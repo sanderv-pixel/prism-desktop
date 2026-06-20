@@ -12,7 +12,7 @@ export function Hero() {
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-hero mb-7">
             Get paid for{' '}
-            <span className="gradient-text">every Ai wait.</span>
+            <span className="gradient-text">every AI wait.</span>
           </h1>
 
           <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-4 max-w-2xl mx-auto text-balance">
@@ -33,7 +33,7 @@ export function Hero() {
               <ArrowRight size={18} className="ml-2" />
             </Button>
             <Button href="/advertisers" size="lg" variant="outline">
-              Advertise to Ai creators
+              Advertise to AI creators
             </Button>
           </div>
 

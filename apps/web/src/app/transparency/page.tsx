@@ -40,7 +40,7 @@ export default function TransparencyPage() {
                 How we make money
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                Advertisers pay Prism to show tiny, relevant ads during Ai wait
+                Advertisers pay Prism to show tiny, relevant ads during AI wait
                 states. We keep 50% of the clearing price and pay the other 50%
                 to the creator whose device showed the ad.
               </p>

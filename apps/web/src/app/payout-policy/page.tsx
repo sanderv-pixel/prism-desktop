@@ -16,7 +16,7 @@ export default function PayoutPolicyPage() {
       <p>
         Creators earn 50% of every dollar advertisers pay for validated
         viewable impressions served to their account. A validated impression requires the ad to be rendered,
-        the window to be focused, the Ai task to be active, and no obscuring
+        the window to be focused, the AI task to be active, and no obscuring
         panel over the ad slot.
       </p>
 

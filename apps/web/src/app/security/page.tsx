@@ -69,7 +69,7 @@ export default function SecurityPage() {
           <SectionHeader
             eyebrow="Security"
             title="Built privacy-first by design"
-            description="Your Ai workflow is personal. Here is how Prism protects it."
+            description="Your AI workflow is personal. Here is how Prism protects it."
             align="center"
           />
         </div>

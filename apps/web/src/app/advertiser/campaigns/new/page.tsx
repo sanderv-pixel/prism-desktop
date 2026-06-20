@@ -413,7 +413,7 @@ export default function NewCampaignPage() {
                   ))}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Select the editors, languages, Ai tools, and intents where your ad should be eligible to compete.
+                  Select the editors, languages, AI tools, and intents where your ad should be eligible to compete.
                 </p>
               </div>
 

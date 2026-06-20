@@ -14,12 +14,12 @@ const benefits = [
   {
     icon: Target,
     title: 'Contextual targeting',
-    description: 'Editor, Ai tool, language, project type, region, time.',
+    description: 'Editor, AI tool, language, project type, region, time.',
   },
   {
     icon: TrendingUp,
     title: 'High-intent moments',
-    description: 'Reach Ai creators while they write, design, build, and debug.',
+    description: 'Reach AI creators while they write, design, build, and debug.',
   },
   {
     icon: Shield,
@@ -34,7 +34,7 @@ const benefits = [
 ]
 
 const targetingOptions = [
-  { icon: Cpu, label: 'Ai tool' },
+  { icon: Cpu, label: 'AI tool' },
   { icon: Globe, label: 'Region' },
   { icon: Clock, label: 'Time window' },
   { icon: Target, label: 'Language' },
@@ -46,8 +46,8 @@ export function AdvertiserCTA() {
       <div className="container-tight">
         <SectionHeader
           eyebrow="For advertisers"
-          title="Reach Ai creators while they work"
-          description="Buy tiny, high-attention placements in Ai workflows. Contextual, opt-in, and fraud-screened."
+          title="Reach AI creators while they work"
+          description="Buy tiny, high-attention placements in AI workflows. Contextual, opt-in, and fraud-screened."
         />
 
         <div className="grid md:grid-cols-2 gap-6 mb-10">

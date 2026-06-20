@@ -70,7 +70,7 @@ export default function PricingPage() {
                 Bid for attention
               </h3>
               <p className="text-muted-foreground mb-6 text-[15px]">
-                Bids start at $5 per 1,000 validated impressions. You only pay when a real creator sees your ad inside an Ai workflow.
+                Bids start at $5 per 1,000 validated impressions. You only pay when a real creator sees your ad inside an AI workflow.
               </p>
               <div className="text-4xl font-semibold text-foreground mb-2">
                 $5
@@ -83,7 +83,7 @@ export default function PricingPage() {
               </p>
               <ul className="space-y-3 mb-8">
                 {[
-                  'Reach Ai creators in VS Code, Cursor, Codex, Claude Code',
+                  'Reach AI creators in VS Code, Cursor, Codex, Claude Code',
                   'Contextual targeting by tool, language, and workflow',
                   'Manual creative review',
                   'Validated, fraud-screened impressions only',

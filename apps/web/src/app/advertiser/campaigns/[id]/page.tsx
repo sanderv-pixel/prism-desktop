@@ -320,7 +320,7 @@ export default function EditCampaignPage() {
                 Contextual targeting
               </label>
               <p className="text-xs text-muted-foreground mb-3">
-                Select broad categories like "Ai general" or "Ai learners" to reach ChatGPT and other non-developer users.
+                Select broad categories like "AI general" or "AI learners" to reach ChatGPT and other non-developer users.
               </p>
               <div className="flex flex-wrap gap-2">
                 {CONTEXT_OPTIONS.map((ctx) => (
