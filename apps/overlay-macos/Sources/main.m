@@ -60,7 +60,29 @@ int main(int argc, const char *argv[]) {
                 fprintf(stdout, "===== pass %d @ %s =====\n%s\n",
                         i, NSDate.date.description.UTF8String, dump.UTF8String);
                 fflush(stdout);
-                [NSThread sleepForTimeInterval:1.0];
+                [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1.0]];
+            }
+            return 0;
+        }
+
+        // Debug: PRISM_DUMPFRONT=1 dumps the frontmost app's full AX tree each
+        // second — used to discover new GUI surfaces (e.g. the Codex desktop app).
+        if (getenv("PRISM_DUMPFRONT")) {
+            for (int i = 0; i < 90; i++) {
+                fprintf(stdout, "===== pass %d =====\n%s\n", i, [PrismAX dumpFront].UTF8String);
+                fflush(stdout);
+                [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1.0]];
+            }
+            return 0;
+        }
+
+        // Debug: PRISM_FRONTDUMP=1 dumps the frontmost terminal's text tail each
+        // second — used to discover new CLI status-line formats (Codex, Gemini).
+        if (getenv("PRISM_FRONTDUMP")) {
+            for (int i = 0; i < 90; i++) {
+                fprintf(stdout, "----- pass %d -----\n%s\n", i, [PrismAX dumpFrontText].UTF8String);
+                fflush(stdout);
+                [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1.0]];
             }
             return 0;
         }
@@ -74,7 +96,7 @@ int main(int argc, const char *argv[]) {
                         d.found, d.frame.origin.x, d.frame.origin.y,
                         d.frame.size.width, d.frame.size.height);
                 fflush(stdout);
-                [NSThread sleepForTimeInterval:1.0];
+                [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1.0]];
             }
             return 0;
         }

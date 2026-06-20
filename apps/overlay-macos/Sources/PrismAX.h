@@ -53,6 +53,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// element carrying classes or short text. Used to discover new surfaces.
 + (NSString *)dumpClaude;
 
+/// Debug: dump the frontmost app's full AX tree. Used to discover new GUI app
+/// surfaces (e.g. the Codex desktop app).
++ (NSString *)dumpFront;
+
+/// Debug: dump the tail of the frontmost app's largest AXTextArea (the terminal
+/// scrollback). Used to discover new CLI status-line formats (Codex, Gemini, …).
++ (NSString *)dumpFrontText;
+
 @end
 
 NS_ASSUME_NONNULL_END
