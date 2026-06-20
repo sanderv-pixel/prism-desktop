@@ -41,12 +41,45 @@ static BOOL IsClaudeWorkRow(NSString *classes) {
            [classes containsString:@"text-assistant-secondary"];
 }
 
-// Cursor: the "Thinking/Generating" indicator is a CSS-module class
-// "thinking_<hash>" / "thinkingV2_<hash>". The hash changes per build, so key on
-// the stable prefix. It exists only while generating and disappears when idle.
-static BOOL IsCursorThinking(NSString *classes) {
-    NSString *low = classes.lowercaseString;
-    return [low containsString:@"thinking_"] || [low containsString:@"thinkingv2"];
+// Does any element in this subtree carry a class containing `needle`?
+static BOOL AXSubtreeHasClass(AXUIElementRef el, NSString *needle, int depth) {
+    if (depth > 8) return NO;
+    if ([AXClassList(el) containsString:needle]) return YES;
+    CFTypeRef kids = NULL;
+    BOOL found = NO;
+    if (AXUIElementCopyAttributeValue(el, kAXChildrenAttribute, &kids) == kAXErrorSuccess && kids) {
+        CFArrayRef arr = (CFArrayRef)kids;
+        for (CFIndex i = 0; i < CFArrayGetCount(arr) && !found; i++) {
+            found = AXSubtreeHasClass((AXUIElementRef)CFArrayGetValueAtIndex(arr, i), needle, depth + 1);
+        }
+        CFRelease(kids);
+    }
+    return found;
+}
+
+// Cursor: the Composer's send control (class `sendButton_<hash>`) becomes the STOP
+// button for the entire duration of a turn (thinking + streaming). In the Send
+// (idle) state it contains a `sendIcon_<hash>` image; in the Stop (generating)
+// state that icon is gone. So `sendButton_` present WITHOUT `sendIcon_` == working.
+// This is stable and well-placed (bottom-right of the Composer), unlike the brief
+// `thinking_` element that only flashes at the top during the pre-stream phase.
+static void FindCursorStop(AXUIElementRef el, int depth, PrismDetection *out) {
+    if (depth > kMaxDepth || out.found) return;
+    if ([AXClassList(el) containsString:@"sendButton"]) {
+        if (!AXSubtreeHasClass(el, @"sendIcon", 0)) {   // no send arrow => Stop => generating
+            CGRect f = AXFrameOf(el);
+            if (f.size.width > 0 && f.size.height > 0) { out.found = YES; out.frame = f; }
+        }
+        return;  // the send/stop button is unique; don't descend further
+    }
+    CFTypeRef kids = NULL;
+    if (AXUIElementCopyAttributeValue(el, kAXChildrenAttribute, &kids) == kAXErrorSuccess && kids) {
+        CFArrayRef arr = (CFArrayRef)kids;
+        for (CFIndex i = 0; i < CFArrayGetCount(arr) && !out.found; i++) {
+            FindCursorStop((AXUIElementRef)CFArrayGetValueAtIndex(arr, i), depth + 1, out);
+        }
+        CFRelease(kids);
+    }
 }
 
 // Walk an Electron/Chromium app's AX tree for the narrowest small element whose
@@ -78,9 +111,9 @@ static void RecurseClass(AXUIElementRef el, int depth, PrismDetection *out, BOOL
     }
 }
 
-static PrismDetection *DetectCursorThinking(AXUIElementRef app) {
+static PrismDetection *DetectCursorGenerating(AXUIElementRef app) {
     PrismDetection *d = [PrismDetection new];
-    if (app) RecurseClass(app, 0, d, ^BOOL(NSString *c) { return IsCursorThinking(c); });
+    if (app) FindCursorStop(app, 0, d);
     return d;
 }
 
@@ -236,32 +269,24 @@ static PrismSourceKind SourceKindForBundle(NSString *bundleId) {
 }
 
 + (PrismDetection *)detect {
-    NSWorkspace *ws = [NSWorkspace sharedWorkspace];
-    pid_t frontPid = ws.frontmostApplication.processIdentifier;
+    // Only look at the FRONTMOST app. The ad anchors to the indicator the user is
+    // actually looking at; a background app's indicator (e.g. Claude Desktop working
+    // while you're in Cursor) must never float a pill over the foreground window.
+    NSRunningApplication *front = [NSWorkspace sharedWorkspace].frontmostApplication;
+    PrismSourceKind kind = SourceKindForBundle(front.bundleIdentifier);
+    if (kind == PrismSourceNone) return [PrismDetection new];
 
-    // Collect supported source apps, frontmost first (so the ad follows attention).
-    NSMutableArray<NSRunningApplication *> *sources = [NSMutableArray array];
-    for (NSRunningApplication *a in ws.runningApplications) {
-        if (a.activationPolicy != NSApplicationActivationPolicyRegular) continue;
-        if (SourceKindForBundle(a.bundleIdentifier) == PrismSourceNone) continue;
-        if (a.processIdentifier == frontPid) [sources insertObject:a atIndex:0];
-        else [sources addObject:a];
+    AXUIElementRef app = AXUIElementCreateApplication(front.processIdentifier);
+    [self wakeAccessibility:app];  // no-op for non-Chromium apps; required for Claude/Cursor
+    PrismDetection *d = nil;
+    switch (kind) {
+        case PrismSourceClaude:   d = [self detectWorkRow:app]; break;
+        case PrismSourceCursor:   d = DetectCursorGenerating(app); break;
+        case PrismSourceTerminal: d = DetectTerminalThinking(app); break;
+        default: break;
     }
-
-    for (NSRunningApplication *a in sources) {
-        AXUIElementRef app = AXUIElementCreateApplication(a.processIdentifier);
-        [self wakeAccessibility:app];  // no-op for non-Chromium apps; required for Claude
-        PrismDetection *d = nil;
-        switch (SourceKindForBundle(a.bundleIdentifier)) {
-            case PrismSourceClaude:   d = [self detectWorkRow:app]; break;
-            case PrismSourceCursor:   d = DetectCursorThinking(app); break;
-            case PrismSourceTerminal: d = DetectTerminalThinking(app); break;
-            default: break;
-        }
-        CFRelease(app);
-        if (d.found) return d;
-    }
-    return [PrismDetection new];
+    CFRelease(app);
+    return d ?: [PrismDetection new];
 }
 
 @end

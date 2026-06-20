@@ -179,10 +179,17 @@ static const CGFloat kGapFromRow = 10.0;            // px to the right of the ro
 
     // Convert AX (top-left origin) → Cocoa (bottom-left origin). The flip uses the
     // primary screen height, which is correct across multiple monitors.
-    CGFloat primaryH = [NSScreen screens].firstObject.frame.size.height;
+    NSRect screen = [NSScreen screens].firstObject.frame;
+    CGFloat winW = self.pill.frame.size.width;
     CGFloat winH = self.pill.frame.size.height;
+    // Default: to the right of the anchor. If the anchor is in the right portion of
+    // the screen (e.g. Cursor's Stop button at the Composer's right edge) or the pill
+    // would spill off-screen, place it to the LEFT instead.
     CGFloat x = rowAX.origin.x + rowAX.size.width + kGapFromRow;
-    CGFloat y = (primaryH - rowAX.origin.y) - rowAX.size.height / 2.0 - winH / 2.0;
+    if (rowAX.origin.x > screen.size.width * 0.65 || x + winW > screen.size.width - 8) {
+        x = rowAX.origin.x - kGapFromRow - winW;
+    }
+    CGFloat y = (screen.size.height - rowAX.origin.y) - rowAX.size.height / 2.0 - winH / 2.0;
     [self.pill setFrameOrigin:NSMakePoint(x, y)];
     [self.pill orderFrontRegardless];
 
