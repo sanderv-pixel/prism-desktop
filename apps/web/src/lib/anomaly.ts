@@ -119,9 +119,7 @@ export async function detectImpressionAnomalies(input: {
       type: 'ip_impression_spike',
       severity: 'high',
       details: { clientIp, count: ipCount, windowSeconds: WINDOW_SECONDS },
-    })
-    await setUserPayoutHold(userId, true)
-  }
+    })  }
 
   if (campaignCount >= THRESHOLDS.campaign_impression_spike) {
     await recordAnomaly({
@@ -136,18 +134,14 @@ export async function detectImpressionAnomalies(input: {
       type: 'user_impression_spike',
       severity: 'medium',
       details: { userId, count: userCount, windowSeconds: WINDOW_SECONDS },
-    })
-    await setUserPayoutHold(userId, true)
-  }
+    })  }
 
   if (contextHash && identicalContextCount >= THRESHOLDS.repeated_context_fingerprint) {
     await recordAnomaly({
       type: 'repeated_context_fingerprint',
       severity: 'high',
       details: { contextHash, count: identicalContextCount },
-    })
-    await setUserPayoutHold(userId, true)
-  }
+    })  }
 }
 
 /**
