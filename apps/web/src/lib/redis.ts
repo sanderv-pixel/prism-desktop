@@ -70,19 +70,26 @@ export async function kvExists(key: string): Promise<number> {
 
 export async function kvIncr(key: string, windowSeconds?: number): Promise<number> {
   if (redis) {
-    const pipeline = redis.pipeline()
-    pipeline.incr(key)
-    if (windowSeconds !== undefined) {
-      pipeline.expire(key, windowSeconds)
+    const count = Number(await redis.incr(key))
+    // Only set the TTL when the window first opens (count === 1). Calling EXPIRE
+    // on every increment slides the TTL forward, so a key under sustained traffic
+    // never expires — a rate-limited caller would be locked out permanently and a
+    // fraud-velocity counter would never reset.
+    if (windowSeconds !== undefined && count === 1) {
+      await redis.expire(key, windowSeconds)
     }
-    const results = (await pipeline.exec()) as unknown[]
-    const count = Number(results[0])
     return Number.isNaN(count) ? 1 : count
   }
 
   const raw = memoryStore.get(key)
-  const count = raw && !isExpired(raw) ? Number(raw.value) + 1 : 1
-  const expiresAt = windowSeconds !== undefined ? Date.now() + windowSeconds * 1000 : undefined
+  const fresh = !raw || isExpired(raw)
+  const count = fresh ? 1 : Number(raw.value) + 1
+  // Same rule for the dev in-memory store: keep the original expiry, don't slide.
+  const expiresAt = fresh
+    ? windowSeconds !== undefined
+      ? Date.now() + windowSeconds * 1000
+      : undefined
+    : raw.expiresAt
   memoryStore.set(key, { value: String(count), expiresAt })
   return count
 }
