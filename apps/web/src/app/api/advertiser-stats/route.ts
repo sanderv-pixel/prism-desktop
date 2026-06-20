@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
         ? await Promise.all([
             supabase
               .from('impressions')
-              .select('campaign_id, auction_price_cpm, session_id, context, created_at')
+              .select('campaign_id, auction_price_cpm, session_id, context, source, created_at')
               .in('campaign_id', campaignIds)
               .gte('created_at', startIso),
             supabase

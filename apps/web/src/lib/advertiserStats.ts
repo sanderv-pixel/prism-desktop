@@ -27,6 +27,7 @@ export interface Impression {
   auction_price_cpm: number | null
   session_id?: string | null
   context?: string | null
+  source?: string | null
   created_at: string
 }
 
@@ -70,6 +71,7 @@ export interface AdvertiserStatsResult {
   }
   chartData: { date: string; spend: number; impressions: number; clicks: number }[]
   contextBreakdown: { name: string; impressions: number; spend: number; clicks: number }[]
+  sourceBreakdown: { name: string; impressions: number; spend: number }[]
   campaigns: {
     id: string
     title: string
@@ -262,6 +264,26 @@ export function computeAdvertiserStats(
     .sort((a, b) => b.impressions - a.impressions)
     .slice(0, 8)
 
+  // Source breakdown — which surface (Codex, Cursor, Claude, terminal) served each view.
+  const SOURCE_LABELS: Record<string, string> = {
+    claude: 'Claude',
+    cursor: 'Cursor',
+    codex: 'Codex',
+    terminal: 'Terminal',
+    unknown: 'Unknown',
+  }
+  const sourceMap = new Map<string, { impressions: number; spend: number }>()
+  for (const imp of recentImpressions) {
+    const key = SOURCE_LABELS[imp.source ?? 'unknown'] ?? 'Unknown'
+    const current = sourceMap.get(key) ?? { impressions: 0, spend: 0 }
+    current.impressions += 1
+    current.spend += impressionSpendCents(imp.auction_price_cpm) / 100
+    sourceMap.set(key, current)
+  }
+  const sourceBreakdown = Array.from(sourceMap.entries())
+    .map(([name, vals]) => ({ name, ...vals }))
+    .sort((a, b) => b.impressions - a.impressions)
+
   return {
     advertiser: {
       id: advertiser.id,
@@ -296,6 +318,7 @@ export function computeAdvertiserStats(
       clicks: dailyClicks[date],
     })),
     contextBreakdown,
+    sourceBreakdown,
     campaigns: campaignStats,
   }
 }
