@@ -1,14 +1,3 @@
-import { IconPreview } from './IconUpload'
-
-function getDomain(url: string): string {
-  try {
-    const hostname = new URL(url).hostname.replace(/^www\./, '')
-    return hostname
-  } catch {
-    return url
-  }
-}
-
 function getFallbackIconUrl(url: string): string | null {
   try {
     const hostname = new URL(url).hostname.replace(/^www\./, '')
@@ -25,29 +14,80 @@ interface AdPreviewProps {
   brandName?: string
 }
 
+// Renders the ad exactly as the overlay pill draws it: dark glass surface, violet
+// icon tile, optional brand name, underlined CTA, mono "AD" label, purple glow —
+// shown on a dark host surface next to a faux "Thinking…" line for context.
 export function AdPreview({ copy, url, iconUrl, brandName }: AdPreviewProps) {
-  const resolvedIcon = iconUrl || getFallbackIconUrl(url)
+  const icon = iconUrl || getFallbackIconUrl(url)
+  const ctaText = copy || 'Your ad copy →'
+  const initial = (brandName || copy || 'A').trim().charAt(0).toUpperCase()
 
   return (
-    <div className="rounded-xl border border-border bg-white p-4 shadow-sm">
-      <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-2">
-        Ad preview
+    <div className="rounded-xl border border-border bg-white p-4">
+      <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-3">
+        Ad preview — exactly as shown
       </p>
-      <div className="flex items-start gap-3">
-        <IconPreview url={resolvedIcon} size={44} />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-foreground leading-snug">
-            {brandName ? <span className="font-semibold">{brandName} </span> : null}
-            {copy || 'Your ad copy will appear here.'}
-          </p>
-          {url ? (
-            <p className="text-xs text-muted-foreground mt-1 truncate">
-              {getDomain(url)}
-            </p>
-          ) : (
-            <p className="text-xs text-muted-foreground mt-1">destination.com</p>
-          )}
-        </div>
+      <div
+        className="rounded-lg px-4 py-5 flex items-center gap-3 flex-wrap"
+        style={{ background: '#0d0d10' }}
+      >
+        <span style={{ color: '#9aa3b2', fontSize: 12.5, whiteSpace: 'nowrap' }}>
+          <span style={{ color: '#d8836a' }}>✶</span> Thinking…
+        </span>
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 9,
+            padding: '7px 13px 7px 9px',
+            background: 'rgb(18,18,23)',
+            border: '1px solid rgba(255,255,255,0.10)',
+            borderRadius: 10,
+            boxShadow: '0 0 13px rgba(139,92,246,0.5)',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <span
+            style={{
+              width: 17,
+              height: 17,
+              borderRadius: 5,
+              background: '#8b5cf6',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+              flexShrink: 0,
+            }}
+          >
+            {icon ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={icon} alt="" width={17} height={17} style={{ objectFit: 'contain' }} />
+            ) : (
+              <span style={{ color: '#fff', fontSize: 10, fontWeight: 700, lineHeight: 1 }}>
+                {initial}
+              </span>
+            )}
+          </span>
+          {brandName ? (
+            <span style={{ color: '#fff', fontSize: 12.5, fontWeight: 600 }}>{brandName}</span>
+          ) : null}
+          <span style={{ color: '#cbd5e1', fontSize: 12.5, textDecoration: 'underline' }}>
+            {ctaText}
+          </span>
+          <span
+            style={{
+              color: '#64748b',
+              fontSize: 9,
+              fontWeight: 700,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              fontFamily: 'var(--font-mono, ui-monospace, monospace)',
+            }}
+          >
+            AD
+          </span>
+        </span>
       </div>
     </div>
   )
