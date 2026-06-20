@@ -433,9 +433,9 @@ export function LandingPage() {
       {/* FINAL CTA */}
       <section id="waitlist" style={{ background: '#fff', borderTop: '1px solid #e8ebf0' }}>
         <div style={sectionWrap}>
-          <div data-reveal style={{ position: 'relative', overflow: 'hidden', borderRadius: 28, background: '#0f0f17', padding: 'clamp(40px,6vw,72px)', textAlign: 'center' }}>
+          <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 28, background: '#0f0f17', padding: 'clamp(40px,6vw,72px)', textAlign: 'center' }}>
             <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(60% 90% at 50% 0%, rgba(124,58,237,.32), transparent 60%)', pointerEvents: 'none' }} />
-            <div style={{ position: 'relative' }}>
+            <div data-reveal style={{ position: 'relative' }}>
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 22 }}><PrismLogo size={40} id="lgCta" /></div>
               <h2 style={{ fontFamily: DISPLAY, fontSize: 'clamp(30px,4.5vw,48px)', fontWeight: 600, letterSpacing: '-.025em', color: '#fff', lineHeight: 1.08 }}>Get paid for every<br />AI wait.</h2>
               <p style={{ margin: '16px auto 0', maxWidth: 540, fontSize: 17, color: '#a8a8b8' }}>Build with AI and get paid for the wait, or put your product in front of the people who do. There&apos;s a path for both.</p>
