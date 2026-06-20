@@ -138,6 +138,18 @@ static PrismDetection *DetectCursorGenerating(AXUIElementRef app) {
     return d;
 }
 
+// Codex desktop app (Electron): while the agent works it renders its status
+// ("Thinking", "Working for Ns") inside a shimmer-animated container carrying the
+// stable class `loading-shimmer-pure-text`. That class is present only while the
+// agent is actively working and disappears when it settles to "Worked for Ns".
+static PrismDetection *DetectCodexGenerating(AXUIElementRef app) {
+    PrismDetection *d = [PrismDetection new];
+    if (app) RecurseClass(app, 0, d, ^BOOL(NSString *c) {
+        return [c containsString:@"loading-shimmer"];
+    });
+    return d;
+}
+
 #pragma mark - Terminal (Claude Code CLI) detection
 
 static NSString *AXRole(AXUIElementRef el) {
@@ -244,11 +256,12 @@ static PrismDetection *DetectTerminalThinking(AXUIElementRef app) {
 
 #pragma mark - Source apps
 
-typedef NS_ENUM(NSInteger, PrismSourceKind) { PrismSourceNone = 0, PrismSourceClaude, PrismSourceCursor, PrismSourceTerminal };
+typedef NS_ENUM(NSInteger, PrismSourceKind) { PrismSourceNone = 0, PrismSourceClaude, PrismSourceCursor, PrismSourceTerminal, PrismSourceCodex };
 
 static PrismSourceKind SourceKindForBundle(NSString *bundleId) {
     if ([bundleId isEqualToString:@"com.anthropic.claudefordesktop"]) return PrismSourceClaude;
     if ([bundleId isEqualToString:@"com.todesktop.230313mzl4w4u92"]) return PrismSourceCursor;
+    if ([bundleId isEqualToString:@"com.openai.codex"]) return PrismSourceCodex;
     static NSSet *terminals;
     static dispatch_once_t once;
     dispatch_once(&once, ^{
@@ -348,6 +361,7 @@ static void DumpRecurse(AXUIElementRef el, int depth, NSMutableString *out) {
         case PrismSourceClaude:   d = [self detectWorkRow:app]; break;
         case PrismSourceCursor:   d = DetectCursorGenerating(app); break;
         case PrismSourceTerminal: d = DetectTerminalThinking(app); break;
+        case PrismSourceCodex:    d = DetectCodexGenerating(app); break;
         default: break;
     }
     CFRelease(app);
@@ -363,6 +377,38 @@ static void DumpRecurse(AXUIElementRef el, int depth, NSMutableString *out) {
     DumpRecurse(app, 0, out);
     CFRelease(app);
     return out;
+}
+
++ (NSString *)dumpFront {
+    NSRunningApplication *front = [NSWorkspace sharedWorkspace].frontmostApplication;
+    if (!front) return @"(no frontmost app)\n";
+    AXUIElementRef app = AXUIElementCreateApplication(front.processIdentifier);
+    [self wakeAccessibility:app];
+    NSMutableString *out = [NSMutableString stringWithFormat:@"=== %@ (%@) ===\n",
+                            front.localizedName, front.bundleIdentifier];
+    DumpRecurse(app, 0, out);
+    CFRelease(app);
+    return out;
+}
+
++ (NSString *)dumpFrontText {
+    NSRunningApplication *front = [NSWorkspace sharedWorkspace].frontmostApplication;
+    if (!front) return @"(no frontmost app)\n";
+    AXUIElementRef app = AXUIElementCreateApplication(front.processIdentifier);
+    [self wakeAccessibility:app];
+    AXUIElementRef ta = NULL;
+    NSUInteger len = 0;
+    FindBestTextArea(app, 0, &ta, &len);
+    NSString *value = @"(no AXTextArea found)";
+    if (ta) { value = AXStringValue(ta); CFRelease(ta); }
+    CFRelease(app);
+    // The live status line sits at the bottom — keep only the last lines.
+    NSArray<NSString *> *lines = [value componentsSeparatedByString:@"\n"];
+    NSUInteger keep = 24;
+    if (lines.count > keep) lines = [lines subarrayWithRange:NSMakeRange(lines.count - keep, keep)];
+    return [NSString stringWithFormat:@"=== %@ (%@) textlen=%lu ===\n%@\n",
+            front.localizedName, front.bundleIdentifier, (unsigned long)len,
+            [lines componentsJoinedByString:@"\n"]];
 }
 
 @end
