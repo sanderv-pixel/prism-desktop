@@ -4,6 +4,7 @@ import { createAdminClient } from '@/utils/supabase/admin'
 import { RateLimiter, getClientIp, rateLimitResponse } from '@/lib/api/rate-limit'
 import { handleApiError, ApiError } from '@/lib/api/errors'
 import { requireApiKey, getRequestDeviceUserId } from '@/lib/api/auth'
+import { isTrustedUserId } from '@/lib/api/trusted'
 import {
   evaluateFraud,
   contextHash,
@@ -42,16 +43,6 @@ const MIN_ATTENTION_MS = 800
 // legitimate clients always have token-age >= dwell, so this never trips them.
 const DWELL_GRACE_MS = 2000
 const DWELL_BLOCK_SCORE = 10
-
-// Vetted accounts (e.g. the team's own devices) that bypass fraud blocking and
-// payout holds, so legitimate high-volume usage isn't auto-frozen. Set the
-// PRISM_TRUSTED_USER_IDS env var to a comma-separated list of auth user ids.
-const TRUSTED_USER_IDS = new Set(
-  (process.env.PRISM_TRUSTED_USER_IDS ?? '')
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean)
-)
 
 const RequestSchema = z.object({
   userId: z.string().min(1).max(128),
@@ -113,7 +104,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { userId, sessionId, campaignId, impressionToken, context, durationMs, fingerprint, source } = parseResult.data
-    const isTrusted = TRUSTED_USER_IDS.has(userId)
+    const isTrusted = isTrustedUserId(userId)
     const impressionSource = source ?? 'unknown'
 
     // Validate the signed impression token to ensure the ad was actually served.

@@ -8,6 +8,7 @@ import {
 } from '@/lib/api/rate-limit'
 import { handleApiError, ApiError, formatZodError } from '@/lib/api/errors'
 import { requireApiKey, getRequestDeviceUserId } from '@/lib/api/auth'
+import { isTrustedUserId } from '@/lib/api/trusted'
 import { createImpressionToken, createConversionToken } from '@/lib/api/tokens'
 import { kvGet, kvSet } from '@/lib/redis'
 
@@ -232,12 +233,11 @@ export async function POST(req: NextRequest) {
     const resolvedUserId = deviceUserId || userId || session
 
     // Frequency-cap filter: do not serve the same campaign to the same device
-    // more than the configured number of times per window.
-    const eligibleByFrequency = await filterByFrequencyCap(
-      supabase,
-      eligible,
-      resolvedUserId
-    )
+    // more than the configured number of times per window. Trusted accounts (our
+    // own test devices) are exempt so testing never runs dry.
+    const eligibleByFrequency = isTrustedUserId(resolvedUserId)
+      ? eligible
+      : await filterByFrequencyCap(supabase, eligible, resolvedUserId)
     if (eligibleByFrequency.length === 0) {
       return new NextResponse(null, { status: 204, headers: corsHeaders() })
     }
