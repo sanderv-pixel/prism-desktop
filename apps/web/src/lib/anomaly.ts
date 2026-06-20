@@ -1,5 +1,5 @@
 import { createAdminClient } from '@/utils/supabase/admin'
-import { kvIncr, kvSet } from '@/lib/redis'
+import { kvIncr, kvSet, kvDel } from '@/lib/redis'
 import { getIdenticalContextCount } from '@/lib/api/fraud'
 import { sendPayoutHoldEmail, sendAdminAnomalyAlertEmail } from '@/lib/email/helpers'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -73,7 +73,17 @@ export async function setUserPayoutHold(
   })
   if (error) throw error
 
-  sendPayoutHoldEmail(userId, hold).catch(() => {})
+  // Notify the user at most once per state transition. The hold detector runs on
+  // every impression, so without this a busy device re-emails the same "on hold"
+  // notice over and over. We only send when this state is newly set, and clear the
+  // opposite key so a genuine later transition can notify again.
+  const sentKey = `email:payouthold:${userId}:${hold ? 'on' : 'off'}`
+  const oppositeKey = `email:payouthold:${userId}:${hold ? 'off' : 'on'}`
+  const fresh = await kvSet(sentKey, '1', { ex: 7 * 24 * 3600, nx: true }).catch(() => null)
+  if (fresh === 'OK') {
+    await kvDel(oppositeKey).catch(() => {})
+    sendPayoutHoldEmail(userId, hold).catch(() => {})
+  }
 }
 
 /**
@@ -109,9 +119,7 @@ export async function detectImpressionAnomalies(input: {
       type: 'ip_impression_spike',
       severity: 'high',
       details: { clientIp, count: ipCount, windowSeconds: WINDOW_SECONDS },
-    })
-    await setUserPayoutHold(userId, true)
-  }
+    })  }
 
   if (campaignCount >= THRESHOLDS.campaign_impression_spike) {
     await recordAnomaly({
@@ -126,18 +134,14 @@ export async function detectImpressionAnomalies(input: {
       type: 'user_impression_spike',
       severity: 'medium',
       details: { userId, count: userCount, windowSeconds: WINDOW_SECONDS },
-    })
-    await setUserPayoutHold(userId, true)
-  }
+    })  }
 
   if (contextHash && identicalContextCount >= THRESHOLDS.repeated_context_fingerprint) {
     await recordAnomaly({
       type: 'repeated_context_fingerprint',
       severity: 'high',
       details: { contextHash, count: identicalContextCount },
-    })
-    await setUserPayoutHold(userId, true)
-  }
+    })  }
 }
 
 /**

@@ -10,7 +10,7 @@ const steps = [
   {
     icon: Gift,
     title: 'Share your link',
-    description: 'Send your link to other Ai creators, teams, or communities.',
+    description: 'Send your link to other AI creators, teams, or communities.',
   },
   {
     icon: TrendingUp,
@@ -35,7 +35,6 @@ const benefits = [
 export function AffiliateSection() {
   return (
     <section className="section-padding relative overflow-hidden bg-violet-50/50">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-violet-100/40 via-transparent to-transparent blur-3xl" />
       <div className="container-tight relative px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           <div>
@@ -45,7 +44,7 @@ export function AffiliateSection() {
               <span className="gradient-text">Earn 10% for life.</span>
             </h2>
             <p className="text-lg text-muted-foreground leading-relaxed mb-8">
-              Know other Ai power users? Share Prism and earn a lifetime 10%
+              Know other AI power users? Share Prism and earn a lifetime 10%
               share of their creator payouts. It comes from Prism, so your
               referrals still keep every cent of their 50%.
             </p>

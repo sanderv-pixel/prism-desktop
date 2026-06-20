@@ -6,7 +6,7 @@ const cards = [
     icon: DollarSign,
     title: 'Creators earn',
     description:
-      'Install Prism once and earn a share of revenue every time a relevant ad is shown during your Ai workflows.',
+      'Install Prism once and earn a share of revenue every time a relevant ad is shown during your AI workflows.',
   },
   {
     icon: Target,
@@ -32,7 +32,7 @@ export function CategorySection() {
             The most overlooked attention in technology.
           </h2>
           <p className="text-lg text-muted-foreground leading-relaxed text-balance">
-            Ai users spend billions of minutes every month waiting for responses.
+            AI users spend billions of minutes every month waiting for responses.
             Until now, this attention had no marketplace.
           </p>
         </div>

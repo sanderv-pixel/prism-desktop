@@ -117,6 +117,7 @@ static const CGFloat kGapFromRow = 10.0;            // px to the right of the ro
 @property(nonatomic, strong) NSTimer *timer;
 @property(nonatomic, assign) int tick;
 @property(nonatomic, assign) int missStreak;
+@property(nonatomic, assign) int lastFetchTick;   // throttle network ad fetches
 // impression accounting
 @property(nonatomic, assign) NSTimeInterval visibleSince;
 @property(nonatomic, assign) NSInteger accumulatedMs;
@@ -166,12 +167,24 @@ static const CGFloat kGapFromRow = 10.0;            // px to the right of the ro
 }
 
 - (void)showNextTo:(CGRect)rowAX {
-    // Pick/rotate the ad.
-    if (!self.currentAd || (self.tick % kRotateEveryTicks) == 0) {
-        [self flushImpression];           // close out the previous ad's dwell
-        self.currentAd = [self.ads nextAd];
-        [self resetDwell];
-        // Prefetch a fresh ad (and a new single-use impression token) for next time.
+    BOOL due = (self.tick - self.lastFetchTick) >= kRotateEveryTicks;
+    // Rotate/first-fill the displayed ad from the local queue. This is cheap (no
+    // network) so it runs every poll while we lack an ad, picking up a freshly
+    // prefetched ad within one tick.
+    if (!self.currentAd || due) {
+        PrismAd *next = [self.ads nextAd];
+        if (next) {
+            [self flushImpression];       // close out the previous ad's dwell
+            self.currentAd = next;
+            [self resetDwell];
+        }
+    }
+    // Throttle the network prefetch to at most once per rotation window — even
+    // when inventory is empty — so a long work session with no ad (e.g. when ads
+    // are frequency-capped) doesn't hammer /api/ads every 0.25s poll and exhaust
+    // the per-key rate limit, which would kill the pill on every surface.
+    if (due || self.lastFetchTick == 0) {
+        self.lastFetchTick = self.tick;
         [self.ads refresh];
     }
     if (!self.currentAd) { [self hide]; return; }   // connected but no inventory yet

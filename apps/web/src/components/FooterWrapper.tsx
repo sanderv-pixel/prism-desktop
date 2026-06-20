@@ -6,8 +6,11 @@ import { Footer } from './Footer'
 export function FooterWrapper() {
   const pathname = usePathname()
 
-  // Hide the marketing footer inside dashboard, advertiser, and admin routes.
+  // Hide the marketing footer inside dashboard, advertiser, and admin routes —
+  // and on the landing page (`/`), which ships its own footer.
   if (
+    pathname === '/' ||
+    pathname === '/contact' ||
     pathname?.startsWith('/dashboard') ||
     pathname?.startsWith('/advertiser/') ||
     pathname?.startsWith('/admin/')

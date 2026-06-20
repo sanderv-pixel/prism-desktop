@@ -108,14 +108,14 @@ export const CONTEXT_OPTIONS = [
 ]
 
 export const PRESETS: Record<string, string[]> = {
-  'Ai general': ['chatgpt', 'claude', 'gemini', 'general-ai', 'general', 'productivity'],
-  'Ai creators': ['chatgpt', 'claude', 'writing', 'creative', 'design', 'marketing'],
-  'Ai learners': ['chatgpt', 'claude', 'perplexity', 'learning', 'education', 'research'],
+  'AI general': ['chatgpt', 'claude', 'gemini', 'general-ai', 'general', 'productivity'],
+  'AI creators': ['chatgpt', 'claude', 'writing', 'creative', 'design', 'marketing'],
+  'AI learners': ['chatgpt', 'claude', 'perplexity', 'learning', 'education', 'research'],
   SaaS: ['typescript', 'saas', 'cursor', 'vscode', 'business', 'professional', 'founders'],
   Cloud: ['python', 'go', 'cloud', 'vscode', 'devops', 'infrastructure', 'developers'],
   Design: ['design', 'v0', 'lovable', 'bolt', 'creative', 'designers'],
   'Next.js / React': ['nextjs', 'react', 'typescript', 'javascript', 'cursor', 'vscode'],
-  'Python / Ai': ['python', 'fastapi', 'django', 'openai', 'anthropic', 'langchain'],
+  'Python / AI': ['python', 'fastapi', 'django', 'openai', 'anthropic', 'langchain'],
   'Full-stack': ['nextjs', 'react', 'prisma', 'supabase', 'stripe', 'tailwind', 'typescript'],
   Vibecoders: ['vibecoders', 'lovable', 'v0', 'bolt', 'replit', 'chatgpt', 'claude', 'general-ai'],
   'Job seekers': ['job-seeking', 'developers', 'chatgpt', 'claude', 'general', 'business'],

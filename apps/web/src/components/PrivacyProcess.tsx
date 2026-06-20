@@ -3,7 +3,7 @@ import { CheckCircle2, XCircle } from 'lucide-react'
 
 const dontAccess = [
   'Your prompts, code, or designs',
-  'Your Ai conversations or outputs',
+  'Your AI conversations or outputs',
   'What you are building',
   'Your project structure',
 ]

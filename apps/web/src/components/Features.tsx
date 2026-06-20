@@ -23,14 +23,14 @@ const features = [
     icon: ShieldCheck,
     title: 'Contextual only',
     description:
-      'Ads match editor, Ai tool, language, and project type. No cookies, no cross-site tracking, no surveillance.',
+      'Ads match editor, AI tool, language, and project type. No cookies, no cross-site tracking, no surveillance.',
     accent: 'cyan' as const,
   },
   {
     icon: MousePointerClick,
     title: 'Tiny by design',
     description:
-      'One labeled line. Only during Ai wait states. Hide any advertiser instantly with a single click.',
+      'One labeled line. Only during AI wait states. Hide any advertiser instantly with a single click.',
     accent: 'fuchsia' as const,
   },
   {
@@ -51,7 +51,7 @@ const features = [
     icon: Sparkles,
     title: 'High-intent inventory',
     description:
-      'Advertisers reach Ai creators while they write, design, build, and debug - not while they mindlessly scroll.',
+      'Advertisers reach AI creators while they write, design, build, and debug - not while they mindlessly scroll.',
     accent: 'fuchsia' as const,
   },
 ]
@@ -66,7 +66,7 @@ export function Features() {
           <SectionHeader
             eyebrow="Why Prism"
             title="Built for the way you actually work"
-            description="Most ads interrupt. Prism lives in the natural pauses of Ai-assisted work."
+            description="Most ads interrupt. Prism lives in the natural pauses of AI-assisted work."
             align="left"
             className="lg:mb-0"
           />
@@ -94,13 +94,13 @@ export function Features() {
           <FeatureCard
             icon={ShieldCheck}
             title="Contextual only"
-            description="Ads match editor, Ai tool, language, and project type. No cookies, no cross-site tracking."
+            description="Ads match editor, AI tool, language, and project type. No cookies, no cross-site tracking."
             accent="cyan"
           />
           <FeatureCard
             icon={MousePointerClick}
             title="Tiny by design"
-            description="One labeled line. Only during Ai wait states. Hide any advertiser instantly."
+            description="One labeled line. Only during AI wait states. Hide any advertiser instantly."
             accent="fuchsia"
           />
           <FeatureCard
@@ -112,7 +112,7 @@ export function Features() {
           <FeatureCard
             icon={Sparkles}
             title="High-intent inventory"
-            description="Advertisers reach Ai creators while they write, design, build, and debug — not while they scroll."
+            description="Advertisers reach AI creators while they write, design, build, and debug — not while they scroll."
             className="md:col-span-2 lg:col-span-1"
             accent="fuchsia"
           />

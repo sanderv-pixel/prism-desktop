@@ -1,101 +1,178 @@
 'use client'
 
-import { Button } from '@/components/Button'
-import { InstallCommand } from '@/components/InstallCommand'
-import { ArrowRight, Sparkles, Shield, Zap } from 'lucide-react'
+import { InstallCard } from '@/components/home/InstallCard'
+import { Shield, Zap } from 'lucide-react'
 
 export function NewHero() {
   return (
-    <section className="relative min-h-screen pt-28 pb-16 md:pt-36 md:pb-24 overflow-hidden bg-background flex items-center">
-      {/* Colorful Stripe-like hero background */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Soft white centre glow so text stays crisp */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(255,255,255,0)_0%,rgba(255,255,255,1)_70%)]" />
-
-        {/* Large blurred colourful arc / string */}
-        <svg
-          className="absolute -top-24 left-1/2 -translate-x-1/2 w-[1600px] h-[800px] opacity-30"
-          viewBox="0 0 1600 800"
-          preserveAspectRatio="xMidYMin slice"
-          aria-hidden="true"
-        >
-          <defs>
-            <linearGradient id="heroArc" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#8b5cf6" />
-              <stop offset="33%" stopColor="#ec4899" />
-              <stop offset="66%" stopColor="#06b6d4" />
-              <stop offset="100%" stopColor="#f59e0b" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M-200,700 C250,150 700,950 1200,300 S1800,250 2200,800"
-            fill="none"
-            stroke="url(#heroArc)"
-            strokeWidth="180"
-            strokeLinecap="round"
-            filter="blur(90px)"
-          />
-        </svg>
-
-        {/* Soft gradient orbs */}
-        <div className="absolute top-[-10%] left-[5%] w-[600px] h-[600px] rounded-full bg-violet-400/20 blur-[120px]" />
-        <div className="absolute top-[0%] right-[5%] w-[700px] h-[700px] rounded-full bg-cyan-400/15 blur-[120px]" />
-        <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-[900px] h-[450px] rounded-full bg-fuchsia-400/10 blur-[100px]" />
-
-        {/* Fade to white over the content area */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-white/60 to-white" />
-        <div className="absolute inset-0 bg-noise opacity-50" />
+    <section className="relative isolate flex min-h-screen items-center overflow-hidden bg-background pt-28 pb-16 md:pt-32 md:pb-24">
+      {/* Structured, single-accent background (no gradient soup) */}
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute inset-0 bg-dot-grid opacity-70 [mask-image:radial-gradient(ellipse_75%_60%_at_50%_-5%,#000_35%,transparent_100%)]" />
+        <div className="absolute -top-40 left-1/2 h-[560px] w-[980px] -translate-x-1/2 rounded-full bg-violet-400/20 blur-[140px]" />
+        <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-white" />
       </div>
 
-      <div className="relative container-tight px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-violet-50 border border-violet-100 px-4 py-1.5 mb-6">
-            <Sparkles size={14} className="text-primary" />
-            <span className="text-xs font-semibold text-primary">
-              The first ad network built for Ai workflows
-            </span>
-          </div>
+      <div className="container-tight relative w-full px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[1.05fr_1fr] lg:gap-12">
+          {/* Left: copy + install */}
+          <div className="text-center lg:text-left">
+            <h1 className="anim-rise text-hero mb-5" style={{ animationDelay: '0s' }}>
+              Get paid while{' '}
+              <span className="bg-gradient-to-r from-violet-600 to-violet-500 bg-clip-text text-transparent">
+                AI thinks.
+              </span>
+            </h1>
 
-          <h1 className="text-hero mb-6">
-            Get paid while{' '}
-            <span className="gradient-text">Ai thinks.</span>
-          </h1>
-
-          <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-10 text-balance max-w-2xl mx-auto">
-            Prism is a free extension for VS Code, Cursor, Codex, and Claude
-            Code. It shows tiny, relevant ads during Ai wait states and pays
-            you a share of the revenue. Your work never leaves your device.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-10">
-            <Button href="/onboarding" size="xl">
-              Install Prism free
-              <ArrowRight size={20} className="ml-2" />
-            </Button>
-            <Button href="#how-it-works" size="xl" variant="outline">
-              See how it works
-            </Button>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground mb-12">
-            <div className="flex items-center gap-2">
-              <Shield size={16} className="text-emerald-600" />
-              <span>No prompts or code collected</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Zap size={16} className="text-amber-500" />
-              <span>50% revenue share</span>
-            </div>
-          </div>
-
-          <div className="max-w-xl mx-auto p-6 rounded-2xl bg-muted/50 border border-border text-left">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-              Quick install
+            <p
+              className="anim-rise mx-auto mb-8 max-w-xl text-balance text-lg leading-relaxed text-muted-foreground lg:mx-0"
+              style={{ animationDelay: '0.08s' }}
+            >
+              Your AI keeps you waiting. Prism makes that pay: one small,
+              relevant ad while it thinks, and you earn a cut. Works with Claude,
+              Codex, Gemini, Cursor, and every AI you build with.
             </p>
-            <InstallCommand />
+
+            <div
+              className="anim-rise mx-auto max-w-xl lg:mx-0"
+              style={{ animationDelay: '0.16s' }}
+            >
+              <InstallCard />
+            </div>
+
+            <div
+              className="anim-rise mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground lg:justify-start"
+              style={{ animationDelay: '0.24s' }}
+            >
+              <div className="flex items-center gap-2">
+                <Shield size={16} className="text-emerald-600" />
+                <span>Your code never leaves your device</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Zap size={16} className="text-amber-500" />
+                <span>You keep 50% of the revenue</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: live product demo (signature moment) */}
+          <div
+            className="anim-rise relative mx-auto w-full min-w-0 max-w-xl lg:max-w-none"
+            style={{ animationDelay: '0.12s' }}
+          >
+            <HeroDemo />
           </div>
         </div>
       </div>
     </section>
+  )
+}
+
+/** The signature moment: a live agent window where the Prism pill slides in next to "Thinking…". */
+function HeroDemo() {
+  return (
+    <div className="anim-float relative">
+      <div className="absolute -inset-8 -z-10 rounded-[2.5rem] bg-violet-500/10 blur-3xl" />
+
+      <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl shadow-violet-950/40 ring-1 ring-white/5">
+        {/* titlebar */}
+        <div className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-3">
+          <span className="h-3 w-3 rounded-full bg-red-400/80" />
+          <span className="h-3 w-3 rounded-full bg-amber-400/80" />
+          <span className="h-3 w-3 rounded-full bg-emerald-400/80" />
+          <span className="ml-3 font-mono text-xs font-medium text-slate-500">
+            claude · agent
+          </span>
+          <span className="ml-auto inline-flex items-center gap-1.5 text-[10px] font-medium text-slate-500">
+            <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />
+            Prism active
+          </span>
+        </div>
+
+        {/* body */}
+        <div className="space-y-4 p-5 font-mono text-[13px] leading-relaxed">
+          <p
+            className="anim-rise text-slate-400"
+            style={{ animationDelay: '0.45s' }}
+          >
+            <span className="text-violet-400">›</span> refactor the auth module
+            to use the new session API
+          </p>
+
+          {/* thinking line + Prism pill */}
+          <div className="flex flex-wrap items-center gap-3">
+            <span
+              className="anim-rise inline-flex items-center gap-2 text-slate-300"
+              style={{ animationDelay: '0.65s' }}
+            >
+              <span className="anim-spin-slow inline-block text-amber-400">✶</span>
+              Thinking…
+              <span className="text-slate-500">(12s · 1.4k tokens)</span>
+            </span>
+
+            <span className="anim-pill-in inline-block" style={{ animationDelay: '1s' }}>
+              <span className="anim-glow inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.07] px-2.5 py-1.5 backdrop-blur">
+                <span className="flex h-4 w-4 items-center justify-center rounded bg-violet-500 text-[9px] font-bold text-white">
+                  V
+                </span>
+                <span className="text-[12px] font-semibold text-white">Vercel</span>
+                <span className="text-[12px] text-slate-300 underline decoration-slate-500/60 underline-offset-2">
+                  Ship faster →
+                </span>
+                <span className="text-[9px] font-bold uppercase tracking-wide text-slate-500">
+                  Ad
+                </span>
+              </span>
+            </span>
+          </div>
+
+          {/* streaming code skeleton */}
+          <div
+            className="anim-rise space-y-2 pt-1"
+            style={{ animationDelay: '0.85s' }}
+          >
+            <div className="h-2 w-[72%] rounded-full bg-slate-800" />
+            <div className="h-2 w-[58%] rounded-full bg-slate-800/70" />
+            <div className="h-2 w-[64%] rounded-full bg-slate-800/50" />
+          </div>
+        </div>
+      </div>
+
+      {/* floating earnings chip: the payoff, made tangible */}
+      <div
+        className="anim-pill-in absolute bottom-6 -left-3 sm:-left-7"
+        style={{ animationDelay: '1.35s' }}
+      >
+        <div className="anim-float flex items-center gap-2.5 rounded-xl border border-border bg-white px-3.5 py-2.5 shadow-xl shadow-black/10 [animation-duration:7s]">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M5 12l5-5 4 4 5-6"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M19 5v5M19 5h-5"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
+          <div className="leading-tight">
+            <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+              Earned this view
+            </div>
+            <div className="text-sm font-bold tabular-nums text-foreground">
+              +$0.04
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
   )
 }

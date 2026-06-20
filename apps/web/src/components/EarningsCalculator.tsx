@@ -51,7 +51,7 @@ export function EarningsCalculator() {
           <div className="flex justify-between items-center mb-3">
             <label className="text-sm font-medium text-foreground flex items-center gap-2">
               <Clock size={14} className="text-muted-foreground" />
-              Ai hours per day
+              AI hours per day
             </label>
             <span className="text-sm font-bold text-primary bg-violet-50 px-2.5 py-1 rounded-lg">
               {hours}h
@@ -120,7 +120,7 @@ export function EarningsCalculator() {
         </div>
 
         <p className="text-xs text-muted-foreground leading-relaxed">
-          Based on average Ai wait-state coverage, fill rates, and a 50% creator
+          Based on average AI wait-state coverage, fill rates, and a 50% creator
           revenue share. Not a guarantee — actual earnings depend on advertiser
           demand and your usage patterns.
         </p>

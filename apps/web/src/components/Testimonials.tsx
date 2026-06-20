@@ -23,7 +23,7 @@ const testimonials = [
     amount: '$67',
     label: '/mo',
     quote:
-      'As a no-code builder, every Ai request on Lovable now earns me money. I barely notice the ads.',
+      'As a no-code builder, every AI request on Lovable now earns me money. I barely notice the ads.',
     name: 'Thomas K.',
     role: 'Product Designer',
     tool: 'Lovable',
@@ -47,7 +47,7 @@ export function Testimonials() {
       <div className="container-tight relative">
         <SectionHeader
           eyebrow="Social proof"
-          title="Loved by Ai builders"
+          title="Loved by AI builders"
           description="Creators are turning dead wait time into real income — without changing how they work."
         />
 

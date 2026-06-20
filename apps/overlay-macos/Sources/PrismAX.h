@@ -22,6 +22,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, assign) BOOL found;
 /// Frame of the work-indicator row, in AX coordinates (top-left origin).
 @property(nonatomic, assign) CGRect frame;
+/// Internal: Cowork has no work row; it shows a bare "Thinking…" status text.
+/// Tracked separately and only promoted to `found`/`frame` when no work row
+/// exists, so Chat/Code placement is unchanged.
+@property(nonatomic, assign) BOOL foundAlt;
+@property(nonatomic, assign) CGRect altFrame;
 @end
 
 @interface PrismAX : NSObject
@@ -43,6 +48,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// and return the first active "working" indicator found. Frame is in AX
 /// coordinates (top-left origin). Handles waking + per-app detection internally.
 + (PrismDetection *)detect;
+
+/// Debug: dump Claude's full AX tree (role, DOM classes, text, frame) for any
+/// element carrying classes or short text. Used to discover new surfaces.
++ (NSString *)dumpClaude;
 
 @end
 

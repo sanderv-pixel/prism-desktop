@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { createAdminClient } from '@/utils/supabase/admin'
 import { RateLimiter, getClientIp, rateLimitResponse } from '@/lib/api/rate-limit'
 import { handleApiError, ApiError } from '@/lib/api/errors'
-import { requireApiKey } from '@/lib/api/auth'
+import { requireApiKey, getRequestDeviceUserId } from '@/lib/api/auth'
 import {
   evaluateFraud,
   contextHash,
@@ -36,6 +36,16 @@ const impressionsRateLimiter = new RateLimiter(30, 60 * 1000)
 const MAX_DAILY_SPEND_CENTS = 50000 // $500/day cap per campaign
 const MIN_TRUST_SCORE_FOR_PAYOUT = 20
 const MIN_ATTENTION_MS = 800
+
+// Vetted accounts (e.g. the team's own devices) that bypass fraud blocking and
+// payout holds, so legitimate high-volume usage isn't auto-frozen. Set the
+// PRISM_TRUSTED_USER_IDS env var to a comma-separated list of auth user ids.
+const TRUSTED_USER_IDS = new Set(
+  (process.env.PRISM_TRUSTED_USER_IDS ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+)
 
 const RequestSchema = z.object({
   userId: z.string().min(1).max(128),
@@ -94,6 +104,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { userId, sessionId, campaignId, impressionToken, context, durationMs, fingerprint } = parseResult.data
+    const isTrusted = TRUSTED_USER_IDS.has(userId)
 
     // Validate the signed impression token to ensure the ad was actually served.
     const tokenPayload = await verifyImpressionToken(impressionToken)
@@ -108,6 +119,12 @@ export async function POST(req: NextRequest) {
     }
     if (tokenPayload.sessionId !== sessionId) {
       throw new ApiError(401, 'Impression token session mismatch', 'TOKEN_SESSION_MISMATCH')
+    }
+    // Defense in depth: a per-device key may only redeem tokens issued to its own
+    // account, so one device can't claim another creator's impressions.
+    const deviceUserId = await getRequestDeviceUserId(req)
+    if (deviceUserId && tokenPayload.userId !== deviceUserId) {
+      throw new ApiError(401, 'Impression token device mismatch', 'TOKEN_DEVICE_MISMATCH')
     }
     const sessionIdForRow = tokenPayload.sessionId || sessionId
     const auctionPriceCpm = tokenPayload.auctionPriceCpm || 0
@@ -153,7 +170,7 @@ export async function POST(req: NextRequest) {
       'update_user_trust_atomic',
       {
         p_user_id: userId,
-        p_flagged: combinedFraud.blocked,
+        p_flagged: combinedFraud.blocked && !isTrusted,
       }
     )
     if (trustError) throw trustError
@@ -168,7 +185,7 @@ export async function POST(req: NextRequest) {
       flagged_count: number
     }>
     const trustScore = trustRow.trust_score
-    const payoutHold = trustRow.payout_hold
+    const payoutHold = isTrusted ? false : trustRow.payout_hold
     const tokenNonce = tokenPayload.nonce
 
     // Fire non-blocking anomaly detection for operational alerting.
@@ -179,7 +196,7 @@ export async function POST(req: NextRequest) {
       contextHash: ctxHash,
     }).catch(() => {})
 
-    if (combinedFraud.blocked) {
+    if (combinedFraud.blocked && !isTrusted) {
       await supabase.from('impressions').insert({
         user_id: userId,
         session_id: sessionIdForRow,

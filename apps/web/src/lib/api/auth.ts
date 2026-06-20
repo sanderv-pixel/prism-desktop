@@ -84,3 +84,25 @@ export async function requireApiKey(
     return apiKeyRequiredResponse()
   }
 }
+
+/**
+ * The account id bound to the request's per-device API key, or null when the
+ * request used a global/legacy key or no key. For device keys minted by a
+ * signed-in user, `anonymous_user_id` equals their auth user id, so this is what
+ * impressions must be attributed to for earnings to reach the creator dashboard.
+ */
+export async function getRequestDeviceUserId(
+  req: NextRequest
+): Promise<string | null> {
+  const key = req.headers.get('x-prism-api-key')
+  if (!key || API_KEYS.has(key)) return null
+  try {
+    const device = await validateDeviceApiKey(key)
+    if (device.valid && !device.revoked && device.anonymousUserId) {
+      return device.anonymousUserId
+    }
+  } catch {
+    /* fall through to null */
+  }
+  return null
+}

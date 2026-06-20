@@ -15,7 +15,7 @@ export default function AdvertiserPolicyPage() {
 
       <h2>Allowed categories</h2>
       <ul>
-        <li>Ai tools and SaaS</li>
+        <li>AI tools and SaaS</li>
         <li>Cloud infrastructure and hosting</li>
         <li>APIs and developer platforms</li>
         <li>Design, writing, and creative tools</li>

@@ -52,6 +52,33 @@
 
 int main(int argc, const char *argv[]) {
     @autoreleasepool {
+        // Debug capture: PRISM_DUMP=1 dumps Claude's live AX tree once per second
+        // for ~60s, then exits. Used to discover new surfaces (e.g. Cowork).
+        if (getenv("PRISM_DUMP")) {
+            for (int i = 0; i < 60; i++) {
+                NSString *dump = [PrismAX dumpClaude];
+                fprintf(stdout, "===== pass %d @ %s =====\n%s\n",
+                        i, NSDate.date.description.UTF8String, dump.UTF8String);
+                fflush(stdout);
+                [NSThread sleepForTimeInterval:1.0];
+            }
+            return 0;
+        }
+
+        // Debug: PRISM_DETECT=1 runs the real detection against the live tree and
+        // prints found/frame each second (verifies a surface without the ad pipeline).
+        if (getenv("PRISM_DETECT")) {
+            for (int i = 0; i < 30; i++) {
+                PrismDetection *d = [PrismAX detect];   // frontmost: Claude/Cursor/Terminal
+                fprintf(stdout, "detect: found=%d frame=%.0f,%.0f %.0fx%.0f\n",
+                        d.found, d.frame.origin.x, d.frame.origin.y,
+                        d.frame.size.width, d.frame.size.height);
+                fflush(stdout);
+                [NSThread sleepForTimeInterval:1.0];
+            }
+            return 0;
+        }
+
         NSApplication *app = [NSApplication sharedApplication];
         [app setActivationPolicy:NSApplicationActivationPolicyAccessory];  // menu-bar only, no Dock
         AppDelegate *delegate = [AppDelegate new];

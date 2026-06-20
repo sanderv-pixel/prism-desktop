@@ -8,14 +8,14 @@ export function HeroSection() {
 
       <div className="relative container-tight px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
-          <p className="eyebrow mb-6">The advertising network for Ai workflows</p>
+          <p className="eyebrow mb-6">The advertising network for AI workflows</p>
 
           <h1 className="text-hero mb-8">
-            Monetize the most viewed line in Ai.
+            Monetize the most viewed line in AI.
           </h1>
 
           <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-10 max-w-2xl mx-auto text-balance">
-            Every day, millions of people wait for Ai to think. Prism transforms
+            Every day, millions of people wait for AI to think. Prism transforms
             those moments into a privacy-first attention marketplace where
             creators earn and advertisers reach builders.
           </p>
@@ -26,7 +26,7 @@ export function HeroSection() {
               <ArrowRight size={18} className="ml-2" />
             </Button>
             <Button href="/advertisers" size="lg" variant="outline">
-              Advertise to Ai creators
+              Advertise to AI creators
             </Button>
           </div>
 

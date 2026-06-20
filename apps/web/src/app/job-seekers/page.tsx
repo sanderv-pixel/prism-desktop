@@ -69,7 +69,7 @@ export default function JobSeekersPage() {
               </div>
               <div className="flex items-center gap-2">
                 <Eye size={16} className="text-primary" />
-                <span>Appear during Ai work sessions</span>
+                <span>Appear during AI work sessions</span>
               </div>
               <div className="flex items-center gap-2">
                 <ShieldCheck size={16} className="text-primary" />
@@ -105,7 +105,7 @@ export default function JobSeekersPage() {
             <StepCard
               number="03"
               title="Get discovered"
-              description="Your ad appears when recruiters and founders are in Ai tools or reviewing hiring materials."
+              description="Your ad appears when recruiters and founders are in AI tools or reviewing hiring materials."
               icon={<Briefcase size={20} />}
             />
           </div>
@@ -124,7 +124,7 @@ export default function JobSeekersPage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <FeatureCard
               title="Contextual targeting"
-              description="Reach recruiters on LinkedIn Jobs, Greenhouse, Lever, and inside Ai coding assistants."
+              description="Reach recruiters on LinkedIn Jobs, Greenhouse, Lever, and inside AI coding assistants."
               icon={<Target size={20} />}
             />
             <FeatureCard

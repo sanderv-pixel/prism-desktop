@@ -14,7 +14,7 @@ export default function DocsPage() {
         <SectionHeader
           eyebrow="Docs"
           title="Getting started with Prism"
-          description="Install Prism and start monetizing Ai wait time in minutes."
+          description="Install Prism and start monetizing AI wait time in minutes."
         />
 
         <div className="prose max-w-none prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-li:text-muted-foreground prose-code:text-primary prose-pre:bg-muted">

@@ -15,7 +15,7 @@ const steps = [
     number: '02',
     title: 'Work as usual',
     description:
-      'Use Cursor, Claude, ChatGPT, Lovable, or any supported Ai tool normally. No workflow changes.',
+      'Use Cursor, Claude, ChatGPT, Lovable, or any supported AI tool normally. No workflow changes.',
     icon: MousePointerClick,
     highlight: 'Zero friction',
   },

@@ -36,7 +36,7 @@ export function Footer() {
               </span>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Contextual ad network for Ai creators. Monetize dead wait time,
+              Contextual ad network for AI creators. Monetize dead wait time,
               respect privacy.
             </p>
           </div>
@@ -67,7 +67,7 @@ export function Footer() {
             © {new Date().getFullYear()} Prism. All rights reserved.
           </p>
           <p className="text-sm text-muted-foreground/70">
-            Built for the Ai-native creator economy.
+            Built for the AI-native creator economy.
           </p>
         </div>
       </div>

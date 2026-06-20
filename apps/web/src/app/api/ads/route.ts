@@ -7,7 +7,7 @@ import {
   rateLimitResponse,
 } from '@/lib/api/rate-limit'
 import { handleApiError, ApiError, formatZodError } from '@/lib/api/errors'
-import { requireApiKey } from '@/lib/api/auth'
+import { requireApiKey, getRequestDeviceUserId } from '@/lib/api/auth'
 import { createImpressionToken, createConversionToken } from '@/lib/api/tokens'
 import { kvGet, kvSet } from '@/lib/redis'
 
@@ -225,7 +225,11 @@ export async function POST(req: NextRequest) {
     }
 
     const session = sessionId || generateSessionId()
-    const resolvedUserId = userId || session
+    // Attribute to the connected account (the device key's anonymous_user_id,
+    // which equals the auth user id) so earnings reach the creator dashboard.
+    // Fall back to the client-supplied id only for non-device-key callers.
+    const deviceUserId = await getRequestDeviceUserId(req)
+    const resolvedUserId = deviceUserId || userId || session
 
     // Frequency-cap filter: do not serve the same campaign to the same device
     // more than the configured number of times per window.
@@ -280,7 +284,7 @@ export async function POST(req: NextRequest) {
 
     const impressionToken = await createImpressionToken({
       campaignId: winner.id,
-      userId: userId || session,
+      userId: resolvedUserId,
       sessionId: session,
       auctionPriceCpm: clearingPrice,
     })
