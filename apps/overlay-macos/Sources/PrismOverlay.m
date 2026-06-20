@@ -9,7 +9,8 @@ static const int kHideAfterMisses = 3;              // debounce flicker
 static const int kShowAfterTicks = 4;               // ~1s after thinking begins (per guidelines)
 static const int kRotateEveryTicks = 24;            // ~6s ad rotation
 static const NSInteger kMinDwellMs = 5000;          // viewable-impression threshold
-static const CGFloat kPillHeight = 28.0;
+static const CGFloat kPillHeight = 32.0;
+static const CGFloat kGlow = 16.0;                  // margin around the pill for the purple glow
 static const CGFloat kGapFromRow = 10.0;            // px to the right of the row
 
 #pragma mark - PrismPillView (clickable surface)
@@ -28,6 +29,7 @@ static const CGFloat kGapFromRow = 10.0;            // px to the right of the ro
 #pragma mark - PrismOverlayWindow
 
 @interface PrismOverlayWindow ()
+@property(nonatomic, strong) NSView *pillView;    // the visible pill, inset within the window
 @property(nonatomic, strong) NSView *badge;
 @property(nonatomic, strong) NSTextField *badgeLabel;
 @property(nonatomic, strong) NSImageView *badgeIcon;
@@ -38,51 +40,45 @@ static const CGFloat kGapFromRow = 10.0;            // px to the right of the ro
 @implementation PrismOverlayWindow
 
 - (instancetype)initPill {
-    NSRect r = NSMakeRect(-1000, -1000, 300, kPillHeight);
+    CGFloat winH = kPillHeight + 2 * kGlow;
+    NSRect r = NSMakeRect(-1000, -1000, 300, winH);
     self = [super initWithContentRect:r styleMask:NSWindowStyleMaskBorderless
                               backing:NSBackingStoreBuffered defer:NO];
     if (!self) return nil;
     self.opaque = NO;
     self.backgroundColor = [NSColor clearColor];
     self.level = NSStatusWindowLevel;
-    // The pill itself is clickable (to open the ad); the window is small, so
-    // nothing outside the pill is affected.
     self.ignoresMouseEvents = NO;
     self.collectionBehavior = NSWindowCollectionBehaviorCanJoinAllSpaces |
                               NSWindowCollectionBehaviorStationary |
                               NSWindowCollectionBehaviorFullScreenAuxiliary;
 
-    PrismPillView *cv = [[PrismPillView alloc] initWithFrame:NSMakeRect(0, 0, r.size.width, r.size.height)];
+    // Transparent host fills the whole window; the pill is inset by kGlow so its
+    // outer purple glow has room to render (a borderless window clips shadows).
+    NSView *host = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, r.size.width, winH)];
+    host.wantsLayer = YES;
+    self.contentView = host;
+
+    PrismPillView *cv = [[PrismPillView alloc] initWithFrame:NSMakeRect(kGlow, kGlow, r.size.width - 2 * kGlow, kPillHeight)];
     __weak PrismOverlayWindow *weakSelf = self;
     cv.onClick = ^{ if (weakSelf.onClick) weakSelf.onClick(); };
-    self.contentView = cv;
     cv.wantsLayer = YES;
-    // Glassy dark surface per the ad-unit guidelines: translucent blur + a thin
-    // white tint + a hairline border, 10px radius. masksToBounds stays NO so the
-    // entrance glow can extend past the pill.
+    // Solid dark glass surface (white-on-dark), 10px radius, hairline border.
+    // masksToBounds NO so the glow renders past the pill.
+    cv.layer.backgroundColor = [NSColor colorWithRed:0.07 green:0.07 blue:0.09 alpha:0.95].CGColor;
     cv.layer.cornerRadius = 10;
     cv.layer.borderWidth = 1;
     cv.layer.borderColor = [NSColor colorWithWhite:1 alpha:0.10].CGColor;
-
-    NSVisualEffectView *fx = [[NSVisualEffectView alloc] initWithFrame:cv.bounds];
-    fx.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
-    fx.material = NSVisualEffectMaterialHUDWindow;
-    fx.blendingMode = NSVisualEffectBlendingModeBehindWindow;
-    fx.state = NSVisualEffectStateActive;
-    fx.wantsLayer = YES;
-    fx.layer.cornerRadius = 10;
-    fx.layer.masksToBounds = YES;
-    [cv addSubview:fx];
-    NSView *tint = [[NSView alloc] initWithFrame:cv.bounds];
-    tint.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
-    tint.wantsLayer = YES;
-    tint.layer.cornerRadius = 10;
-    tint.layer.masksToBounds = YES;
-    tint.layer.backgroundColor = [NSColor colorWithWhite:1 alpha:0.07].CGColor;
-    [cv addSubview:tint];
+    // Subtle persistent purple glow behind the pill (#8b5cf6).
+    cv.layer.shadowColor = [NSColor colorWithRed:0.545 green:0.361 blue:0.965 alpha:1].CGColor;
+    cv.layer.shadowOffset = CGSizeZero;
+    cv.layer.shadowRadius = 13;
+    cv.layer.shadowOpacity = 0.5;
+    [host addSubview:cv];
+    _pillView = cv;
 
     // A: brand icon tile — 17×17, radius 5, #8b5cf6 (set per-ad in renderAd).
-    _badge = [[NSView alloc] initWithFrame:NSMakeRect(6, 5, 17, 17)];
+    _badge = [[NSView alloc] initWithFrame:NSMakeRect(9, 8, 17, 17)];
     _badge.wantsLayer = YES;
     _badge.layer.cornerRadius = 5;
     _badgeLabel = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 1, 17, 15)];
@@ -99,8 +95,8 @@ static const CGFloat kGapFromRow = 10.0;            // px to the right of the ro
     [_badge addSubview:_badgeIcon];
     [cv addSubview:_badge];
 
-    // 6px left pad + 17px icon + 9px gap = text starts at x=32.
-    _text = [[NSTextField alloc] initWithFrame:NSMakeRect(32, 5, 250, 18)];
+    // 9px left pad + 17px icon + 9px gap = text starts at x=35.
+    _text = [[NSTextField alloc] initWithFrame:NSMakeRect(35, 7, 250, 18)];
     [self styleField:_text];
     [cv addSubview:_text];
 
@@ -194,9 +190,10 @@ static NSImage *PrismImageFromDataURL(NSString *s) {
     [self.text sizeToFit];
 
     // 32px text origin + text width + 8px right padding.
-    CGFloat w = 32 + self.text.frame.size.width + 8;
+    CGFloat w = 35 + self.text.frame.size.width + 13;
     NSRect f = self.frame;
-    [self setFrame:NSMakeRect(f.origin.x, f.origin.y, w, kPillHeight) display:YES];
+    [self setFrame:NSMakeRect(f.origin.x, f.origin.y, w + 2 * kGlow, kPillHeight + 2 * kGlow) display:YES];
+    self.pillView.frame = NSMakeRect(kGlow, kGlow, w, kPillHeight);
     return w;
 }
 
@@ -214,13 +211,13 @@ static NSImage *PrismImageFromDataURL(NSString *s) {
         [self.animator setFrameOrigin:origin];
     } completionHandler:nil];
 
-    // Glow pulses once: the border flashes violet, then settles to the hairline.
-    CABasicAnimation *glow = [CABasicAnimation animationWithKeyPath:@"borderColor"];
-    glow.fromValue = (id)[NSColor colorWithRed:0.545 green:0.361 blue:0.965 alpha:0.85].CGColor;
-    glow.toValue = (id)[NSColor colorWithWhite:1 alpha:0.10].CGColor;
+    // Glow pulses brighter on entrance, then settles to its resting opacity.
+    CABasicAnimation *glow = [CABasicAnimation animationWithKeyPath:@"shadowOpacity"];
+    glow.fromValue = @0.95;
+    glow.toValue = @0.5;
     glow.duration = 0.9;
     glow.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseOut];
-    [self.contentView.layer addAnimation:glow forKey:@"glow"];
+    [self.pillView.layer addAnimation:glow forKey:@"glow"];
 }
 
 @end
@@ -316,21 +313,23 @@ static NSImage *PrismImageFromDataURL(NSString *s) {
     // Convert AX (top-left origin) → Cocoa (bottom-left origin). The flip uses the
     // primary screen height, which is correct across multiple monitors.
     NSRect screen = [NSScreen screens].firstObject.frame;
-    CGFloat winW = self.pill.frame.size.width;
-    CGFloat winH = self.pill.frame.size.height;
+    // Position the VISIBLE pill (the window extends kGlow past it on every side).
+    CGFloat pillW = self.pill.frame.size.width - 2 * kGlow;
+    CGFloat pillH = kPillHeight;
     // Default: to the right of the anchor. If the anchor is in the right portion of
     // the screen (e.g. Cursor's Stop button at the Composer's right edge) or the pill
     // would spill off-screen, place it to the LEFT instead.
-    CGFloat x = rowAX.origin.x + rowAX.size.width + kGapFromRow;
-    if (rowAX.origin.x > screen.size.width * 0.65 || x + winW > screen.size.width - 8) {
-        x = rowAX.origin.x - kGapFromRow - winW;
+    CGFloat px = rowAX.origin.x + rowAX.size.width + kGapFromRow;
+    if (rowAX.origin.x > screen.size.width * 0.65 || px + pillW > screen.size.width - 8) {
+        px = rowAX.origin.x - kGapFromRow - pillW;
     }
-    CGFloat y = (screen.size.height - rowAX.origin.y) - rowAX.size.height / 2.0 - winH / 2.0;
+    CGFloat py = (screen.size.height - rowAX.origin.y) - rowAX.size.height / 2.0 - pillH / 2.0;
+    NSPoint origin = NSMakePoint(px - kGlow, py - kGlow);   // window origin (pill inset by kGlow)
     if (!self.pillVisible) {
         self.pillVisible = YES;
-        [self.pill animateEntranceAt:NSMakePoint(x, y)];   // slide-in + fade + glow
+        [self.pill animateEntranceAt:origin];   // slide-in + fade + glow
     } else {
-        [self.pill setFrameOrigin:NSMakePoint(x, y)];
+        [self.pill setFrameOrigin:origin];
         [self.pill orderFrontRegardless];
     }
 
