@@ -37,6 +37,12 @@ const MAX_DAILY_SPEND_CENTS = 50000 // $500/day cap per campaign
 const MIN_TRUST_SCORE_FOR_PAYOUT = 20
 const MIN_ATTENTION_MS = 800
 
+// A reported dwell can't exceed how long the impression token has existed (both
+// timestamps are server-side). The grace absorbs network latency on the report;
+// legitimate clients always have token-age >= dwell, so this never trips them.
+const DWELL_GRACE_MS = 2000
+const DWELL_BLOCK_SCORE = 10
+
 // Vetted accounts (e.g. the team's own devices) that bypass fraud blocking and
 // payout holds, so legitimate high-volume usage isn't auto-frozen. Set the
 // PRISM_TRUSTED_USER_IDS env var to a comma-separated list of auth user ids.
@@ -155,10 +161,20 @@ export async function POST(req: NextRequest) {
       evaluateDeviceFingerprint(supabase, userId, fingerprint),
     ])
 
+    // Temporal dwell sanity: a scripted caller that fetches a token and instantly
+    // reports a long dwell is physically impossible — the token hasn't existed
+    // that long. This forces faking a human dwell to cost real wall-clock time.
+    const tokenAgeMs = Date.now() - tokenPayload.issuedAt
+    const dwellImplausible = durationMs > tokenAgeMs + DWELL_GRACE_MS
+
     const combinedFraud: typeof fraud = {
-      blocked: fraud.blocked || fingerprintResult.blocked,
-      reasons: [...fraud.reasons, ...fingerprintResult.reasons],
-      score: fraud.score + fingerprintResult.score,
+      blocked: fraud.blocked || fingerprintResult.blocked || dwellImplausible,
+      reasons: [
+        ...fraud.reasons,
+        ...fingerprintResult.reasons,
+        ...(dwellImplausible ? ['dwell_exceeds_token_age'] : []),
+      ],
+      score: fraud.score + fingerprintResult.score + (dwellImplausible ? DWELL_BLOCK_SCORE : 0),
     }
 
     if (!rateLimitResult.success) {
