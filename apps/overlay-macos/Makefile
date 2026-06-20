@@ -29,7 +29,7 @@ $(BIN): $(SOURCES) Info.plist
 	@mkdir -p $(APP)/Contents/MacOS
 	clang $(CFLAGS) $(SOURCES) $(FRAMEWORKS) -o $(BIN)
 	@cp Info.plist $(APP)/Contents/Info.plist
-	codesign --force --sign $(SIGN_ID) $(APP)
+	codesign --force --sign "$(SIGN_ID)" $(APP)
 	@echo "Built $(APP)"
 
 run: all

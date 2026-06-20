@@ -42,6 +42,25 @@ static BOOL IsWorkRow(NSString *classes) {
            [classes containsString:@"text-assistant-secondary"];
 }
 
+// Cowork (the VM/agent surface) renders no work row. While the agent generates
+// it shows a bare "Thinking…" status text with no DOM classes. We match a short
+// status word ending in a horizontal-ellipsis ("Thinking…", "Working…"), which
+// avoids matching ordinary message text (paragraphs aren't short, and they use
+// "..." rather than the U+2026 ellipsis the indicator uses).
+static NSString *AXStringValue(AXUIElementRef el) {
+    CFTypeRef v = NULL;
+    NSString *r = nil;
+    if (AXUIElementCopyAttributeValue(el, kAXValueAttribute, &v) == kAXErrorSuccess && v) {
+        if (CFGetTypeID(v) == CFStringGetTypeID()) r = [(__bridge NSString *)v copy];
+        CFRelease(v);
+    }
+    return r ?: @"";
+}
+
+static BOOL IsThinkingStatus(NSString *value) {
+    return value.length > 0 && value.length <= 16 && [value hasSuffix:@"…"];
+}
+
 static void Recurse(AXUIElementRef el, int depth, PrismDetection *out) {
     if (depth > kMaxDepth) return;
 
@@ -56,6 +75,18 @@ static void Recurse(AXUIElementRef el, int depth, PrismDetection *out) {
                 out.frame = f;
             }
         }
+    } else if (classes.length == 0) {
+        // Cowork fallback: a bare "Thinking…" status text (no DOM classes).
+        // Require a real (uncollapsed) frame to skip the 1px duplicate nodes.
+        if (IsThinkingStatus(AXStringValue(el))) {
+            CGRect f = AXFrameOf(el);
+            if (f.size.width > 0 && f.size.width < 200 && f.size.height >= 10 && f.size.height < 60) {
+                if (!out.foundAlt || f.size.width < out.altFrame.size.width) {
+                    out.foundAlt = YES;
+                    out.altFrame = f;
+                }
+            }
+        }
     }
 
     CFTypeRef kids = NULL;
@@ -63,6 +94,46 @@ static void Recurse(AXUIElementRef el, int depth, PrismDetection *out) {
         CFArrayRef arr = (CFArrayRef)kids;
         for (CFIndex i = 0; i < CFArrayGetCount(arr); i++) {
             Recurse((AXUIElementRef)CFArrayGetValueAtIndex(arr, i), depth + 1, out);
+        }
+        CFRelease(kids);
+    }
+}
+
+// --- Debug tree dump (discovery of new surfaces) ---------------------------
+
+static NSString *AXStr(AXUIElementRef el, CFStringRef attr) {
+    CFTypeRef v = NULL;
+    NSString *r = @"";
+    if (AXUIElementCopyAttributeValue(el, attr, &v) == kAXErrorSuccess && v) {
+        if (CFGetTypeID(v) == CFStringGetTypeID()) r = [(__bridge NSString *)v copy];
+        CFRelease(v);
+    }
+    return r;
+}
+
+static void DumpRecurse(AXUIElementRef el, int depth, NSMutableString *out) {
+    if (depth > kMaxDepth) return;
+
+    NSString *cls = AXClassList(el);
+    NSString *role = AXStr(el, kAXRoleAttribute);
+    NSString *val = AXStr(el, kAXValueAttribute);
+    NSString *title = AXStr(el, kAXTitleAttribute);
+    NSString *desc = AXStr(el, kAXDescriptionAttribute);
+    NSString *text = val.length ? val : (title.length ? title : desc);
+    if (text.length > 80) text = [text substringToIndex:80];
+    // Only print nodes that could anchor detection: those with DOM classes or
+    // short text (status verbs, timers, token counts).
+    if (cls.length || (text.length && text.length <= 80)) {
+        CGRect f = AXFrameOf(el);
+        [out appendFormat:@"%*s%@ cls={%@} '%@' @%.0f,%.0f %.0fx%.0f\n",
+            depth * 2, "", role, cls, text, f.origin.x, f.origin.y, f.size.width, f.size.height];
+    }
+
+    CFTypeRef kids = NULL;
+    if (AXUIElementCopyAttributeValue(el, kAXChildrenAttribute, &kids) == kAXErrorSuccess && kids) {
+        CFArrayRef arr = (CFArrayRef)kids;
+        for (CFIndex i = 0; i < CFArrayGetCount(arr); i++) {
+            DumpRecurse((AXUIElementRef)CFArrayGetValueAtIndex(arr, i), depth + 1, out);
         }
         CFRelease(kids);
     }
@@ -93,7 +164,24 @@ static void Recurse(AXUIElementRef el, int depth, PrismDetection *out) {
 + (PrismDetection *)detectWorkRow:(AXUIElementRef)app {
     PrismDetection *d = [PrismDetection new];
     if (app) Recurse(app, 0, d);
+    // Chat/Code expose a work row (preferred). Cowork has none, so fall back to
+    // the "Thinking…" status text only when no work row was found.
+    if (!d.found && d.foundAlt) {
+        d.found = YES;
+        d.frame = d.altFrame;
+    }
     return d;
+}
+
++ (NSString *)dumpClaude {
+    pid_t pid = [self findClaudePid];
+    if (!pid) return @"(claude not running)\n";
+    AXUIElementRef app = AXUIElementCreateApplication(pid);
+    [self wakeAccessibility:app];
+    NSMutableString *out = [NSMutableString string];
+    DumpRecurse(app, 0, out);
+    CFRelease(app);
+    return out;
 }
 
 @end
