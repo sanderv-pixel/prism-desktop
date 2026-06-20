@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { createAdminClient } from '@/utils/supabase/admin'
 import { RateLimiter, getClientIp, rateLimitResponse } from '@/lib/api/rate-limit'
 import { handleApiError, ApiError } from '@/lib/api/errors'
-import { requireApiKey } from '@/lib/api/auth'
+import { requireApiKey, getRequestDeviceUserId } from '@/lib/api/auth'
 import {
   evaluateFraud,
   contextHash,
@@ -108,6 +108,12 @@ export async function POST(req: NextRequest) {
     }
     if (tokenPayload.sessionId !== sessionId) {
       throw new ApiError(401, 'Impression token session mismatch', 'TOKEN_SESSION_MISMATCH')
+    }
+    // Defense in depth: a per-device key may only redeem tokens issued to its own
+    // account, so one device can't claim another creator's impressions.
+    const deviceUserId = await getRequestDeviceUserId(req)
+    if (deviceUserId && tokenPayload.userId !== deviceUserId) {
+      throw new ApiError(401, 'Impression token device mismatch', 'TOKEN_DEVICE_MISMATCH')
     }
     const sessionIdForRow = tokenPayload.sessionId || sessionId
     const auctionPriceCpm = tokenPayload.auctionPriceCpm || 0
