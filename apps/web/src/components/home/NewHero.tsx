@@ -44,19 +44,18 @@ export function NewHero() {
             <div className="inline-flex items-center gap-2 rounded-full bg-violet-50 border border-violet-100 px-4 py-1.5 mb-6">
               <Sparkles size={14} className="text-primary" />
               <span className="text-xs font-semibold text-primary">
-                The first ad network built for Ai workflows
+                The first ad network built for AI builders
               </span>
             </div>
 
             <h1 className="text-hero mb-5">
-              Get paid while <span className="gradient-text">Ai thinks.</span>
+              Get paid while <span className="gradient-text">AI thinks.</span>
             </h1>
 
             <p className="text-lg text-muted-foreground leading-relaxed mb-8 text-balance max-w-xl mx-auto lg:mx-0">
-              Prism is a tiny overlay that shows one small, relevant ad next to
-              your AI&apos;s &ldquo;thinking&rdquo; indicator — in Claude,
-              Cursor, and your terminal — and pays you a share. Your code never
-              leaves your device.
+              Every time Claude, Cursor, or your terminal stops to think, Prism
+              slips in one small, relevant ad — and pays you for it. No tracking,
+              no clutter, and your code never leaves your machine.
             </p>
 
             <div className="max-w-xl mx-auto lg:mx-0">
@@ -66,11 +65,11 @@ export function NewHero() {
             <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-2 text-sm text-muted-foreground mt-6">
               <div className="flex items-center gap-2">
                 <Shield size={16} className="text-emerald-600" />
-                <span>No prompts or code collected</span>
+                <span>Your code never leaves your device</span>
               </div>
               <div className="flex items-center gap-2">
                 <Zap size={16} className="text-amber-500" />
-                <span>50% revenue share</span>
+                <span>You keep 50% of the revenue</span>
               </div>
             </div>
           </div>
@@ -139,7 +138,7 @@ function HeroMock() {
 
       {/* caption */}
       <p className="mt-4 text-center text-xs text-muted-foreground">
-        One line, only while the AI works. Click pays you.
+        One quiet line, only while your AI thinks — you get paid to wait.
       </p>
     </div>
   )

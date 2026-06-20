@@ -16,9 +16,9 @@ const OS_LABEL: Record<Os, string> = {
 }
 
 const STEPS = [
-  { n: 1, label: 'Run the command' },
+  { n: 1, label: 'Run it' },
   { n: 2, label: 'Allow access once' },
-  { n: 3, label: 'Connect your account' },
+  { n: 3, label: 'Connect & earn' },
 ]
 
 export function InstallCard() {
