@@ -7,7 +7,7 @@ const roles = [
   },
   {
     title: 'Advertisers',
-    description: 'Access a new, premium inventory channel built for the Ai era.',
+    description: 'Access a new, premium inventory channel built for the AI era.',
   },
   {
     title: 'Prism',

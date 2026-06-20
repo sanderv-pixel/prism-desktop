@@ -15,22 +15,9 @@ export function NewHero() {
 
       <div className="container-tight relative w-full px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[1.05fr_1fr] lg:gap-12">
-          {/* Left — copy + install */}
+          {/* Left: copy + install */}
           <div className="text-center lg:text-left">
-            <div
-              className="anim-rise inline-flex items-center gap-2 rounded-full border border-violet-100 bg-violet-50/80 px-4 py-1.5 backdrop-blur-sm"
-              style={{ animationDelay: '0s' }}
-            >
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-violet-500 opacity-60" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-violet-500" />
-              </span>
-              <span className="text-xs font-semibold text-primary">
-                The first ad network built for AI builders
-              </span>
-            </div>
-
-            <h1 className="anim-rise text-hero mt-6 mb-5" style={{ animationDelay: '0.08s' }}>
+            <h1 className="anim-rise text-hero mb-5" style={{ animationDelay: '0s' }}>
               Get paid while{' '}
               <span className="bg-gradient-to-r from-violet-600 to-violet-500 bg-clip-text text-transparent">
                 AI thinks.
@@ -39,23 +26,23 @@ export function NewHero() {
 
             <p
               className="anim-rise mx-auto mb-8 max-w-xl text-balance text-lg leading-relaxed text-muted-foreground lg:mx-0"
-              style={{ animationDelay: '0.16s' }}
+              style={{ animationDelay: '0.08s' }}
             >
-              Every time Claude, Cursor, or your terminal stops to think, Prism
-              slips in one small, relevant ad — and pays you for it. No tracking,
-              no clutter, and your code never leaves your machine.
+              Your AI keeps you waiting. Prism makes that pay: one small,
+              relevant ad while it thinks, and you earn a cut. Works with Claude,
+              Codex, Gemini, Cursor, and every AI you build with.
             </p>
 
             <div
               className="anim-rise mx-auto max-w-xl lg:mx-0"
-              style={{ animationDelay: '0.24s' }}
+              style={{ animationDelay: '0.16s' }}
             >
               <InstallCard />
             </div>
 
             <div
               className="anim-rise mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground lg:justify-start"
-              style={{ animationDelay: '0.32s' }}
+              style={{ animationDelay: '0.24s' }}
             >
               <div className="flex items-center gap-2">
                 <Shield size={16} className="text-emerald-600" />
@@ -68,10 +55,10 @@ export function NewHero() {
             </div>
           </div>
 
-          {/* Right — live product demo (signature moment) */}
+          {/* Right: live product demo (signature moment) */}
           <div
             className="anim-rise relative mx-auto w-full min-w-0 max-w-xl lg:max-w-none"
-            style={{ animationDelay: '0.2s' }}
+            style={{ animationDelay: '0.12s' }}
           >
             <HeroDemo />
           </div>
@@ -94,7 +81,7 @@ function HeroDemo() {
           <span className="h-3 w-3 rounded-full bg-amber-400/80" />
           <span className="h-3 w-3 rounded-full bg-emerald-400/80" />
           <span className="ml-3 font-mono text-xs font-medium text-slate-500">
-            claude — agent
+            claude · agent
           </span>
           <span className="ml-auto inline-flex items-center gap-1.5 text-[10px] font-medium text-slate-500">
             <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />
@@ -151,7 +138,7 @@ function HeroDemo() {
         </div>
       </div>
 
-      {/* floating earnings chip — the payoff, made tangible */}
+      {/* floating earnings chip: the payoff, made tangible */}
       <div
         className="anim-pill-in absolute bottom-6 -left-3 sm:-left-7"
         style={{ animationDelay: '1.35s' }}
@@ -186,9 +173,6 @@ function HeroDemo() {
         </div>
       </div>
 
-      <p className="mt-6 text-center text-xs text-muted-foreground">
-        One quiet line, only while your AI thinks — you get paid to wait.
-      </p>
     </div>
   )
 }

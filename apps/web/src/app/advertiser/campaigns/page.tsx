@@ -290,7 +290,7 @@ export default function CampaignsPage() {
           </p>
           <p className="text-sm mb-6">
             {filter === 'all'
-              ? 'Create your first campaign to start reaching Ai builders.'
+              ? 'Create your first campaign to start reaching AI builders.'
               : 'Try a different filter.'}
           </p>
           {filter === 'all' && (

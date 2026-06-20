@@ -93,7 +93,7 @@ export function EditorMockup({ className }: EditorMockupProps) {
           <div className="mt-10 rounded-xl border border-white/[0.08] bg-gradient-to-b from-[#1a1a25] to-[#15151e] p-4">
             <div className="flex items-center gap-2 mb-3">
               <div className="h-5 w-5 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 animate-pulse" />
-              <span className="text-xs text-slate-400">Ai agent is working</span>
+              <span className="text-xs text-slate-400">AI agent is working</span>
             </div>
             <div className="space-y-2">
               <div className="h-2 w-3/4 rounded-full bg-slate-800" />

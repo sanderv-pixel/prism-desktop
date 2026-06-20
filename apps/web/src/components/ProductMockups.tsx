@@ -12,18 +12,18 @@ const tabs = [
   {
     id: 'cursor',
     label: 'VS Code / Cursor',
-    description: 'A tiny ad line in the status bar while the Ai agent works.',
+    description: 'A tiny ad line in the status bar while the AI agent works.',
     component: CursorMockup,
   },
   {
     id: 'claude',
     label: 'Claude Code',
-    description: 'Status-line placement in terminal Ai workflows.',
+    description: 'Status-line placement in terminal AI workflows.',
     component: ClaudeCodeMockup,
   },
   {
     id: 'chat',
-    label: 'Web Ai tools',
+    label: 'Web AI tools',
     description: 'Subtle placement below ChatGPT, Claude, or Perplexity responses.',
     component: ChatMockup,
   },
@@ -45,7 +45,7 @@ export function ProductMockups() {
       <div className="container-tight">
         <SectionHeader
           eyebrow="Product"
-          title="One line. Every Ai workflow."
+          title="One line. Every AI workflow."
           description="Prism lives in the natural pauses of the tools you already use."
         />
 

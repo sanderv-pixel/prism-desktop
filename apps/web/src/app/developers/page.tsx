@@ -45,7 +45,7 @@ const features = [
     icon: Zap,
     title: 'Zero friction',
     description:
-      'One tiny line during Ai wait states. No popups, no animations, no slowdown.',
+      'One tiny line during AI wait states. No popups, no animations, no slowdown.',
   },
 ]
 
@@ -53,7 +53,7 @@ const audiences = [
   { icon: Rocket, label: 'Indie hackers' },
   { icon: Briefcase, label: 'Freelancers' },
   { icon: GraduationCap, label: 'Students' },
-  { icon: Code2, label: 'Ai power users' },
+  { icon: Code2, label: 'AI power users' },
 ]
 
 const supportedTools = [
@@ -66,7 +66,7 @@ const supportedTools = [
 export const metadata = {
   title: 'Earn with Prism',
   description:
-    'Get paid for every Ai wait. Show tiny, relevant ads during Ai wait states in VS Code, Cursor, Codex, and Claude Code. Keep 50% of advertiser spend and earn 10% from referrals.',
+    'Get paid for every AI wait. Show tiny, relevant ads during AI wait states in VS Code, Cursor, Codex, and Claude Code. Keep 50% of advertiser spend and earn 10% from referrals.',
 }
 
 export default function DevelopersPage() {
@@ -77,13 +77,13 @@ export default function DevelopersPage() {
         <div className="container-tight px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-14 lg:gap-20 items-center">
             <div>
-              <span className="eyebrow mb-5">For Ai creators</span>
+              <span className="eyebrow mb-5">For AI creators</span>
               <h1 className="text-hero mb-7">
                 Get paid for{' '}
-                <span className="gradient-text">every Ai wait.</span>
+                <span className="gradient-text">every AI wait.</span>
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-9">
-                Ai tools create thousands of tiny waiting moments every month.
+                AI tools create thousands of tiny waiting moments every month.
                 Prism shows one tiny, relevant ad in each one and you keep
                 50% of every dollar advertisers pay.
               </p>
@@ -118,7 +118,7 @@ export default function DevelopersPage() {
                   <li className="flex gap-3">
                     <span className="font-semibold text-primary">1.</span>
                     <span>
-                      Prism shows one tiny, relevant ad during each Ai wait state.
+                      Prism shows one tiny, relevant ad during each AI wait state.
                     </span>
                   </li>
                   <li className="flex gap-3">
@@ -150,7 +150,7 @@ export default function DevelopersPage() {
                   Most active creators earn{' '}
                   <span className="font-semibold text-foreground">$20–100/month</span>.
                   Heavy users in high-demand contexts can earn more. Use the calculator
-                  to estimate based on your daily Ai hours.
+                  to estimate based on your daily AI hours.
                 </p>
               </div>
             </div>
@@ -166,7 +166,7 @@ export default function DevelopersPage() {
         <div className="container-tight">
           <SectionHeader
             eyebrow="Built for you"
-            title="The ad network that respects your Ai workflow"
+            title="The ad network that respects your AI workflow"
           />
           <div className="grid md:grid-cols-2 gap-4">
             {features.map((feature) => (
@@ -178,7 +178,6 @@ export default function DevelopersPage() {
 
       {/* Transparency */}
       <section className="section-padding relative bg-white overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-violet-100/30 via-transparent to-transparent blur-3xl" />
         <div className="container-tight relative">
           <SectionHeader
             eyebrow="Transparency"
@@ -245,12 +244,11 @@ export default function DevelopersPage() {
 
       {/* Honest social proof */}
       <section className="section-padding relative bg-white overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-violet-100/30 via-transparent to-transparent blur-3xl" />
         <div className="container-tight relative">
           <SectionHeader
             eyebrow="Early access"
             title="Join creators turning wait time into income"
-            description="Prism is rolling out to creators now. Install today and be among the first to earn from the Ai workflow attention layer."
+            description="Prism is rolling out to creators now. Install today and be among the first to earn from the AI workflow attention layer."
           />
 
           <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
@@ -294,7 +292,7 @@ export default function DevelopersPage() {
             <div>
               <h2 className="text-section mb-5">Who it is for</h2>
               <p className="text-lg text-muted-foreground leading-relaxed mb-8">
-                Prism is built for anyone paying for Ai tools out of pocket and
+                Prism is built for anyone paying for AI tools out of pocket and
                 turning prompts into products.
               </p>
               <div className="grid grid-cols-2 gap-3 mb-8">

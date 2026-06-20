@@ -25,7 +25,7 @@ import {
 export const metadata = {
   title: 'Advertise on Prism',
   description:
-    'Self-serve ad platform for reaching Ai creators in VS Code, Cursor, Codex, and Claude Code. Launch campaigns in minutes. Transparent reporting, fraud-filtered impressions, no surveillance.',
+    'Self-serve ad platform for reaching AI creators in VS Code, Cursor, Codex, and Claude Code. Launch campaigns in minutes. Transparent reporting, fraud-filtered impressions, no surveillance.',
 }
 
 const possibilities = [
@@ -33,13 +33,13 @@ const possibilities = [
     icon: Target,
     title: 'Contextual targeting',
     description:
-      'Target by Ai tool, editor, language, project type, region, and time window — without cookies or invasive profiling.',
+      'Target by AI tool, editor, language, project type, region, and time window — without cookies or invasive profiling.',
   },
   {
     icon: TrendingUp,
     title: 'High-intent moments',
     description:
-      'Place your message during Ai wait states when creators are actively writing, designing, and debugging.',
+      'Place your message during AI wait states when creators are actively writing, designing, and debugging.',
   },
   {
     icon: Monitor,
@@ -68,7 +68,7 @@ const possibilities = [
 ]
 
 const targetingOptions = [
-  { icon: Cpu, label: 'Ai tool' },
+  { icon: Cpu, label: 'AI tool' },
   { icon: Globe, label: 'Region' },
   { icon: Clock, label: 'Time window' },
   { icon: Target, label: 'Workflow' },
@@ -87,7 +87,7 @@ const steps = [
     number: '02',
     title: 'Choose your context',
     description:
-      'Select the Ai tools, editors, and workflows where your ad should appear. No cookies, no cross-site tracking.',
+      'Select the AI tools, editors, and workflows where your ad should appear. No cookies, no cross-site tracking.',
   },
   {
     number: '03',
@@ -120,14 +120,12 @@ export default function AdvertisersPage() {
     <>
       {/* Hero */}
       <section className="relative overflow-hidden bg-white pt-28 pb-16 md:pt-44 md:pb-28">
-        <div className="absolute inset-0 bg-hero-glow" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1400px] h-[700px] bg-gradient-radial from-violet-100/40 via-transparent to-transparent blur-3xl" />
-        <div className="absolute bottom-0 right-0 w-[800px] h-[800px] bg-gradient-radial from-cyan-100/20 via-transparent to-transparent blur-3xl" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-violet-100/40 via-transparent to-transparent blur-3xl" />
 
         <div className="relative container-tight px-4 sm:px-6 lg:px-8 text-center">
           <span className="eyebrow mb-5">For advertisers</span>
           <h1 className="text-hero mb-7 max-w-4xl mx-auto">
-            Reach Ai creators while they{' '}
+            Reach AI creators while they{' '}
             <span className="gradient-text">build.</span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-6 max-w-3xl mx-auto text-balance">
@@ -153,7 +151,7 @@ export default function AdvertisersPage() {
           <div className="flex flex-wrap justify-center gap-x-8 gap-y-3 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <Zap size={16} className="text-primary" />
-              <span>Ai workflow placements</span>
+              <span>AI workflow placements</span>
             </div>
             <div className="flex items-center gap-2">
               <Shield size={16} className="text-primary" />
@@ -176,7 +174,7 @@ export default function AdvertisersPage() {
             <div>
               <p className="eyebrow mb-4">Built for conversion</p>
               <h2 className="text-section mb-6">
-                Reach Ai creators while they build.
+                Reach AI creators while they build.
               </h2>
               <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-8 text-balance">
                 Prism lets you buy tiny, high-attention ads inside the tools builders
@@ -437,8 +435,8 @@ export default function AdvertisersPage() {
                 Reach the people building the future.
               </h2>
               <p className="text-lg text-muted-foreground leading-relaxed mb-8">
-                Prism reaches developers, founders, designers, and Ai-native
-                professionals while they are actively creating inside Ai
+                Prism reaches developers, founders, designers, and AI-native
+                professionals while they are actively creating inside AI
                 workflows — not while they are scrolling feeds.
               </p>
 
@@ -508,7 +506,7 @@ export default function AdvertisersPage() {
             <div className="absolute inset-0 bg-gradient-to-br from-violet-50 via-transparent to-cyan-50" />
             <div className="relative max-w-2xl mx-auto">
               <h2 className="text-section mb-5">
-                Ready to reach Ai creators?
+                Ready to reach AI creators?
               </h2>
               <p className="text-lg text-muted-foreground mb-10">
                 Join advertisers who are replacing noisy feed ads with quiet, contextual

@@ -41,7 +41,7 @@ export function BuilderCTA() {
               </span>
 
               <h2 className="text-3xl md:text-4xl font-semibold text-white mb-5 leading-tight">
-                Your Ai stack isn't cheap.
+                Your AI stack isn't cheap.
                 <span className="block text-violet-300">Let it pay for itself.</span>
               </h2>
 

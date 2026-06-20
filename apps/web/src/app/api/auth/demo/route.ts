@@ -139,7 +139,7 @@ export async function POST(req: NextRequest) {
         website: 'https://lovable.dev',
         campaign: {
           title: 'Lovable Launch Week',
-          copy: 'Build apps with Ai, no code needed →',
+          copy: 'Build apps with AI, no code needed →',
           url: 'https://lovable.dev',
           icon_url: 'https://placehold.co/64x64.png?text=L',
           max_bid_cpm: 1300,

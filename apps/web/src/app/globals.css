@@ -66,19 +66,31 @@
   }
 
   .text-hero {
-    @apply text-[2.25rem] sm:text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tight leading-[1.08] text-balance text-foreground;
+    @apply font-display text-[2.25rem] sm:text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tight leading-[1.08] text-balance text-foreground;
   }
 
   .text-section {
-    @apply text-2xl md:text-4xl lg:text-5xl font-semibold tracking-tight text-balance text-foreground;
+    @apply font-display text-2xl md:text-4xl lg:text-5xl font-semibold tracking-tight text-balance text-foreground;
   }
 
   .eyebrow {
-    @apply inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary;
+    @apply inline-flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-primary;
   }
 
   .card {
     @apply bg-card border border-border rounded-2xl shadow-sm;
+  }
+
+  /* Dark anchor section: breaks the all-white rhythm and signals "the product". */
+  .section-dark {
+    @apply relative overflow-hidden bg-[#0f0f17] text-white;
+  }
+  .section-dark .text-hero,
+  .section-dark .text-section {
+    @apply text-white;
+  }
+  .section-dark .eyebrow {
+    @apply text-violet-300;
   }
 }
 
@@ -236,4 +248,48 @@
     }
   }
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Prism landing page (design-handoff fidelity)
+   ───────────────────────────────────────────────────────────── */
+@keyframes prismPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+@keyframes prismSpin {
+  to { transform: rotate(360deg); }
+}
+@keyframes prismFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+@keyframes ldReveal {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: none; }
+}
+@supports (animation-timeline: view()) {
+  [data-reveal] {
+    opacity: 0;
+    animation: ldReveal 0.9s ease both;
+    animation-timeline: view();
+    animation-range: entry 4% cover 26%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ld-float { animation: none !important; }
+}
+
+/* Hover states (the handoff specifies exact hover colors/transforms) */
+.ld-navlink { transition: 0.18s; }
+.ld-navlink:hover { color: #0f1729 !important; background: #f1f0f5 !important; }
+.ld-btn-primary:hover { background: #6d28d9 !important; transform: translateY(-2px); }
+.ld-btn-nav:hover { background: #6d28d9 !important; transform: translateY(-1px); }
+.ld-btn-outline:hover { border-color: #c4b5fd !important; background: #faf9ff !important; }
+.ld-btn-white:hover { background: #ede9fe !important; transform: translateY(-2px); }
+.ld-btn-white-sm:hover { background: #ede9fe !important; transform: translateY(-1px); }
+.ld-card:hover { transform: translateY(-4px); box-shadow: 0 24px 50px -28px rgba(76, 29, 149, 0.35); border-color: #ddd6fe !important; }
+.ld-footlink:hover { color: #7c3aed !important; }
+.ld-modal-close:hover { background: #e8e6ee !important; color: #0f1729 !important; }
+.ld-btn-grey:hover { background: #e8e6ee !important; }
+.ld-float { animation: prismFloat 7s ease-in-out infinite; }
 

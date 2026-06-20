@@ -4,7 +4,6 @@ import { ArrowRight, Sparkles } from 'lucide-react'
 export function FinalCTA() {
   return (
     <section className="section-padding bg-background relative overflow-hidden">
-      <div className="absolute inset-0 bg-hero-glow" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[500px] bg-gradient-radial from-violet-100/40 via-transparent to-transparent blur-3xl" />
 
       <div className="container-tight relative px-4 sm:px-6 lg:px-8">
@@ -17,7 +16,7 @@ export function FinalCTA() {
           </div>
 
           <h2 className="text-section mb-6">
-            Turn Ai wait time into income.
+            Turn AI wait time into income.
           </h2>
           <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-10 max-w-2xl mx-auto text-balance">
             Install Prism free in 30 seconds. Works in VS Code, Cursor, Codex,

@@ -52,7 +52,7 @@ export function WorksWith() {
         <SectionHeader
           eyebrow="Works where you work"
           title="Install Prism in the tools you already use"
-          description="Available today for VS Code, Cursor, Codex, and Claude Code. More Ai tools coming soon."
+          description="Available today for VS Code, Cursor, Codex, and Claude Code. More AI tools coming soon."
         />
 
         <div className="grid md:grid-cols-2 gap-8 lg:gap-12">

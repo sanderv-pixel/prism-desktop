@@ -6,12 +6,12 @@ const faqs = [
   {
     question: 'Does Prism read my prompts, code, or designs?',
     answer:
-      'No. Ad matching uses coarse contextual signals like your Ai tool and workflow. Your prompts, code, designs, filenames, and model outputs are never sent to our servers.',
+      'No. Ad matching uses coarse contextual signals like your AI tool and workflow. Your prompts, code, designs, filenames, and model outputs are never sent to our servers.',
   },
   {
     question: 'When do ads appear?',
     answer:
-      'Only during Ai wait states while your tool is thinking, planning, generating, or rendering. When Ai is idle, the Prism line disappears.',
+      'Only during AI wait states while your tool is thinking, planning, generating, or rendering. When AI is idle, the Prism line disappears.',
   },
   {
     question: 'How do I get paid?',

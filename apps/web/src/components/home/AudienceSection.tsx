@@ -3,7 +3,7 @@ import { Button } from '@/components/Button'
 const audiences = [
   'Developers',
   'Founders',
-  'Ai-native professionals',
+  'AI-native professionals',
   'Designers',
   'Software buyers',
   'Technical decision makers',
