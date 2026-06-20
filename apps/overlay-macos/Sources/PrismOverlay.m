@@ -1,10 +1,12 @@
 #import "PrismOverlay.h"
 #import "PrismAX.h"
+#import <QuartzCore/QuartzCore.h>
 
 #pragma mark - Tunables
 
 static const NSTimeInterval kPollInterval = 0.25;   // detection cadence
 static const int kHideAfterMisses = 3;              // debounce flicker
+static const int kShowAfterTicks = 4;               // ~1s after thinking begins (per guidelines)
 static const int kRotateEveryTicks = 24;            // ~6s ad rotation
 static const NSInteger kMinDwellMs = 5000;          // viewable-impression threshold
 static const CGFloat kPillHeight = 28.0;
@@ -55,15 +57,35 @@ static const CGFloat kGapFromRow = 10.0;            // px to the right of the ro
     cv.onClick = ^{ if (weakSelf.onClick) weakSelf.onClick(); };
     self.contentView = cv;
     cv.wantsLayer = YES;
-    cv.layer.backgroundColor = [NSColor colorWithWhite:0.08 alpha:0.94].CGColor;
-    cv.layer.cornerRadius = 8;
+    // Glassy dark surface per the ad-unit guidelines: translucent blur + a thin
+    // white tint + a hairline border, 10px radius. masksToBounds stays NO so the
+    // entrance glow can extend past the pill.
+    cv.layer.cornerRadius = 10;
     cv.layer.borderWidth = 1;
-    cv.layer.borderColor = [NSColor colorWithWhite:1 alpha:0.13].CGColor;
+    cv.layer.borderColor = [NSColor colorWithWhite:1 alpha:0.10].CGColor;
 
-    _badge = [[NSView alloc] initWithFrame:NSMakeRect(9, 6, 16, 16)];
+    NSVisualEffectView *fx = [[NSVisualEffectView alloc] initWithFrame:cv.bounds];
+    fx.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+    fx.material = NSVisualEffectMaterialHUDWindow;
+    fx.blendingMode = NSVisualEffectBlendingModeBehindWindow;
+    fx.state = NSVisualEffectStateActive;
+    fx.wantsLayer = YES;
+    fx.layer.cornerRadius = 10;
+    fx.layer.masksToBounds = YES;
+    [cv addSubview:fx];
+    NSView *tint = [[NSView alloc] initWithFrame:cv.bounds];
+    tint.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+    tint.wantsLayer = YES;
+    tint.layer.cornerRadius = 10;
+    tint.layer.masksToBounds = YES;
+    tint.layer.backgroundColor = [NSColor colorWithWhite:1 alpha:0.07].CGColor;
+    [cv addSubview:tint];
+
+    // A: brand icon tile — 17×17, radius 5, #8b5cf6 (set per-ad in renderAd).
+    _badge = [[NSView alloc] initWithFrame:NSMakeRect(6, 5, 17, 17)];
     _badge.wantsLayer = YES;
-    _badge.layer.cornerRadius = 4;
-    _badgeLabel = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 1, 16, 14)];
+    _badge.layer.cornerRadius = 5;
+    _badgeLabel = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 1, 17, 15)];
     [self styleField:_badgeLabel];
     _badgeLabel.alignment = NSTextAlignmentCenter;
     _badgeLabel.font = [NSFont boldSystemFontOfSize:10];
@@ -71,13 +93,14 @@ static const CGFloat kGapFromRow = 10.0;            // px to the right of the ro
     [_badge addSubview:_badgeLabel];
     // Advertiser icon — shown when the ad has a loadable icon, otherwise we fall
     // back to the coloured initial badge.
-    _badgeIcon = [[NSImageView alloc] initWithFrame:NSMakeRect(0, 0, 16, 16)];
+    _badgeIcon = [[NSImageView alloc] initWithFrame:NSMakeRect(0, 0, 17, 17)];
     _badgeIcon.imageScaling = NSImageScaleProportionallyUpOrDown;
     _badgeIcon.hidden = YES;
     [_badge addSubview:_badgeIcon];
     [cv addSubview:_badge];
 
-    _text = [[NSTextField alloc] initWithFrame:NSMakeRect(31, 5, 250, 18)];
+    // 6px left pad + 17px icon + 9px gap = text starts at x=32.
+    _text = [[NSTextField alloc] initWithFrame:NSMakeRect(32, 5, 250, 18)];
     [self styleField:_text];
     [cv addSubview:_text];
 
@@ -150,26 +173,54 @@ static NSImage *PrismImageFromDataURL(NSString *s) {
     [self loadBadgeIcon:ad.iconUrl color:ad.color];
 
     NSMutableAttributedString *as = [NSMutableAttributedString new];
+    // B: advertiser/brand name — semibold 12.5, white. Only when set.
     if (name.length) {
         [as appendAttributedString:[[NSAttributedString alloc] initWithString:name
             attributes:@{ NSForegroundColorAttributeName: [NSColor whiteColor],
-                          NSFontAttributeName: [NSFont systemFontOfSize:12 weight:NSFontWeightSemibold] }]];
+                          NSFontAttributeName: [NSFont systemFontOfSize:12.5 weight:NSFontWeightSemibold] }]];
         [as appendAttributedString:[[NSAttributedString alloc] initWithString:@"  " attributes:@{}]];
     }
+    // C: CTA / copy — 12.5, muted #cbd5e1, underlined.
     [as appendAttributedString:[[NSAttributedString alloc] initWithString:ad.tagline
-        attributes:@{ NSForegroundColorAttributeName: [NSColor colorWithWhite:0.85 alpha:1],
-                      NSFontAttributeName: [NSFont systemFontOfSize:12],
+        attributes:@{ NSForegroundColorAttributeName: [NSColor colorWithRed:0.796 green:0.835 blue:0.882 alpha:1],
+                      NSFontAttributeName: [NSFont systemFontOfSize:12.5],
                       NSUnderlineStyleAttributeName: @(NSUnderlineStyleSingle) }]];
-    [as appendAttributedString:[[NSAttributedString alloc] initWithString:@"   Ad"
-        attributes:@{ NSForegroundColorAttributeName: [NSColor colorWithWhite:0.45 alpha:1],
-                      NSFontAttributeName: [NSFont boldSystemFontOfSize:9] }]];
+    // D: "Ad" label — JetBrains Mono-style 9, bold, uppercase, muted #64748b, tracked.
+    [as appendAttributedString:[[NSAttributedString alloc] initWithString:@"   AD"
+        attributes:@{ NSForegroundColorAttributeName: [NSColor colorWithRed:0.392 green:0.455 blue:0.545 alpha:1],
+                      NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9 weight:NSFontWeightBold],
+                      NSKernAttributeName: @(0.5) }]];
     self.text.attributedStringValue = as;
     [self.text sizeToFit];
 
-    CGFloat w = 31 + self.text.frame.size.width + 12;
+    // 32px text origin + text width + 8px right padding.
+    CGFloat w = 32 + self.text.frame.size.width + 8;
     NSRect f = self.frame;
     [self setFrame:NSMakeRect(f.origin.x, f.origin.y, w, kPillHeight) display:YES];
     return w;
+}
+
+// Entrance per the guidelines: slide up + fade in over ~0.7s with one violet glow
+// pulse, then it settles static. Called only on the hidden→visible transition.
+- (void)animateEntranceAt:(NSPoint)origin {
+    [self setFrameOrigin:NSMakePoint(origin.x, origin.y - 6)];
+    self.alphaValue = 0;
+    [self orderFrontRegardless];
+
+    [NSAnimationContext runAnimationGroup:^(NSAnimationContext *ctx) {
+        ctx.duration = 0.7;
+        ctx.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseOut];
+        self.animator.alphaValue = 1.0;
+        [self.animator setFrameOrigin:origin];
+    } completionHandler:nil];
+
+    // Glow pulses once: the border flashes violet, then settles to the hairline.
+    CABasicAnimation *glow = [CABasicAnimation animationWithKeyPath:@"borderColor"];
+    glow.fromValue = (id)[NSColor colorWithRed:0.545 green:0.361 blue:0.965 alpha:0.85].CGColor;
+    glow.toValue = (id)[NSColor colorWithWhite:1 alpha:0.10].CGColor;
+    glow.duration = 0.9;
+    glow.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseOut];
+    [self.contentView.layer addAnimation:glow forKey:@"glow"];
 }
 
 @end
@@ -183,6 +234,8 @@ static NSImage *PrismImageFromDataURL(NSString *s) {
 @property(nonatomic, strong) NSTimer *timer;
 @property(nonatomic, assign) int tick;
 @property(nonatomic, assign) int missStreak;
+@property(nonatomic, assign) int foundStreak;     // consecutive found polls (entrance delay)
+@property(nonatomic, assign) BOOL pillVisible;    // animate entrance only on transition
 @property(nonatomic, assign) int lastFetchTick;   // throttle network ad fetches
 @property(nonatomic, copy) NSString *currentSource;   // surface of the current view
 // impression accounting
@@ -228,8 +281,10 @@ static NSImage *PrismImageFromDataURL(NSString *s) {
     if (d.found) {
         self.missStreak = 0;
         self.currentSource = d.source;   // surface the impression will be attributed to
-        [self showNextTo:d.frame];
+        // Hold ~1s after thinking begins before the ad slides in (per guidelines).
+        if (++self.foundStreak >= kShowAfterTicks) [self showNextTo:d.frame];
     } else {
+        self.foundStreak = 0;
         if (++self.missStreak >= kHideAfterMisses) [self hide];
     }
 }
@@ -271,13 +326,19 @@ static NSImage *PrismImageFromDataURL(NSString *s) {
         x = rowAX.origin.x - kGapFromRow - winW;
     }
     CGFloat y = (screen.size.height - rowAX.origin.y) - rowAX.size.height / 2.0 - winH / 2.0;
-    [self.pill setFrameOrigin:NSMakePoint(x, y)];
-    [self.pill orderFrontRegardless];
+    if (!self.pillVisible) {
+        self.pillVisible = YES;
+        [self.pill animateEntranceAt:NSMakePoint(x, y)];   // slide-in + fade + glow
+    } else {
+        [self.pill setFrameOrigin:NSMakePoint(x, y)];
+        [self.pill orderFrontRegardless];
+    }
 
     [self accrueDwell];
 }
 
 - (void)hide {
+    self.pillVisible = NO;
     [self.pill orderOut:nil];
     [self flushImpression];
     [self resetDwell];
