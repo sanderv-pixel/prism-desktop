@@ -572,6 +572,7 @@ export type Database = {
           referrer_payout_cents: number
           referrer_user_id: string | null
           session_id: string | null
+          source: string | null
           token_nonce: string | null
           user_id: string | null
           validated: boolean
@@ -594,6 +595,7 @@ export type Database = {
           referrer_payout_cents?: number
           referrer_user_id?: string | null
           session_id?: string | null
+          source?: string | null
           token_nonce?: string | null
           user_id?: string | null
           validated?: boolean
@@ -616,6 +618,7 @@ export type Database = {
           referrer_payout_cents?: number
           referrer_user_id?: string | null
           session_id?: string | null
+          source?: string | null
           token_nonce?: string | null
           user_id?: string | null
           validated?: boolean

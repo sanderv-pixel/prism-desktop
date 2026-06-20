@@ -61,6 +61,9 @@ const RequestSchema = z.object({
   context: z.union([z.string(), z.record(z.any())]).optional(),
   durationMs: z.number().int().min(MIN_ATTENTION_MS).max(600 * 1000),
   fingerprint: z.union([z.string(), z.record(z.any())]).optional(),
+  // The surface the ad was shown on, for advertiser reporting. Informational
+  // only (client-reported), so it never affects validation or payout.
+  source: z.enum(['claude', 'cursor', 'terminal', 'codex', 'unknown']).optional(),
 })
 
 function getRateLimitKey(userId: string, campaignId: string): string {
@@ -109,8 +112,9 @@ export async function POST(req: NextRequest) {
       throw new ApiError(400, 'Invalid request body', 'INVALID_BODY')
     }
 
-    const { userId, sessionId, campaignId, impressionToken, context, durationMs, fingerprint } = parseResult.data
+    const { userId, sessionId, campaignId, impressionToken, context, durationMs, fingerprint, source } = parseResult.data
     const isTrusted = TRUSTED_USER_IDS.has(userId)
+    const impressionSource = source ?? 'unknown'
 
     // Validate the signed impression token to ensure the ad was actually served.
     const tokenPayload = await verifyImpressionToken(impressionToken)
@@ -224,6 +228,7 @@ export async function POST(req: NextRequest) {
         auction_price_cpm: auctionPriceCpm,
         token_nonce: tokenNonce,
         currency: 'usd',
+        source: impressionSource,
         validated: false,
         payout_cents: 0,
         fraud_flags: combinedFraud.reasons,
@@ -317,6 +322,7 @@ export async function POST(req: NextRequest) {
         auction_price_cpm: auctionPriceCpm,
         token_nonce: tokenNonce,
         currency: 'usd',
+        source: impressionSource,
         validated,
         payout_cents: payoutCents,
         referrer_user_id: referrerUserId,

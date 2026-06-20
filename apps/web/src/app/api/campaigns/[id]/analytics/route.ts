@@ -79,7 +79,7 @@ export async function GET(
       await Promise.all([
         supabase
           .from('impressions')
-          .select('auction_price_cpm, context, session_id, created_at')
+          .select('auction_price_cpm, context, session_id, source, created_at')
           .eq('campaign_id', params.id)
           .gte('created_at', startIso)
           .order('created_at', { ascending: false }),
@@ -180,6 +180,26 @@ export async function GET(
       .sort((a, b) => b.impressions - a.impressions)
       .slice(0, 10)
 
+    // Source breakdown — which surface (Codex, Cursor, Claude, terminal) served each view.
+    const SOURCE_LABELS: Record<string, string> = {
+      claude: 'Claude',
+      cursor: 'Cursor',
+      codex: 'Codex',
+      terminal: 'Terminal',
+      unknown: 'Unknown',
+    }
+    const sourceMap = new Map<string, { impressions: number; spend: number }>()
+    for (const imp of impressions) {
+      const key = SOURCE_LABELS[imp.source as string] ?? 'Unknown'
+      const current = sourceMap.get(key) ?? { impressions: 0, spend: 0 }
+      current.impressions += 1
+      current.spend += impressionSpendCents(imp.auction_price_cpm) / 100
+      sourceMap.set(key, current)
+    }
+    const sourceBreakdown = Array.from(sourceMap.entries())
+      .map(([name, vals]) => ({ name, ...vals }))
+      .sort((a, b) => b.impressions - a.impressions)
+
     // Recent activity
     const recentActivity = [
       ...impressions.slice(0, 15).map((i) => ({
@@ -239,6 +259,7 @@ export async function GET(
       },
       chartData,
       contextBreakdown,
+      sourceBreakdown,
       recentActivity,
     })
   } catch (err) {

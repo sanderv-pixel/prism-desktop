@@ -118,6 +118,7 @@ static const CGFloat kGapFromRow = 10.0;            // px to the right of the ro
 @property(nonatomic, assign) int tick;
 @property(nonatomic, assign) int missStreak;
 @property(nonatomic, assign) int lastFetchTick;   // throttle network ad fetches
+@property(nonatomic, copy) NSString *currentSource;   // surface of the current view
 // impression accounting
 @property(nonatomic, assign) NSTimeInterval visibleSince;
 @property(nonatomic, assign) NSInteger accumulatedMs;
@@ -160,6 +161,7 @@ static const CGFloat kGapFromRow = 10.0;            // px to the right of the ro
     PrismDetection *d = [PrismAX detect];
     if (d.found) {
         self.missStreak = 0;
+        self.currentSource = d.source;   // surface the impression will be attributed to
         [self showNextTo:d.frame];
     } else {
         if (++self.missStreak >= kHideAfterMisses) [self hide];
@@ -229,7 +231,7 @@ static const CGFloat kGapFromRow = 10.0;            // px to the right of the ro
     self.visibleSince = now;
     if (!self.impressionReported && self.accumulatedMs >= kMinDwellMs && self.currentAd) {
         self.impressionReported = YES;
-        [self.ads reportImpression:self.currentAd durationMs:self.accumulatedMs];
+        [self.ads reportImpression:self.currentAd durationMs:self.accumulatedMs source:self.currentSource];
     }
 }
 
@@ -241,7 +243,7 @@ static const CGFloat kGapFromRow = 10.0;            // px to the right of the ro
     }
     if (!self.impressionReported && self.accumulatedMs >= kMinDwellMs && self.currentAd) {
         self.impressionReported = YES;
-        [self.ads reportImpression:self.currentAd durationMs:self.accumulatedMs];
+        [self.ads reportImpression:self.currentAd durationMs:self.accumulatedMs source:self.currentSource];
     }
 }
 

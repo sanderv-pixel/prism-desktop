@@ -54,6 +54,7 @@ interface AnalyticsData {
   }
   chartData: { date: string; spend: number; impressions: number; clicks: number }[]
   contextBreakdown: { name: string; impressions: number; spend: number }[]
+  sourceBreakdown: { name: string; impressions: number; spend: number }[]
   recentActivity: { type: 'impression' | 'click' | 'conversion'; date: string; detail: string }[]
 }
 
@@ -130,7 +131,7 @@ export default function CampaignAnalyticsPage() {
     )
   }
 
-  const { campaign, totals, chartData, contextBreakdown, recentActivity } = data
+  const { campaign, totals, chartData, contextBreakdown, sourceBreakdown, recentActivity } = data
   const progress = campaign.budgetCents > 0 ? (campaign.spentCents / campaign.budgetCents) * 100 : 0
 
   return (
@@ -273,6 +274,34 @@ export default function CampaignAnalyticsPage() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Source breakdown — which app each view came from */}
+      <div className="rounded-xl border border-border bg-white p-6">
+        <h3 className="text-base font-semibold text-foreground mb-1">Where views came from</h3>
+        <p className="text-sm text-muted-foreground mb-6">Impressions by surface (Claude, Cursor, Codex, terminal)</p>
+        {sourceBreakdown.length > 0 ? (
+          <div className="space-y-4">
+            {sourceBreakdown.map((s) => {
+              const pct = totals.impressions > 0 ? (s.impressions / totals.impressions) * 100 : 0
+              return (
+                <div key={s.name}>
+                  <div className="flex items-center justify-between text-sm mb-1.5">
+                    <span className="font-medium text-foreground">{s.name}</span>
+                    <span className="text-muted-foreground">
+                      {formatNumber(s.impressions)} · {pct.toFixed(0)}%
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-muted overflow-hidden">
+                    <div className="h-full rounded-full" style={{ width: `${pct}%`, background: '#8b5cf6' }} />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="text-muted-foreground text-sm py-8 text-center">No source data yet.</div>
+        )}
       </div>
 
       {/* Conversion funnel + recent activity */}

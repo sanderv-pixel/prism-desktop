@@ -330,15 +330,18 @@ static void DumpRecurse(AXUIElementRef el, int depth, NSMutableString *out) {
     AXUIElementRef app = AXUIElementCreateApplication(front.processIdentifier);
     [self wakeAccessibility:app];  // no-op for non-Chromium apps; required for Claude/Cursor
     PrismDetection *d = nil;
+    NSString *source = nil;
     switch (kind) {
-        case PrismSourceClaude:   d = [self detectWorkRow:app]; break;
-        case PrismSourceCursor:   d = DetectCursorGenerating(app); break;
-        case PrismSourceTerminal: d = DetectTerminalThinking(app); break;
-        case PrismSourceCodex:    d = DetectCodexGenerating(app); break;
+        case PrismSourceClaude:   d = [self detectWorkRow:app];      source = @"claude";   break;
+        case PrismSourceCursor:   d = DetectCursorGenerating(app);   source = @"cursor";   break;
+        case PrismSourceTerminal: d = DetectTerminalThinking(app);   source = @"terminal"; break;
+        case PrismSourceCodex:    d = DetectCodexGenerating(app);    source = @"codex";    break;
         default: break;
     }
     CFRelease(app);
-    return d ?: [PrismDetection new];
+    if (!d) d = [PrismDetection new];
+    d.source = source;
+    return d;
 }
 
 + (NSString *)dumpClaude {
