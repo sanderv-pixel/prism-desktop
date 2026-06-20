@@ -9,6 +9,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, copy) NSString *adId;             // campaign id (UUID for live ads)
 @property(nonatomic, copy) NSString *advertiserName;
 @property(nonatomic, copy) NSString *tagline;          // ad copy
+@property(nonatomic, copy, nullable) NSString *iconUrl;         // advertiser icon (http(s) or data: URL)
 @property(nonatomic, copy, nullable) NSString *clickURL;        // /api/clicks redirect — open to register a click
 @property(nonatomic, copy, nullable) NSString *impressionToken; // signed; required to report a view
 @property(nonatomic, copy, nullable) NSString *userId;          // bound to the impression token

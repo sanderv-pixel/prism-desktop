@@ -101,6 +101,7 @@ static NSColor *ColorHex(uint32_t rgb) {
     if (!adId.length || !name.length || !copy.length) return nil;
     PrismAd *ad = [PrismAd new];
     ad.adId = adId; ad.advertiserName = name; ad.tagline = copy;
+    ad.iconUrl = [d[@"iconUrl"] isKindOfClass:[NSString class]] ? d[@"iconUrl"] : nil;
     ad.clickURL = d[@"clickUrl"] ?: d[@"url"];
     ad.impressionToken = d[@"impressionToken"];
     // Identifiers the impression token is signed against — report them back verbatim.
