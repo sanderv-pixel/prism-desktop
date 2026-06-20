@@ -1,115 +1,30 @@
-# Prism extension installer for Windows
-# Usage:
+# Prism Overlay — one-line installer for Windows.
+#
 #   irm https://goprism.dev/install.ps1 | iex
-#   & ([scriptblock]::Create((irm https://goprism.dev/install.ps1))) -Cursor
-#   & ([scriptblock]::Create((irm https://goprism.dev/install.ps1))) -Code
-
+#
+# No admin, no .NET install needed (the .exe is self-contained).
 $ErrorActionPreference = 'Stop'
 
-param(
-    [switch]$Cursor,
-    [switch]$Code
-)
+$dest = Join-Path $env:LOCALAPPDATA 'Prism'
+$exe  = Join-Path $dest 'PrismOverlay.exe'
+$url  = if ($env:PRISM_EXE_URL) { $env:PRISM_EXE_URL } else { 'https://goprism.dev/download/PrismOverlay.exe' }
 
-$DownloadUrl = 'https://goprism.dev/prism-extension.vsix'
-$TempPath = Join-Path $env:TEMP 'prism-extension.vsix'
+Write-Host '-> Downloading Prism...'
+New-Item -ItemType Directory -Force -Path $dest | Out-Null
+Get-Process PrismOverlay -ErrorAction SilentlyContinue | Stop-Process -Force
+Start-Sleep -Milliseconds 500
+Invoke-WebRequest -Uri $url -OutFile $exe
+# Clear the "downloaded from the internet" mark so SmartScreen doesn't nag.
+Unblock-File -Path $exe
 
-function Resolve-EditorCli {
-    param(
-        [Parameter(Mandatory)]
-        [string]$Name
-    )
+# Launch at login.
+$run = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
+New-ItemProperty -Path $run -Name 'PrismOverlay' -Value "`"$exe`"" -PropertyType String -Force | Out-Null
 
-    # 1. PATH
-    $cmd = Get-Command $Name -ErrorAction SilentlyContinue
-    if ($cmd) {
-        return $cmd.Source
-    }
+Write-Host '-> Launching Prism...'
+Start-Process $exe
 
-    # 2. Windows default install locations
-    $candidates = switch ($Name) {
-        'code' {
-            @(
-                Join-Path $env:LOCALAPPDATA 'Programs\Microsoft VS Code\bin\code.cmd'
-                Join-Path $env:ProgramFiles 'Microsoft VS Code\bin\code.cmd'
-                Join-Path ${env:ProgramFiles(x86)} 'Microsoft VS Code\bin\code.cmd'
-            )
-        }
-        'cursor' {
-            @(
-                Join-Path $env:LOCALAPPDATA 'Programs\cursor\resources\app\bin\cursor.cmd'
-                Join-Path $env:LOCALAPPDATA 'Programs\Cursor\resources\app\bin\cursor.cmd'
-                Join-Path $env:ProgramFiles 'Cursor\resources\app\bin\cursor.cmd'
-                Join-Path ${env:ProgramFiles(x86)} 'Cursor\resources\app\bin\cursor.cmd'
-            )
-        }
-        default { @() }
-    }
-
-    foreach ($candidate in $candidates) {
-        if (Test-Path $candidate) {
-            return $candidate
-        }
-    }
-
-    return $null
-}
-
-function Resolve-Target {
-    param(
-        [string[]]$Preference
-    )
-
-    foreach ($name in $Preference) {
-        $cli = Resolve-EditorCli -Name $name
-        if ($cli) {
-            return @{ Name = $name; Cli = $cli }
-        }
-    }
-
-    return $null
-}
-
-$target = $null
-if ($Code) {
-    $target = Resolve-Target -Preference @('code')
-} elseif ($Cursor) {
-    $target = Resolve-Target -Preference @('cursor')
-}
-
-# Default: prefer code, then cursor
-if (-not $target) {
-    $target = Resolve-Target -Preference @('code', 'cursor')
-}
-
-if (-not $target) {
-    $msg = @"
-Could not find 'code' or 'cursor'.
-Add the editor's CLI to PATH, or pass -Code / -Cursor explicitly.
-
-Common fixes:
-  VS Code: Add "C:\Users\<you>\AppData\Local\Programs\Microsoft VS Code\bin" to PATH
-  Cursor:  Add "C:\Users\<you>\AppData\Local\Programs\cursor\resources\app\bin" to PATH
-
-Explicit install examples:
-  VS Code: & ([scriptblock]::Create((irm https://goprism.dev/install.ps1))) -Code
-  Cursor:  & ([scriptblock]::Create((irm https://goprism.dev/install.ps1))) -Cursor
-"@
-    Write-Error $msg
-    exit 1
-}
-
-try {
-    Write-Host "Installing Prism extension for $($target.Name)..."
-    Write-Host "Using CLI: $($target.Cli)"
-
-    Invoke-WebRequest -Uri $DownloadUrl -OutFile $TempPath -UseBasicParsing
-    & $target.Cli --install-extension $TempPath
-
-    Write-Host 'Prism extension installed successfully.'
-    Write-Host "Open $($target.Name) and run 'Prism: Enable Prism' from the Command Palette if needed."
-} finally {
-    if (Test-Path $TempPath) {
-        Remove-Item $TempPath -Force -ErrorAction SilentlyContinue
-    }
-}
+Write-Host ''
+Write-Host 'Prism is running in your system tray (look for its icon).'
+Write-Host 'Use "Connect account" to link your account for live ads + earnings.'
+Write-Host 'Uninstall any time:  irm https://goprism.dev/uninstall.ps1 | iex'

@@ -1,18 +1,13 @@
 'use client'
 
-import { Button } from '@/components/Button'
-import { InstallCommand } from '@/components/InstallCommand'
-import { ArrowRight, Sparkles, Shield, Zap } from 'lucide-react'
+import { InstallCard } from '@/components/home/InstallCard'
+import { Sparkles, Shield, Zap } from 'lucide-react'
 
 export function NewHero() {
   return (
-    <section className="relative min-h-screen pt-28 pb-16 md:pt-36 md:pb-24 overflow-hidden bg-background flex items-center">
+    <section className="relative min-h-screen pt-28 pb-16 md:pt-32 md:pb-24 overflow-hidden bg-background flex items-center">
       {/* Colorful Stripe-like hero background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Soft white centre glow so text stays crisp */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(255,255,255,0)_0%,rgba(255,255,255,1)_70%)]" />
-
-        {/* Large blurred colourful arc / string */}
         <svg
           className="absolute -top-24 left-1/2 -translate-x-1/2 w-[1600px] h-[800px] opacity-30"
           viewBox="0 0 1600 800"
@@ -36,66 +31,116 @@ export function NewHero() {
             filter="blur(90px)"
           />
         </svg>
-
-        {/* Soft gradient orbs */}
         <div className="absolute top-[-10%] left-[5%] w-[600px] h-[600px] rounded-full bg-violet-400/20 blur-[120px]" />
         <div className="absolute top-[0%] right-[5%] w-[700px] h-[700px] rounded-full bg-cyan-400/15 blur-[120px]" />
-        <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-[900px] h-[450px] rounded-full bg-fuchsia-400/10 blur-[100px]" />
-
-        {/* Fade to white over the content area */}
         <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-white/60 to-white" />
         <div className="absolute inset-0 bg-noise opacity-50" />
       </div>
 
-      <div className="relative container-tight px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-violet-50 border border-violet-100 px-4 py-1.5 mb-6">
-            <Sparkles size={14} className="text-primary" />
-            <span className="text-xs font-semibold text-primary">
-              The first ad network built for Ai workflows
-            </span>
-          </div>
-
-          <h1 className="text-hero mb-6">
-            Get paid while{' '}
-            <span className="gradient-text">Ai thinks.</span>
-          </h1>
-
-          <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-10 text-balance max-w-2xl mx-auto">
-            Prism is a free extension for VS Code, Cursor, Codex, and Claude
-            Code. It shows tiny, relevant ads during Ai wait states and pays
-            you a share of the revenue. Your work never leaves your device.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-10">
-            <Button href="/onboarding" size="xl">
-              Install Prism free
-              <ArrowRight size={20} className="ml-2" />
-            </Button>
-            <Button href="#how-it-works" size="xl" variant="outline">
-              See how it works
-            </Button>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground mb-12">
-            <div className="flex items-center gap-2">
-              <Shield size={16} className="text-emerald-600" />
-              <span>No prompts or code collected</span>
+      <div className="relative container-tight px-4 sm:px-6 lg:px-8 w-full">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-10 items-center">
+          {/* Left: copy + install */}
+          <div className="text-center lg:text-left">
+            <div className="inline-flex items-center gap-2 rounded-full bg-violet-50 border border-violet-100 px-4 py-1.5 mb-6">
+              <Sparkles size={14} className="text-primary" />
+              <span className="text-xs font-semibold text-primary">
+                The first ad network built for Ai workflows
+              </span>
             </div>
-            <div className="flex items-center gap-2">
-              <Zap size={16} className="text-amber-500" />
-              <span>50% revenue share</span>
-            </div>
-          </div>
 
-          <div className="max-w-xl mx-auto p-6 rounded-2xl bg-muted/50 border border-border text-left">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-              Quick install
+            <h1 className="text-hero mb-5">
+              Get paid while <span className="gradient-text">Ai thinks.</span>
+            </h1>
+
+            <p className="text-lg text-muted-foreground leading-relaxed mb-8 text-balance max-w-xl mx-auto lg:mx-0">
+              Prism is a tiny overlay that shows one small, relevant ad next to
+              your AI&apos;s &ldquo;thinking&rdquo; indicator — in Claude,
+              Cursor, and your terminal — and pays you a share. Your code never
+              leaves your device.
             </p>
-            <InstallCommand />
+
+            <div className="max-w-xl mx-auto lg:mx-0">
+              <InstallCard />
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-2 text-sm text-muted-foreground mt-6">
+              <div className="flex items-center gap-2">
+                <Shield size={16} className="text-emerald-600" />
+                <span>No prompts or code collected</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Zap size={16} className="text-amber-500" />
+                <span>50% revenue share</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: product mock */}
+          <div className="relative mx-auto w-full max-w-lg lg:max-w-none">
+            <HeroMock />
           </div>
         </div>
       </div>
     </section>
+  )
+}
+
+/** A stylised editor window with the Prism pill sitting next to a "thinking" line. */
+function HeroMock() {
+  return (
+    <div className="relative">
+      {/* glow */}
+      <div className="absolute -inset-6 bg-gradient-to-tr from-violet-400/20 via-fuchsia-400/10 to-cyan-400/20 blur-2xl rounded-[2rem]" />
+
+      <div className="relative rounded-2xl border border-border bg-slate-950 shadow-2xl shadow-violet-900/20 overflow-hidden">
+        {/* titlebar */}
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10">
+          <span className="h-3 w-3 rounded-full bg-red-400/80" />
+          <span className="h-3 w-3 rounded-full bg-amber-400/80" />
+          <span className="h-3 w-3 rounded-full bg-emerald-400/80" />
+          <span className="ml-3 text-xs text-slate-500 font-medium">
+            claude — agent
+          </span>
+        </div>
+
+        {/* body */}
+        <div className="p-5 font-mono text-[13px] leading-relaxed">
+          <p className="text-slate-500">
+            <span className="text-violet-400">›</span> refactor the auth module
+            to use the new session API
+          </p>
+
+          {/* thinking line + Prism pill */}
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <span className="text-amber-400">
+              ✶ <span className="text-slate-300">Thinking…</span>{' '}
+              <span className="text-slate-500">(12s · 1.4k tokens)</span>
+            </span>
+
+            <span className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-2.5 py-1.5 backdrop-blur">
+              <span className="flex h-4 w-4 items-center justify-center rounded bg-violet-500 text-[9px] font-bold text-white">
+                V
+              </span>
+              <span className="text-[12px] font-semibold text-white">
+                Vercel
+              </span>
+              <span className="text-[12px] text-slate-300 underline decoration-slate-500/60 underline-offset-2">
+                Ship faster →
+              </span>
+              <span className="text-[9px] font-bold uppercase text-slate-500">
+                Ad
+              </span>
+            </span>
+          </div>
+
+          <p className="mt-4 text-slate-600">│</p>
+        </div>
+      </div>
+
+      {/* caption */}
+      <p className="mt-4 text-center text-xs text-muted-foreground">
+        One line, only while the AI works. Click pays you.
+      </p>
+    </div>
   )
 }
