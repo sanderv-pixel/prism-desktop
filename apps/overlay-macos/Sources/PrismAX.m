@@ -47,7 +47,12 @@ static BOOL IsClaudeWorkRow(NSString *classes) {
 // and uses "..." rather than the U+2026 ellipsis the indicator uses.
 static NSString *AXStringValue(AXUIElementRef el);   // defined in the terminal section
 static BOOL IsThinkingStatus(NSString *value) {
-    return value.length > 0 && value.length <= 16 && [value hasSuffix:@"…"];
+    // A single short word ending in a horizontal ellipsis ("Thinking…", "Working…").
+    // The single-word + length rules exclude the composer placeholder
+    // ("Write a message…") and other multi-word UI strings.
+    if (value.length == 0 || value.length > 14) return NO;
+    if (![value hasSuffix:@"…"]) return NO;
+    return [value rangeOfString:@" "].location == NSNotFound;
 }
 
 // Does any element in this subtree carry a class containing `needle`?
