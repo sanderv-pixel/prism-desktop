@@ -15,6 +15,7 @@ const createCampaignRateLimiter = new RateLimiter(20, 60 * 60 * 1000)
 const CampaignSchema = z.object({
   title: z.string().min(1).max(120),
   copy: z.string().min(1).max(160),
+  brandName: z.string().max(40).optional(),
   url: httpUrl(),
   iconUrl: iconUrlSchema().optional().or(z.literal('')),
   objective: z.enum(['awareness', 'performance']).default('awareness'),
@@ -121,6 +122,7 @@ export async function POST(req: NextRequest) {
     const {
       title,
       copy,
+      brandName,
       url,
       iconUrl,
       objective,
@@ -153,6 +155,7 @@ export async function POST(req: NextRequest) {
         advertiser_id: advertiser.id,
         title,
         copy,
+        brand_name: brandName?.trim() || null,
         url,
         icon_url: iconUrl || null,
         objective,

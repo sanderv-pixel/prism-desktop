@@ -22,9 +22,10 @@ interface AdPreviewProps {
   copy: string
   url: string
   iconUrl: string | null
+  brandName?: string
 }
 
-export function AdPreview({ copy, url, iconUrl }: AdPreviewProps) {
+export function AdPreview({ copy, url, iconUrl, brandName }: AdPreviewProps) {
   const resolvedIcon = iconUrl || getFallbackIconUrl(url)
 
   return (
@@ -36,6 +37,7 @@ export function AdPreview({ copy, url, iconUrl }: AdPreviewProps) {
         <IconPreview url={resolvedIcon} size={44} />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-foreground leading-snug">
+            {brandName ? <span className="font-semibold">{brandName} </span> : null}
             {copy || 'Your ad copy will appear here.'}
           </p>
           {url ? (

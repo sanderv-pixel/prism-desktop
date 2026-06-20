@@ -143,14 +143,19 @@ static NSImage *PrismImageFromDataURL(NSString *s) {
 }
 
 - (CGFloat)renderAd:(PrismAd *)ad {
-    self.badgeLabel.stringValue = [[ad.advertiserName substringToIndex:1] uppercaseString];
+    // The name is advertiser-controlled and may be empty (show only icon + copy).
+    NSString *name = ad.advertiserName ?: @"";
+    NSString *initialSrc = name.length ? name : (ad.tagline.length ? ad.tagline : @"•");
+    self.badgeLabel.stringValue = [[initialSrc substringToIndex:1] uppercaseString];
     [self loadBadgeIcon:ad.iconUrl color:ad.color];
 
     NSMutableAttributedString *as = [NSMutableAttributedString new];
-    [as appendAttributedString:[[NSAttributedString alloc] initWithString:ad.advertiserName
-        attributes:@{ NSForegroundColorAttributeName: [NSColor whiteColor],
-                      NSFontAttributeName: [NSFont systemFontOfSize:12 weight:NSFontWeightSemibold] }]];
-    [as appendAttributedString:[[NSAttributedString alloc] initWithString:@"  " attributes:@{}]];
+    if (name.length) {
+        [as appendAttributedString:[[NSAttributedString alloc] initWithString:name
+            attributes:@{ NSForegroundColorAttributeName: [NSColor whiteColor],
+                          NSFontAttributeName: [NSFont systemFontOfSize:12 weight:NSFontWeightSemibold] }]];
+        [as appendAttributedString:[[NSAttributedString alloc] initWithString:@"  " attributes:@{}]];
+    }
     [as appendAttributedString:[[NSAttributedString alloc] initWithString:ad.tagline
         attributes:@{ NSForegroundColorAttributeName: [NSColor colorWithWhite:0.85 alpha:1],
                       NSFontAttributeName: [NSFont systemFontOfSize:12],
