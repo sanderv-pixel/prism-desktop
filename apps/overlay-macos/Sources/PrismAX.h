@@ -22,6 +22,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, assign) BOOL found;
 /// Frame of the work-indicator row, in AX coordinates (top-left origin).
 @property(nonatomic, assign) CGRect frame;
+/// The surface this was detected on: "claude" | "cursor" | "terminal" | "codex".
+/// Reported with the impression so advertisers can see where views came from.
+@property(nonatomic, copy, nullable) NSString *source;
 @end
 
 @interface PrismAX : NSObject

@@ -110,14 +110,15 @@ static NSColor *ColorHex(uint32_t rgb) {
     return ad;
 }
 
-- (void)reportImpression:(PrismAd *)ad durationMs:(NSInteger)durationMs {
+- (void)reportImpression:(PrismAd *)ad durationMs:(NSInteger)durationMs source:(nullable NSString *)source {
     if (!ad.impressionToken.length) return;  // demo/built-in ads aren't billable
     // userId/sessionId MUST match what the impression token was signed against.
     NSString *uid = ad.userId.length ? ad.userId : self.sessionId;
     NSString *sid = ad.sessionId.length ? ad.sessionId : self.sessionId;
     NSDictionary *body = @{ @"userId": uid, @"sessionId": sid,
                             @"campaignId": ad.adId, @"impressionToken": ad.impressionToken,
-                            @"durationMs": @(durationMs), @"context": AdContext() };
+                            @"durationMs": @(durationMs), @"context": AdContext(),
+                            @"source": source.length ? source : @"unknown" };
     [[[NSURLSession sharedSession] dataTaskWithRequest:[self postTo:@"impressions" body:body]
         completionHandler:^(NSData *d, NSURLResponse *r, NSError *e) { /* fire and forget */ }] resume];
 }

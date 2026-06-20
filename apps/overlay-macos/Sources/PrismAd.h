@@ -35,7 +35,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable PrismAd *)nextAd;
 
 /// Report a validated viewable impression for an ad (best-effort, fire-and-forget).
-- (void)reportImpression:(PrismAd *)ad durationMs:(NSInteger)durationMs;
+/// `source` is the surface it was shown on (claude/cursor/terminal/codex).
+- (void)reportImpression:(PrismAd *)ad durationMs:(NSInteger)durationMs source:(nullable NSString *)source;
 
 /// Register a click: opens the ad's click URL, which records the click
 /// server-side and redirects the user to the advertiser.
