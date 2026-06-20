@@ -3,18 +3,13 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
 import { PrismLogo } from './PrismLogo'
+import { LandingNav } from './LandingNav'
+import { LandingFooter } from './LandingFooter'
 
 // Font families map to the app's next/font CSS variables.
 const DISPLAY = 'var(--font-display), sans-serif'
 const MONO = 'var(--font-mono), monospace'
 const SPECTRUM = 'linear-gradient(90deg,#8b5cf6,#ec4899,#06b6d4)'
-
-const NAV_LINKS = [
-  { href: '#how', label: 'How it works' },
-  { href: '#privacy', label: 'Privacy' },
-  { href: '#advertisers', label: 'Advertisers' },
-  { href: '#faq', label: 'FAQ' },
-]
 
 const TOOLS = [
   { name: 'Claude', domain: 'claude.ai' },
@@ -115,21 +110,7 @@ export function LandingPage() {
   return (
     <div style={{ overflowX: 'hidden', background: '#fafafa', color: '#0f1729' }}>
       {/* NAV */}
-      <nav style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(250,250,250,.82)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)', borderBottom: '1px solid #e8ebf0' }}>
-        <div style={{ maxWidth: 1160, margin: '0 auto', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 28 }}>
-          <a href="#top" style={{ display: 'flex', alignItems: 'center', gap: 11, textDecoration: 'none' }}>
-            <PrismLogo size={27} id="lgNav" />
-            <span style={{ fontFamily: DISPLAY, fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: '#0f1729' }}>Prism</span>
-          </a>
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
-            {NAV_LINKS.map((l) => (
-              <a key={l.href} href={l.href} className="ld-navlink" style={{ fontSize: 14, fontWeight: 500, color: '#475569', textDecoration: 'none', padding: '8px 12px', borderRadius: 8, whiteSpace: 'nowrap' }}>{l.label}</a>
-            ))}
-            <a href="/auth/sign-in" className="ld-navlink" style={{ fontSize: 14, fontWeight: 500, color: '#475569', textDecoration: 'none', padding: '8px 12px', borderRadius: 8, whiteSpace: 'nowrap' }}>Sign in</a>
-            <button onClick={openModal} className="ld-btn-nav" style={{ marginLeft: 8, fontSize: 14, fontWeight: 600, color: '#fff', background: '#7c3aed', border: 'none', cursor: 'pointer', padding: '9px 18px', borderRadius: 11, transition: '.18s', whiteSpace: 'nowrap', boxShadow: '0 6px 16px -6px rgba(124,58,237,.55)' }}>Get started</button>
-          </div>
-        </div>
-      </nav>
+      <LandingNav linkBase="" onGetStarted={openModal} />
 
       <div id="top" />
 
@@ -460,21 +441,7 @@ export function LandingPage() {
       </section>
 
       {/* FOOTER */}
-      <footer style={{ background: '#fafafa', borderTop: '1px solid #e8ebf0' }}>
-        <div style={{ maxWidth: 1160, margin: '0 auto', padding: '48px 24px', display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-            <PrismLogo size={24} id="lgFoot" />
-            <span style={{ fontFamily: DISPLAY, fontSize: 16, fontWeight: 600, letterSpacing: '-.02em', color: '#0f1729' }}>Prism</span>
-            <span style={{ fontSize: 13, color: '#94a3b8', marginLeft: 6 }}>Get paid for every AI wait.</span>
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 22 }}>
-            {NAV_LINKS.map((l) => (
-              <a key={l.href} href={l.href} className="ld-footlink" style={{ fontSize: 13, color: '#64748b', textDecoration: 'none', transition: '.18s' }}>{l.label}</a>
-            ))}
-          </div>
-          <div style={{ fontSize: 12, color: '#94a3b8', fontFamily: MONO }}>© 2026 Prism</div>
-        </div>
-      </footer>
+      <LandingFooter linkBase="" />
 
       {/* GET-STARTED MODAL */}
       {modal && <GetStartedModal onClose={closeModal} onSubmit={startOnboarding} />}

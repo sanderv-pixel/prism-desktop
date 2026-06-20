@@ -10,6 +10,7 @@ export function NavbarWrapper() {
   // and on the landing page (`/`), which ships its own nav.
   if (
     pathname === '/' ||
+    pathname === '/contact' ||
     pathname?.startsWith('/dashboard') ||
     pathname?.startsWith('/advertiser/') ||
     pathname?.startsWith('/admin/')
