@@ -1,9 +1,17 @@
-// PrismAX — read-only macOS Accessibility helpers for locating Claude's
-// "working" indicator (the duration/token counter row shown in Cowork & Code).
+// PrismAX — read-only macOS Accessibility helpers for locating an AI "working"
+// indicator across supported surfaces:
+//   • Claude Desktop (Cowork/Code) — the duration/token counter row, keyed on the
+//     stable container classes `text-assistant-secondary` + `tabular-nums`.
+//   • Cursor — detected via the Composer's Stop button: the send control
+//     (`sendButton_<hash>`) drops its `sendIcon_` child for the entire turn while
+//     generating, so "sendButton without sendIcon" == working. Stable, well-placed
+//     anchor — unlike the brief `thinking_` element that only flashes at the top.
+//   • Terminals (Terminal, iTerm2, Ghostty, Warp, …) running Claude Code CLI — the
+//     live status line `<spinner> Verb… (Ns · N tokens)`, located inside the big
+//     `AXTextArea` buffer and anchored via `AXBoundsForRange`.
 //
-// Nothing here mutates Claude. We only read the AX tree. Detection keys on the
-// stable container classes `text-assistant-secondary` + `tabular-nums`, which
-// only exist while Claude is actively thinking/streaming and disappear when idle.
+// Nothing here mutates any app. We only read the AX tree. Each indicator exists
+// only while the AI is actively thinking/streaming and disappears when idle.
 #import <Foundation/Foundation.h>
 #import <ApplicationServices/ApplicationServices.h>
 
@@ -35,6 +43,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// Walk the app's AX tree and locate the work-indicator row. Read-only.
 + (PrismDetection *)detectWorkRow:(AXUIElementRef)app;
+
+/// Scan all supported source apps (Claude Desktop + terminals), frontmost first,
+/// and return the first active "working" indicator found. Frame is in AX
+/// coordinates (top-left origin). Handles waking + per-app detection internally.
++ (PrismDetection *)detect;
 
 /// Debug: dump Claude's full AX tree (role, DOM classes, text, frame) for any
 /// element carrying classes or short text. Used to discover new surfaces.

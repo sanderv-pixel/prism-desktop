@@ -69,15 +69,11 @@ int main(int argc, const char *argv[]) {
         // prints found/frame each second (verifies a surface without the ad pipeline).
         if (getenv("PRISM_DETECT")) {
             for (int i = 0; i < 30; i++) {
-                pid_t pid = [PrismAX findClaudePid];
-                AXUIElementRef appEl = pid ? AXUIElementCreateApplication(pid) : NULL;
-                if (appEl) [PrismAX wakeAccessibility:appEl];
-                PrismDetection *d = appEl ? [PrismAX detectWorkRow:appEl] : [PrismDetection new];
+                PrismDetection *d = [PrismAX detect];   // frontmost: Claude/Cursor/Terminal
                 fprintf(stdout, "detect: found=%d frame=%.0f,%.0f %.0fx%.0f\n",
                         d.found, d.frame.origin.x, d.frame.origin.y,
                         d.frame.size.width, d.frame.size.height);
                 fflush(stdout);
-                if (appEl) CFRelease(appEl);
                 [NSThread sleepForTimeInterval:1.0];
             }
             return 0;
