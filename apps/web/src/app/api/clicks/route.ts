@@ -93,16 +93,20 @@ export async function GET(req: NextRequest) {
     }
 
     // Idempotent click recording keyed by the impression token nonce.
-    const { error: clickError } = await supabase.from('clicks').insert({
-      campaign_id: campaignId,
-      user_id: userId,
-      session_id: sessionId,
-      token_nonce: nonce,
-      context: req.headers.get('referer') ?? '',
-      url: destUrl,
-      redirected: true,
-      creative_id: creativeId ?? null,
-    })
+    const { data: clickRow, error: clickError } = await supabase
+      .from('clicks')
+      .insert({
+        campaign_id: campaignId,
+        user_id: userId,
+        session_id: sessionId,
+        token_nonce: nonce,
+        context: req.headers.get('referer') ?? '',
+        url: destUrl,
+        redirected: true,
+        creative_id: creativeId ?? null,
+      })
+      .select('id')
+      .single()
 
     if (clickError) {
       // Duplicate nonce -> this token was already clicked. Still redirect the user.
@@ -119,6 +123,18 @@ export async function GET(req: NextRequest) {
         }
       } catch {
         // ignore
+      }
+    }
+
+    // Pass the click id to the advertiser's landing page so they can attribute a
+    // later conversion back to it via the /api/conversions/track postback.
+    if (clickRow?.id) {
+      try {
+        const u = new URL(destUrl)
+        u.searchParams.set('prism_click_id', clickRow.id)
+        destUrl = u.toString()
+      } catch {
+        // non-absolute URL; leave as-is
       }
     }
 

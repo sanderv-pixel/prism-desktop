@@ -72,6 +72,7 @@ export type Database = {
         Row: {
           balance_cents: number
           balance_millicents: number
+          conversion_api_key: string | null
           created_at: string
           email: string
           id: string
@@ -88,6 +89,7 @@ export type Database = {
         Insert: {
           balance_cents?: number
           balance_millicents?: number
+          conversion_api_key?: string | null
           created_at?: string
           email: string
           id?: string
@@ -104,6 +106,7 @@ export type Database = {
         Update: {
           balance_cents?: number
           balance_millicents?: number
+          conversion_api_key?: string | null
           created_at?: string
           email?: string
           id?: string
