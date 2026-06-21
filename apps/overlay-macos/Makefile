@@ -21,7 +21,7 @@ CFLAGS     := -fobjc-arc -Wall -O2
 BUNDLE_ID  := dev.goprism.overlay
 SIGN_ID    ?= -   # "-" = ad-hoc. Stable: make SIGN_ID="Prism Overlay Signing"
 
-.PHONY: all run release reset clean
+.PHONY: all run release reset clean notarize
 
 all: $(BIN)
 
@@ -47,6 +47,12 @@ release: all
 
 reset:
 	tccutil reset Accessibility $(BUNDLE_ID)
+
+# Build a notarized, stapled Prism.dmg (clickable, no-Terminal installer). Needs a
+# Developer ID cert + notary credentials — see scripts/notarize.sh for setup.
+#   make notarize DEVID="Developer ID Application: Your Name (TEAMID)"
+notarize:
+	DEVID="$(DEVID)" NOTARY_PROFILE="$(NOTARY_PROFILE)" scripts/notarize.sh
 
 clean:
 	rm -rf build
