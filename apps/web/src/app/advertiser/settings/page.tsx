@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { DashboardShell } from '@/components/dashboard/DashboardShell'
 import { Button } from '@/components/Button'
-import { ArrowLeft, CreditCard, Crosshair } from 'lucide-react'
+import { ArrowLeft, CreditCard, Crosshair, AlertTriangle } from 'lucide-react'
 
 interface Settings {
   name: string
@@ -37,6 +37,8 @@ export default function SettingsPage() {
   const [name, setName] = useState('')
   const [website, setWebsite] = useState('')
   const [savingProfile, setSavingProfile] = useState(false)
+  const [closeText, setCloseText] = useState('')
+  const [dangerBusy, setDangerBusy] = useState(false)
 
   useEffect(() => {
     fetch('/api/advertiser/settings')
@@ -75,6 +77,26 @@ export default function SettingsPage() {
       notifyCampaignStatus: 'notifyCampaignStatus',
     }
     patch({ [map[key]]: value }, 'Preferences saved')
+  }
+
+  async function danger(action: 'pauseAll' | 'close') {
+    setDangerBusy(true)
+    const res = await fetch('/api/advertiser/danger', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action }),
+    })
+    setDangerBusy(false)
+    if (!res.ok) {
+      toast.error('Action failed. Please try again.')
+      return
+    }
+    if (action === 'pauseAll') {
+      toast.success('All campaigns paused')
+    } else {
+      toast.success('Account closed')
+      router.push('/')
+    }
   }
 
   if (!s) {
@@ -171,6 +193,56 @@ export default function SettingsPage() {
                 <p className="text-xs text-muted-foreground">Postback key + setup</p>
               </div>
             </a>
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-red-200 bg-red-50/30 p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <AlertTriangle size={17} className="text-red-500" />
+            <h2 className="font-medium text-red-800">Danger zone</h2>
+          </div>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div>
+                <p className="text-sm text-foreground">Pause all campaigns</p>
+                <p className="text-xs text-muted-foreground">
+                  Stop all delivery. You can resume any campaign later.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  if (confirm('Pause all active campaigns? They will stop delivering until you resume them.'))
+                    danger('pauseAll')
+                }}
+                disabled={dangerBusy}
+                className="rounded-lg border border-red-300 text-red-600 px-4 py-2 text-sm font-medium hover:bg-red-50 disabled:opacity-50"
+              >
+                Pause all
+              </button>
+            </div>
+            <div className="border-t border-red-200 pt-4">
+              <p className="text-sm text-foreground">Close account</p>
+              <p className="text-xs text-muted-foreground mb-3">
+                Deactivates your account and pauses all campaigns. Your data and wallet balance are kept;
+                contact support to reopen or request a refund. Type{' '}
+                <span className="font-medium text-foreground">{s.name?.trim()}</span> to confirm.
+              </p>
+              <div className="flex items-center gap-2">
+                <input
+                  value={closeText}
+                  onChange={(e) => setCloseText(e.target.value)}
+                  placeholder={s.name?.trim()}
+                  className="flex-1 min-w-0 rounded-lg border border-border bg-input px-3 py-2 text-sm focus:border-red-400 focus:outline-none focus:ring-1 focus:ring-red-300"
+                />
+                <button
+                  onClick={() => danger('close')}
+                  disabled={dangerBusy || closeText.trim() !== (s.name ?? '').trim()}
+                  className="rounded-lg bg-red-600 text-white px-4 py-2 text-sm font-medium hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                >
+                  Close account
+                </button>
+              </div>
+            </div>
           </div>
         </section>
       </div>
