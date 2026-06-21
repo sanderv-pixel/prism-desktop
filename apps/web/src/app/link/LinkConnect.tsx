@@ -62,7 +62,7 @@ export function LinkConnect() {
           <>
             <p className="mt-4 text-sm font-medium text-green-600">✓ Connected</p>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              You can close this tab and return to Prism — live ads are now enabled.
+              You can close this tab and return to Prism. Live ads are now enabled.
             </p>
           </>
         )}
