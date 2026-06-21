@@ -78,6 +78,8 @@ export interface AdvertiserStatsResult {
     cpc: number
     cpa: number
     cvr: number
+    roas: number
+    conversionValueCents: number
     reach: number
     frequency: number
     activeCampaigns: number
@@ -175,6 +177,11 @@ export function computeAdvertiserStats(
   const cpm = totalImpressions > 0 ? Math.round((totalSpendCents / totalImpressions) * 1000) : 0
   const cpc = totalClicks > 0 ? Math.round(totalSpendCents / totalClicks) : 0
   const cpa = totalConversions > 0 ? Math.round(recentSpend / totalConversions) : 0
+  // ROAS = conversion value returned per dollar of spend (e.g. 2.0 = $2 back per $1).
+  const conversionValueCents = conversions
+    .filter((c) => new Date(c.created_at) >= periodStart)
+    .reduce((s, c) => s + (c.value_cents ?? 0), 0)
+  const roas = totalSpendCents > 0 ? conversionValueCents / totalSpendCents : 0
 
   // Reach comes from the DB aggregation (distinct sessions, uncapped).
   const reach = breakdowns.reach ?? 0
@@ -291,6 +298,8 @@ export function computeAdvertiserStats(
       cpc,
       cpa,
       cvr: Number(cvr.toFixed(2)),
+      roas: Number(roas.toFixed(2)),
+      conversionValueCents,
       reach,
       frequency: Number(frequency.toFixed(2)),
       activeCampaigns,

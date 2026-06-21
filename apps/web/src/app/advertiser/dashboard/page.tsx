@@ -71,6 +71,8 @@ interface AdvertiserStats {
     cpc: number
     cpa: number
     cvr: number
+    roas: number
+    conversionValueCents: number
     reach: number
     frequency: number
     activeCampaigns: number
@@ -797,7 +799,16 @@ export default function AdvertiserDashboardPage() {
                 </p>
               </div>
             </div>
-            <DateRangePicker value={range} onChange={setRange} />
+            <div className="flex items-center gap-2">
+              <DateRangePicker value={range} onChange={setRange} />
+              <a
+                href="/api/advertiser/export"
+                download
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-foreground hover:bg-muted whitespace-nowrap"
+              >
+                <Download size={15} /> Export CSV
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -819,6 +830,11 @@ export default function AdvertiserDashboardPage() {
           icon={Target}
           label="CPA"
           value={stats.totalConversions > 0 ? formatMoney(stats.cpa) : '—'}
+        />
+        <StatCard
+          icon={TrendingUp}
+          label="ROAS"
+          value={stats.conversionValueCents > 0 ? `${stats.roas.toFixed(2)}x` : '—'}
         />
         <StatCard
           icon={Eye}
