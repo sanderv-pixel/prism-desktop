@@ -215,6 +215,38 @@ export default function CampaignAnalyticsPage() {
         />
       </div>
 
+      {/* Auction insight */}
+      <div className="rounded-xl border border-border bg-white p-6 mb-8">
+        <h3 className="text-base font-semibold text-foreground mb-3">Auction</h3>
+        <div className="grid sm:grid-cols-3 gap-4">
+          <div>
+            <p className="text-sm text-muted-foreground">Your max bid</p>
+            <p className="text-xl font-medium">
+              {formatCents(campaign.maxBidCpm)} <span className="text-sm text-muted-foreground">CPM</span>
+            </p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Avg clearing price</p>
+            <p className="text-xl font-medium">
+              {formatCents(totals.cpm)} <span className="text-sm text-muted-foreground">CPM</span>
+            </p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Bid headroom</p>
+            <p className="text-xl font-medium">
+              {totals.cpm > 0 ? `${(campaign.maxBidCpm / totals.cpm).toFixed(1)}x` : '—'}
+            </p>
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground mt-4">
+          Second-price auction: you pay the runner-up bid (or the context floor), never your full
+          max bid.
+          {totals.cpm > 0 && campaign.maxBidCpm >= totals.cpm * 2
+            ? ' Your bid clears comfortably, so lowering it may not reduce delivery much.'
+            : ' Raising your bid can win more competitive impressions.'}
+        </p>
+      </div>
+
       <div className="grid lg:grid-cols-3 gap-6 mb-8">
         {/* Time-series chart */}
         <div className="lg:col-span-2 rounded-xl border border-border bg-white p-6">

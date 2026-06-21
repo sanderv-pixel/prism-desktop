@@ -588,7 +588,21 @@ export default function AdvertiserDashboardPage() {
         </div>
       )}
 
-      {isActive && advertiser.balanceCents < LOW_BALANCE_CENTS && (
+      {isActive && advertiser.balanceCents <= 0 && stats.activeCampaigns > 0 && (
+        <div className="mb-6 rounded-xl bg-red-50 border border-red-200 p-4 flex items-start gap-3">
+          <AlertCircle size={18} className="text-red-500 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-red-800">Campaigns paused — wallet empty</p>
+            <p className="text-sm text-red-700">
+              You have {stats.activeCampaigns} active campaign{stats.activeCampaigns === 1 ? '' : 's'},
+              but your wallet is out of funds so they aren&apos;t delivering. Top up to resume; delivery
+              restarts automatically.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {isActive && advertiser.balanceCents > 0 && advertiser.balanceCents < LOW_BALANCE_CENTS && (
         <div className="mb-6 rounded-xl bg-amber-50 border border-amber-200 p-4 flex items-start gap-3">
           <AlertCircle size={18} className="text-amber-500 mt-0.5" />
           <div className="flex-1">
