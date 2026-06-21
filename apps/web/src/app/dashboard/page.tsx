@@ -27,6 +27,7 @@ import {
   Info,
   Monitor,
   Plus,
+  X,
 } from 'lucide-react'
 
 interface ConnectStatus {
@@ -131,6 +132,8 @@ export default function BuilderDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [withdrawing, setWithdrawing] = useState(false)
+  const [showWithdraw, setShowWithdraw] = useState(false)
+  const [withdrawAmount, setWithdrawAmount] = useState('')
   const [settingUpPayouts, setSettingUpPayouts] = useState(false)
   const [copiedField, setCopiedField] = useState<string | null>(null)
 
@@ -184,12 +187,17 @@ export default function BuilderDashboardPage() {
     }
   }
 
-  async function handleWithdraw() {
+  async function handleWithdraw(amountCents?: number) {
     setWithdrawing(true)
     try {
-      const res = await fetch('/api/dashboard/payouts', { method: 'POST' })
+      const res = await fetch('/api/dashboard/payouts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(amountCents ? { amountCents } : {}),
+      })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? 'Withdrawal failed')
+      setShowWithdraw(false)
       await fetchDashboard()
       toast.success('Withdrawal request submitted. It will be reviewed and paid to your saved payout method.')
     } catch (err) {
@@ -276,11 +284,14 @@ export default function BuilderDashboardPage() {
           ) : (
             <Button
               size="md"
-              onClick={handleWithdraw}
-              disabled={withdrawing || !data.user.payoutEnabled}
+              onClick={() => {
+                setWithdrawAmount((stats.balanceCents / 100).toFixed(2))
+                setShowWithdraw(true)
+              }}
+              disabled={!data.user.payoutEnabled}
             >
               <Download size={16} className="mr-2" />
-              {withdrawing ? 'Processing…' : 'Withdraw'}
+              Withdraw
             </Button>
           )}
         </div>
@@ -732,6 +743,89 @@ export default function BuilderDashboardPage() {
           )}
         </div>
       </div>
+
+      {showWithdraw && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowWithdraw(false)
+          }}
+        >
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-lg font-semibold text-foreground">Withdraw earnings</h3>
+              <button
+                onClick={() => setShowWithdraw(false)}
+                className="rounded-full p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Available: {formatCents(stats.balanceCents)}
+            </p>
+            <label className="block text-sm text-muted-foreground mb-1">Amount</label>
+            <div className="relative mb-1.5">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+              <input
+                type="number"
+                min="20"
+                step="0.01"
+                value={withdrawAmount}
+                onChange={(e) => setWithdrawAmount(e.target.value)}
+                className="w-full rounded-lg border border-border bg-input pl-7 pr-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => setWithdrawAmount((stats.balanceCents / 100).toFixed(2))}
+              className="text-xs text-primary hover:underline mb-4"
+            >
+              Withdraw full balance
+            </button>
+            {(() => {
+              const amt = Math.round((parseFloat(withdrawAmount) || 0) * 100)
+              const tooLow = amt < 2000
+              const tooHigh = amt > stats.balanceCents
+              return (
+                <>
+                  <div className="rounded-xl bg-muted/50 border border-border p-4 space-y-2 text-sm mb-4">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Amount</span>
+                      <span>{formatCents(amt)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Payout fee</span>
+                      <span className="text-emerald-600">Free</span>
+                    </div>
+                    <div className="flex justify-between border-t border-border pt-2 font-medium">
+                      <span>You receive</span>
+                      <span>{formatCents(amt)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Estimated arrival</span>
+                      <span>1–3 business days</span>
+                    </div>
+                  </div>
+                  {tooLow && <p className="text-xs text-amber-600 mb-2">Minimum withdrawal is $20.00.</p>}
+                  {tooHigh && <p className="text-xs text-red-500 mb-2">Exceeds your available balance.</p>}
+                  <Button
+                    size="md"
+                    className="w-full"
+                    disabled={withdrawing || tooLow || tooHigh}
+                    onClick={() => handleWithdraw(amt)}
+                  >
+                    {withdrawing ? 'Submitting…' : `Withdraw ${formatCents(amt)}`}
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-3 text-center">
+                    Paid to your saved payout method after review.
+                  </p>
+                </>
+              )
+            })()}
+          </div>
+        </div>
+      )}
     </DashboardShell>
   )
 }
