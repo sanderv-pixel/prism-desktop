@@ -109,9 +109,20 @@ export async function POST(req: NextRequest) {
 
     if (creditError) throw creditError
 
+    // Capture the saved card so auto-recharge can charge it off-session later.
+    const savedPm =
+      typeof paymentIntent.payment_method === 'string'
+        ? paymentIntent.payment_method
+        : paymentIntent.payment_method?.id ?? null
+    const advUpdate: {
+      status: string
+      subscription_status: string
+      default_payment_method_id?: string
+    } = { status: 'active', subscription_status: 'active' }
+    if (savedPm) advUpdate.default_payment_method_id = savedPm
     const { error: statusError } = await supabase
       .from('advertisers')
-      .update({ status: 'active', subscription_status: 'active' })
+      .update(advUpdate)
       .eq('id', advertiserId)
 
     if (statusError) throw statusError
