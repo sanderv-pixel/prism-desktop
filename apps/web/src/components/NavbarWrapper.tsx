@@ -11,6 +11,7 @@ export function NavbarWrapper() {
   if (
     pathname === '/' ||
     pathname === '/contact' ||
+    pathname === '/install' ||
     pathname?.startsWith('/dashboard') ||
     pathname?.startsWith('/advertiser/') ||
     pathname?.startsWith('/admin/')

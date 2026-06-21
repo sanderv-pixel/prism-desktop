@@ -99,7 +99,7 @@ export function LandingPage() {
   const shown: CSSProperties = { opacity: 1, transform: 'translateY(0)', transition: 'opacity .55s ease,transform .55s ease' }
   const hidden: CSSProperties = { opacity: 0, transform: 'translateY(10px)', transition: 'opacity .45s ease,transform .45s ease', pointerEvents: 'none' }
 
-  const openModal = () => setModal(true)
+  const openModal = () => router.push('/install')
   const closeModal = () => setModal(false)
   // The handoff modal captures an email; submitting kicks off the real onboarding flow.
   const startOnboarding = () => {
