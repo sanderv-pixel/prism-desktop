@@ -51,6 +51,12 @@ export interface DailySpendRow {
   impressions: number
 }
 
+export interface AnalyticsBreakdowns {
+  reach: number
+  source: { name: string; impressions: number; spend: number }[]
+  context: { name: string; impressions: number; spend: number }[]
+}
+
 export interface AdvertiserStatsResult {
   advertiser: {
     id: string
@@ -118,16 +124,6 @@ function impressionSpendCents(auctionPriceCpm: number | null) {
   return (auctionPriceCpm ?? 0) / 1000
 }
 
-function parseContextKey(contextString: string | null | undefined): string {
-  if (!contextString) return 'Unknown'
-  try {
-    const parsed = JSON.parse(contextString)
-    return parsed.editor || parsed.aiTool || parsed.projectType || 'Other'
-  } catch {
-    return contextString.length > 24 ? contextString.slice(0, 24) + '…' : contextString
-  }
-}
-
 export function computeAdvertiserStats(
   advertiser: Advertiser,
   campaigns: Campaign[],
@@ -136,7 +132,8 @@ export function computeAdvertiserStats(
   conversions: Conversion[],
   days: number | 'all' = 30,
   now = new Date(),
-  dailySpendRows: DailySpendRow[] = []
+  dailySpendRows: DailySpendRow[] = [],
+  breakdowns: AnalyticsBreakdowns = { reach: 0, source: [], context: [] }
 ): AdvertiserStatsResult {
   const daysValue = days === 'all' ? MAX_ALL_DAYS : days
   const periodStart = new Date(now.getTime() - daysValue * 24 * 60 * 60 * 1000)
@@ -179,8 +176,8 @@ export function computeAdvertiserStats(
   const cpc = totalClicks > 0 ? Math.round(totalSpendCents / totalClicks) : 0
   const cpa = totalConversions > 0 ? Math.round(recentSpend / totalConversions) : 0
 
-  const recentSessions = new Set(recentImpressions.map((i) => i.session_id).filter(Boolean))
-  const reach = recentSessions.size
+  // Reach comes from the DB aggregation (distinct sessions, uncapped).
+  const reach = breakdowns.reach ?? 0
   const frequency = reach > 0 ? totalImpressions / reach : 0
 
   const dailySpend: Record<string, number> = {}
@@ -251,23 +248,15 @@ export function computeAdvertiserStats(
     }
   })
 
-  const contextMap = new Map<string, { impressions: number; spend: number; clicks: number }>()
-  for (const imp of recentImpressions) {
-    const key = parseContextKey(imp.context)
-    const current = contextMap.get(key) ?? { impressions: 0, spend: 0, clicks: 0 }
-    current.impressions += 1
-    current.spend += impressionSpendCents(imp.auction_price_cpm) / 100
-    contextMap.set(key, current)
-  }
-  // Attribution: count a click toward the context of its matching impression if possible.
-  // Simpler: clicks are attributed to the campaign, so we approximate by parsing click context if available.
-  // The Click type has no context; leave clicks at 0 in context breakdown.
-  const contextBreakdown = Array.from(contextMap.entries())
-    .map(([name, vals]) => ({ name, ...vals }))
-    .sort((a, b) => b.impressions - a.impressions)
-    .slice(0, 8)
+  // Context + source breakdowns come from the DB aggregation (uncapped, billable).
+  // The Click type carries no context, so clicks stay 0 in the context breakdown.
+  const contextBreakdown = (breakdowns.context ?? []).slice(0, 8).map((c) => ({
+    name: c.name,
+    impressions: c.impressions,
+    spend: c.spend,
+    clicks: 0,
+  }))
 
-  // Source breakdown — which surface (Codex, Cursor, Claude, terminal) served each view.
   const SOURCE_LABELS: Record<string, string> = {
     claude: 'Claude',
     cursor: 'Cursor',
@@ -275,17 +264,11 @@ export function computeAdvertiserStats(
     terminal: 'Terminal',
     unknown: 'Unknown',
   }
-  const sourceMap = new Map<string, { impressions: number; spend: number }>()
-  for (const imp of recentImpressions) {
-    const key = SOURCE_LABELS[imp.source ?? 'unknown'] ?? 'Unknown'
-    const current = sourceMap.get(key) ?? { impressions: 0, spend: 0 }
-    current.impressions += 1
-    current.spend += impressionSpendCents(imp.auction_price_cpm) / 100
-    sourceMap.set(key, current)
-  }
-  const sourceBreakdown = Array.from(sourceMap.entries())
-    .map(([name, vals]) => ({ name, ...vals }))
-    .sort((a, b) => b.impressions - a.impressions)
+  const sourceBreakdown = (breakdowns.source ?? []).map((s) => ({
+    name: SOURCE_LABELS[s.name] ?? 'Unknown',
+    impressions: s.impressions,
+    spend: s.spend,
+  }))
 
   return {
     advertiser: {

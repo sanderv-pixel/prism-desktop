@@ -12,13 +12,6 @@ function parseRange(searchParams: URLSearchParams): number | 'all' {
   return 30
 }
 
-// Advertiser cost for one impression = the full auction clearing price
-// (auction_price_cpm is cents per 1000 impressions), as fractional cents. No 1c
-// floor, matching the millicent ledger that maintains spent_cents.
-function impressionSpendCents(auctionPriceCpm: number | null) {
-  return (auctionPriceCpm ?? 0) / 1000
-}
-
 function parseContextKey(contextString: string | null | undefined): string {
   if (!contextString) return 'Unknown'
   try {
@@ -78,7 +71,7 @@ export async function GET(
     const startIso = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
     const now = new Date()
 
-    const [impressionsResult, clicksResult, conversionsResult, dailySpendResult] =
+    const [impressionsResult, clicksResult, conversionsResult, dailySpendResult, breakdownsResult] =
       await Promise.all([
         supabase
           .from('impressions')
@@ -104,9 +97,16 @@ export async function GET(
           .eq('campaign_id', params.id)
           .gte('spend_date', startIso.slice(0, 10))
           .order('spend_date', { ascending: true }),
+        // Breakdowns + reach are aggregated in the DB (uncapped, lifetime, billable).
+        supabase.rpc('campaign_analytics_breakdowns', { p_campaign_ids: [params.id], p_since: null }),
       ])
 
     const impressions = (impressionsResult.data ?? []) as any[]
+    const breakdowns = (breakdownsResult.data ?? {}) as {
+      reach?: number
+      source?: { name: string; impressions: number; spend: number }[]
+      context?: { name: string; impressions: number; spend: number }[]
+    }
     const clicks = (clicksResult.data ?? []) as any[]
     const conversions = (conversionsResult.data ?? []) as any[]
     const dailySpendRows = (dailySpendResult.data ?? []) as any[]
@@ -125,8 +125,7 @@ export async function GET(
     const cpa = totalConversions > 0 ? Math.round(totalSpendCents / totalConversions) : 0
     const cvr = totalClicks > 0 ? (totalConversions / totalClicks) * 100 : 0
 
-    const recentSessions = new Set(impressions.map((i) => i.session_id).filter(Boolean))
-    const reach = recentSessions.size
+    const reach = breakdowns.reach ?? 0
     const frequency = reach > 0 ? totalImpressions / reach : 0
 
     // Time-series buckets
@@ -164,21 +163,9 @@ export async function GET(
       clicks: dailyClicks[date],
     }))
 
-    // Context breakdown
-    const contextMap = new Map<string, { impressions: number; spend: number }>()
-    for (const imp of impressions) {
-      const key = parseContextKey(imp.context)
-      const current = contextMap.get(key) ?? { impressions: 0, spend: 0 }
-      current.impressions += 1
-      current.spend += impressionSpendCents(imp.auction_price_cpm) / 100
-      contextMap.set(key, current)
-    }
-    const contextBreakdown = Array.from(contextMap.entries())
-      .map(([name, vals]) => ({ name, ...vals }))
-      .sort((a, b) => b.impressions - a.impressions)
-      .slice(0, 10)
+    // Context + source breakdowns come from the DB aggregation (uncapped, billable).
+    const contextBreakdown = breakdowns.context ?? []
 
-    // Source breakdown — which surface (Codex, Cursor, Claude, terminal) served each view.
     const SOURCE_LABELS: Record<string, string> = {
       claude: 'Claude',
       cursor: 'Cursor',
@@ -186,17 +173,11 @@ export async function GET(
       terminal: 'Terminal',
       unknown: 'Unknown',
     }
-    const sourceMap = new Map<string, { impressions: number; spend: number }>()
-    for (const imp of impressions) {
-      const key = SOURCE_LABELS[imp.source as string] ?? 'Unknown'
-      const current = sourceMap.get(key) ?? { impressions: 0, spend: 0 }
-      current.impressions += 1
-      current.spend += impressionSpendCents(imp.auction_price_cpm) / 100
-      sourceMap.set(key, current)
-    }
-    const sourceBreakdown = Array.from(sourceMap.entries())
-      .map(([name, vals]) => ({ name, ...vals }))
-      .sort((a, b) => b.impressions - a.impressions)
+    const sourceBreakdown = (breakdowns.source ?? []).map((s) => ({
+      name: SOURCE_LABELS[s.name] ?? 'Unknown',
+      impressions: s.impressions,
+      spend: s.spend,
+    }))
 
     // Recent activity
     const recentActivity = [
