@@ -38,6 +38,12 @@ const impressionsRateLimiter = new RateLimiter(30, 60 * 1000)
 const MAX_DAILY_SPEND_CENTS = 50000 // $500/day cap per campaign
 const MAX_DAILY_SPEND_MILLICENTS = MAX_DAILY_SPEND_CENTS * 1000
 const MIN_TRUST_SCORE_FOR_PAYOUT = 20
+// Session pacing: the overlay rotates ~every 15s, so a long continuous wait could
+// still mint many impressions. Cap billable impressions per session to a rolling
+// rate so one marathon session can't inflate CPM volume. (session_id is per app run,
+// so this is a rate window, not a hard per-session total.)
+const SESSION_IMPRESSION_CAP = 5
+const SESSION_CAP_WINDOW_MS = 2 * 60 * 1000
 const MIN_ATTENTION_MS = 800
 
 // A reported dwell can't exceed how long the impression token has existed (both
@@ -267,6 +273,23 @@ export async function POST(req: NextRequest) {
     if (frequencyCount >= frequencyCap) {
       validated = false
       fraudFlags.push('frequency_cap')
+    }
+
+    // Session pacing backstop: don't bill more than SESSION_IMPRESSION_CAP impressions
+    // per session within a rolling window. Trusted test accounts are exempt (like the
+    // frequency cap) so testing never runs dry.
+    if (validated && !isTrusted) {
+      const since = new Date(Date.now() - SESSION_CAP_WINDOW_MS).toISOString()
+      const { count: recentBillable } = await supabase
+        .from('impressions')
+        .select('id', { count: 'exact', head: true })
+        .eq('session_id', sessionIdForRow)
+        .eq('validated', true)
+        .gte('created_at', since)
+      if ((recentBillable ?? 0) >= SESSION_IMPRESSION_CAP) {
+        validated = false
+        fraudFlags.push('session_pace_cap')
+      }
     }
 
     let referrerUserId: string | null = null

@@ -306,6 +306,8 @@ export async function GET() {
             ? 'Pays when clicked'
             : flags.includes('frequency_cap')
             ? 'Frequency cap reached'
+            : flags.includes('session_pace_cap')
+            ? 'Session pacing limit'
             : flags.some((f) => f.startsWith('budget'))
               ? 'Advertiser out of budget'
               : flags.includes('daily_spend_cap')

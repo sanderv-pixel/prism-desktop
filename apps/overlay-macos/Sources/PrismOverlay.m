@@ -7,7 +7,7 @@
 static const NSTimeInterval kPollInterval = 0.25;   // detection cadence
 static const int kHideAfterMisses = 3;              // debounce flicker
 static const int kShowAfterTicks = 4;               // ~1s after thinking begins (per guidelines)
-static const int kRotateEveryTicks = 24;            // ~6s ad rotation
+static const int kRotateEveryTicks = 60;            // ~15s ad rotation (refresh-norm aligned; each ad still bills once at 5s dwell)
 static const NSInteger kMinDwellMs = 5000;          // viewable-impression threshold
 static const CGFloat kPillHeight = 32.0;
 static const CGFloat kGlow = 16.0;                  // margin around the pill for the purple glow
