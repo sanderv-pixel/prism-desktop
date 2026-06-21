@@ -201,11 +201,14 @@ export async function POST(req: NextRequest) {
     const advertiserIds = Array.from(new Set(campaigns.map((c) => c.advertiser_id)))
     const { data: advertisers } = await supabase
       .from('advertisers')
-      .select('id, name, status')
+      .select('id, name, status, balance_cents')
       .in('id', advertiserIds)
 
     const advertiserMap = new Map(
-      ((advertisers as any[]) ?? []).map((a) => [a.id, { name: a.name, status: a.status }])
+      ((advertisers as any[]) ?? []).map((a) => [
+        a.id,
+        { name: a.name, status: a.status, balanceCents: a.balance_cents ?? 0 },
+      ])
     )
 
     const eligible = campaigns.filter((c) => {
@@ -214,6 +217,9 @@ export async function POST(req: NextRequest) {
       if (c.end_date && new Date(c.end_date) < now) return false
       const advertiser = advertiserMap.get(c.advertiser_id)
       if (!advertiser || advertiser.status !== 'active') return false
+      // Pay-as-you-go: don't serve an advertiser whose wallet is empty. Delivery
+      // resumes automatically once they top up.
+      if (advertiser.balanceCents <= 0) return false
       if (advertiser.name && hiddenAdvertisers.includes(advertiser.name)) return false
       const contexts = c.contexts ?? []
       if (contexts.length === 0) return true

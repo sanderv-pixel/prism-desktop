@@ -175,36 +175,10 @@ export async function POST(req: NextRequest) {
 
     if (error) throw error
 
-    try {
-      const { data: newBalance, error: reserveError } = await supabase.rpc(
-        'reserve_campaign_budget',
-        {
-          p_advertiser_id: advertiser.id,
-          p_campaign_id: data.id,
-          p_amount_cents: budgetCents,
-        }
-      )
-
-      if (reserveError) throw reserveError
-
-      if (newBalance === null) {
-        // Insufficient funds: roll back the campaign creation.
-        await supabase.from('campaigns').delete().eq('id', data.id)
-        throw new ApiError(
-          402,
-          `Insufficient account balance. Your campaign budget is $${(budgetCents / 100).toFixed(
-            2
-          )} but your available balance is $${(advertiser.balance_cents / 100).toFixed(
-            2
-          )}. Top up your account first.`,
-          'INSUFFICIENT_BALANCE'
-        )
-      }
-    } catch (err) {
-      // Make sure we do not leave an un-funded campaign behind on any error.
-      await supabase.from('campaigns').delete().eq('id', data.id)
-      throw err
-    }
+    // Pay-as-you-go: the budget is a per-campaign spend cap, not an upfront charge.
+    // Nothing is taken from the wallet on creation; each delivered impression draws
+    // its cost from the advertiser's balance, and delivery pauses when the wallet
+    // empties (see increment_campaign_spent_mc and the ads eligibility filter).
 
     await logAudit({
       actorId: user.id,

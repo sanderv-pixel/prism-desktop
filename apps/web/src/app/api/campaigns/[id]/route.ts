@@ -143,48 +143,13 @@ export async function PATCH(
       throw campaignError
     }
 
-    if (typeof data.budget_cents === 'number') {
-      // Budget changes move funds between wallet and campaign. Only allow when
-      // the campaign is not actively serving to avoid races with spend.
-      if (campaign.status === 'active') {
-        throw new ApiError(
-          409,
-          'Pause the campaign before changing its budget.',
-          'CAMPAIGN_ACTIVE'
-        )
-      }
-
-      const diff = data.budget_cents - campaign.budget_cents
-      if (diff > 0) {
-        const { data: newBalance, error: increaseError } = await supabase.rpc(
-          'increase_campaign_budget',
-          {
-            p_advertiser_id: advertiser.id,
-            p_campaign_id: campaign.id,
-            p_additional_cents: diff,
-          }
-        )
-        if (increaseError) throw increaseError
-        if (newBalance === null) {
-          throw new ApiError(
-            402,
-            'Insufficient account balance for this budget increase. Top up first.',
-            'INSUFFICIENT_BALANCE'
-          )
-        }
-      } else if (diff < 0) {
-        const { error: decreaseError } = await supabase.rpc('decrease_campaign_budget', {
-          p_advertiser_id: advertiser.id,
-          p_campaign_id: campaign.id,
-          p_reduction_cents: Math.abs(diff),
-        })
-        if (decreaseError) throw decreaseError
-      }
-    }
+    // Pay-as-you-go: the budget is a per-campaign spend cap, so changing it does
+    // not move any wallet funds. It can be edited freely, even while active, since
+    // each impression checks the cap fresh. Just persist the new value.
 
     const updateData: Record<string, unknown> = {}
     for (const [key, value] of Object.entries(data)) {
-      if (value !== undefined && key !== 'budget_cents') {
+      if (value !== undefined) {
         updateData[key] = value === '' ? null : value
       }
     }
@@ -306,11 +271,8 @@ export async function DELETE(
       throw campaignError
     }
 
-    const { error: releaseError } = await supabase.rpc('release_campaign_budget', {
-      p_advertiser_id: advertiser.id,
-      p_campaign_id: campaign.id,
-    })
-    if (releaseError) throw releaseError
+    // Pay-as-you-go: no budget was reserved from the wallet, so there is nothing to
+    // release on delete. Spend already happened impression-by-impression.
 
     const { error: deleteError } = await supabase
       .from('campaigns')
