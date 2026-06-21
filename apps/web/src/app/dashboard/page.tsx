@@ -20,11 +20,9 @@ import {
   CheckCircle2,
   Download,
   Bell,
-  Target,
   Users,
   Copy,
   Check,
-  Info,
   Monitor,
   Plus,
   X,
@@ -247,43 +245,37 @@ export default function BuilderDashboardPage() {
 
   const { stats, chartData, toolBreakdown, recentImpressions, payouts } = data
   const hasData = stats.totalImpressions > 0
+  const activeDevices = devices.filter((d) => d.active && !d.revoked).length
+  const connectedDevices = devices.filter((d) => !d.revoked).length
+  const lastEarned = devices.find((d) => !d.revoked)?.lastUsedAt ?? null
 
   return (
     <DashboardShell>
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
-        <div>
-          <p className="eyebrow mb-2">Creator dashboard</p>
-          <h1 className="text-3xl md:text-4xl font-semibold text-foreground mb-2">
-            Good to see you, {user?.email ? user.email.split('@')[0] : 'creator'}
-          </h1>
-          <p className="text-muted-foreground">
-            Track earnings, impressions, and manage your Prism account.
-          </p>
-        </div>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="md" href="/advertiser/dashboard">
-            <Target size={16} className="mr-2" />
-            Advertiser dashboard
-          </Button>
-          <a
-            href="/api/dashboard/export"
-            download
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-foreground hover:bg-muted whitespace-nowrap"
-          >
-            <Download size={15} /> Export
-          </a>
-          <Button variant="outline" size="md" href="/dashboard/settings">
-            Settings
-          </Button>
+          <div className="w-10 h-10 rounded-xl bg-violet-600 text-white flex items-center justify-center text-lg font-medium shrink-0">
+            {(user?.email ?? 'c').charAt(0).toLowerCase()}
+          </div>
+          <div>
+            <h1 className="text-xl font-semibold text-foreground leading-tight">
+              {user?.email ? user.email.split('@')[0] : 'creator'}
+            </h1>
+            <p className="text-xs text-muted-foreground">Creator</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1 text-sm">
+          <a href="/advertiser/dashboard" className="px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition">Advertiser</a>
+          <a href="/api/dashboard/export" download className="px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition">Export</a>
+          <a href="/dashboard/settings" className="px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition">Settings</a>
           {!data.user.connectStatus.configured ? (
-            <Button size="md" onClick={handleSetupPayouts}>
-              <Download size={16} className="mr-2" />
+            <Button size="md" onClick={handleSetupPayouts} className="ml-1.5">
               Set up payouts
             </Button>
           ) : (
             <Button
               size="md"
+              className="ml-1.5"
               onClick={() => {
                 setWithdrawAmount((stats.balanceCents / 100).toFixed(2))
                 setShowWithdraw(true)
@@ -297,79 +289,63 @@ export default function BuilderDashboardPage() {
         </div>
       </div>
 
-      {/* Balance card */}
-      <div className="rounded-2xl card p-6 md:p-8 mb-8 relative overflow-hidden hover:shadow-md transition">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-violet-100 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
-        <div className="relative">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">Available balance</p>
-              <p className="text-4xl md:text-5xl font-semibold text-foreground">
-                {formatCents(stats.balanceCents)}
-              </p>
-              <div className="flex items-center gap-2 mt-2">
-                <TrendingUp size={14} className="text-emerald-600" />
-                <span className="text-sm text-emerald-600">
-                  +{formatCents(stats.totalEarningsCents)} lifetime earnings
-                </span>
-              </div>
-            </div>
-            <div className="flex gap-6 md:gap-10">
-              <div>
-                <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
-                  Pending
-                </p>
-                <p className="text-xl font-medium text-foreground">
-                  {formatCents(stats.pendingPayoutCents)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
-                  Validated
-                </p>
-                <p className="text-xl font-medium text-foreground">
-                  {formatNumber(stats.validatedImpressions)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
-                  Avg attention
-                </p>
-                <p className="text-xl font-medium text-foreground">
-                  {Math.round(stats.avgDurationMs / 1000)}s
-                </p>
-              </div>
-            </div>
+      {/* Hero: balance + earning status */}
+      <div className="grid md:grid-cols-[1.3fr_1fr] gap-5 mb-5">
+        <div className="rounded-2xl card p-6">
+          <p className="text-sm text-muted-foreground mb-1">Available to withdraw</p>
+          <p className="text-4xl md:text-5xl font-semibold text-foreground leading-none">
+            {formatCents(stats.balanceCents)}
+          </p>
+          <p className="text-sm text-muted-foreground mt-3">
+            {formatCents(stats.totalEarningsCents)} lifetime · {formatCents(stats.pendingPayoutCents)} pending
+          </p>
+        </div>
+        <div className="rounded-2xl card p-6 flex flex-col justify-center gap-2">
+          <div className="flex items-center gap-2">
+            <span
+              className={`w-2.5 h-2.5 rounded-full ${
+                activeDevices > 0 ? 'bg-emerald-500' : connectedDevices > 0 ? 'bg-amber-400' : 'bg-muted-foreground'
+              }`}
+            />
+            <span className="text-sm font-medium text-foreground">
+              {activeDevices > 0 ? 'Earning now' : connectedDevices > 0 ? 'Connected · idle' : 'Not connected'}
+            </span>
           </div>
-
-          {!data.user.connectStatus.configured && (
-            <div className="mt-6 rounded-xl bg-amber-50 border border-amber-200 p-4 flex items-start gap-3">
-              <Bell size={18} className="text-amber-500 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-amber-800">
-                  Payout method required
-                </p>
-                <p className="text-sm text-amber-700">
-                  Add your Wise or Payoneer details to withdraw earnings. Minimum payout is $20.
-                </p>
-              </div>
-            </div>
-          )}
-          {data.user.connectStatus.configured && !data.user.payoutEnabled && stats.balanceCents < 2000 && (
-            <div className="mt-6 rounded-xl bg-blue-50 border border-blue-200 p-4 flex items-start gap-3">
-              <Clock size={18} className="text-blue-500 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-blue-800">
-                  Minimum payout: $20
-                </p>
-                <p className="text-sm text-blue-700">
-                  Your payout method is set up. Withdraw unlocks once your balance reaches $20.
-                </p>
-              </div>
-            </div>
+          <p className="text-xs text-muted-foreground">
+            {connectedDevices > 0
+              ? `${connectedDevices} device${connectedDevices === 1 ? '' : 's'}${lastEarned ? ` · last earned ${timeAgo(lastEarned)}` : ''}`
+              : 'Install Prism to start earning while your AI thinks.'}
+          </p>
+          {connectedDevices === 0 && (
+            <a href="/install" className="text-xs text-primary hover:underline">
+              Install Prism →
+            </a>
           )}
         </div>
       </div>
+
+      {!data.user.connectStatus.configured && (
+        <div className="mb-6 rounded-xl bg-amber-50 border border-amber-200 p-4 flex items-start gap-3">
+          <Bell size={18} className="text-amber-500 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-amber-800">Payout method required</p>
+            <p className="text-sm text-amber-700">
+              Add your Wise or Payoneer details to withdraw earnings. Minimum payout is $20.
+            </p>
+          </div>
+        </div>
+      )}
+      {data.user.connectStatus.configured && !data.user.payoutEnabled && stats.balanceCents < 2000 && (
+        <div className="mb-6 rounded-xl bg-blue-50 border border-blue-200 p-4 flex items-start gap-3">
+          <Clock size={18} className="text-blue-500 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-blue-800">Minimum payout: $20</p>
+            <p className="text-sm text-blue-700">
+              Your payout method is set up. Withdraw unlocks once your balance reaches $20.
+            </p>
+          </div>
+        </div>
+      )}
 
       {data.user.payoutHold && (
         <div className="mb-8 rounded-2xl border border-amber-200 bg-amber-50 p-5 flex items-start gap-3">
@@ -481,119 +457,44 @@ export default function BuilderDashboardPage() {
         />
       </div>
 
-      {/* Referral + transparency */}
-      <div className="grid lg:grid-cols-3 gap-6 mb-8">
-        <div className="lg:col-span-2 rounded-2xl card p-6 hover:shadow-md transition">
-          <div className="flex items-start gap-4 mb-6">
-            <div className="h-12 w-12 rounded-xl bg-violet-50 flex items-center justify-center text-primary">
-              <Users size={24} strokeWidth={1.5} />
+      {/* Referral */}
+      {data.referral.referralCode && (
+        <div className="rounded-2xl card p-5 mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-violet-50 flex items-center justify-center text-primary shrink-0">
+              <Users size={20} strokeWidth={1.5} />
             </div>
             <div>
-              <h3 className="text-lg font-medium text-foreground">Refer creators</h3>
-              <p className="text-sm text-muted-foreground">
-                Earn 10% of what your referred creators earn, for life.
+              <p className="text-sm font-medium text-foreground">Refer creators, earn 10% for life</p>
+              <p className="text-xs text-muted-foreground">
+                {formatNumber(data.referral.referredCount)} referred · +
+                {formatCents(data.referral.referralEarningsCents)} earned
               </p>
             </div>
           </div>
-
-          {data.referral.referralCode ? (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5">
-                  Your referral code
-                </label>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 rounded-lg border border-border bg-muted/50 px-4 py-2.5 font-mono text-foreground">
-                    {data.referral.referralCode}
-                  </div>
-                  <button
-                    onClick={() => copyToClipboard(data.referral.referralCode!, 'code')}
-                    className="inline-flex items-center justify-center rounded-lg border border-border bg-white px-3 py-2.5 text-muted-foreground hover:text-foreground hover:border-primary/50 transition"
-                    aria-label="Copy referral code"
-                  >
-                    {copiedField === 'code' ? (
-                      <Check size={18} className="text-emerald-600" />
-                    ) : (
-                      <Copy size={18} />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5">
-                  Share link
-                </label>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 rounded-lg border border-border bg-muted/50 px-4 py-2.5 text-sm text-foreground truncate">
-                    {`https://goprism.dev/auth/sign-up?ref=${data.referral.referralCode}`}
-                  </div>
-                  <button
-                    onClick={() =>
-                      copyToClipboard(
-                        `https://goprism.dev/auth/sign-up?ref=${data.referral.referralCode}`,
-                        'link'
-                      )
-                    }
-                    className="inline-flex items-center justify-center rounded-lg border border-border bg-white px-3 py-2.5 text-muted-foreground hover:text-foreground hover:border-primary/50 transition"
-                    aria-label="Copy referral link"
-                  >
-                    {copiedField === 'link' ? (
-                      <Check size={18} className="text-emerald-600" />
-                    ) : (
-                      <Copy size={18} />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 pt-2">
-                <div className="rounded-xl bg-muted/50 border border-border p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Referred creators</p>
-                  <p className="text-2xl font-semibold text-foreground">
-                    {formatNumber(data.referral.referredCount)}
-                  </p>
-                </div>
-                <div className="rounded-xl bg-muted/50 border border-border p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Referral earnings</p>
-                  <p className="text-2xl font-semibold text-emerald-600">
-                    +{formatCents(data.referral.referralEarningsCents)}
-                  </p>
-                </div>
-              </div>
+          <div className="flex items-center gap-2">
+            <div className="rounded-lg border border-border bg-muted/50 px-3 py-2 font-mono text-sm text-foreground truncate max-w-[160px]">
+              {data.referral.referralCode}
             </div>
-          ) : (
-            <div className="rounded-xl bg-muted/50 border border-border p-4 text-sm text-muted-foreground">
-              Your referral code is being generated. Check back in a moment.
-            </div>
-          )}
-        </div>
-
-        <div className="rounded-2xl card p-6 hover:shadow-md transition">
-          <div className="flex items-start gap-3 mb-4">
-            <Info size={20} className="text-primary mt-0.5" />
-            <h3 className="text-lg font-medium text-foreground">How earnings work</h3>
+            <button
+              onClick={() =>
+                copyToClipboard(
+                  `https://goprism.dev/auth/sign-up?ref=${data.referral.referralCode}`,
+                  'link'
+                )
+              }
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-white px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:border-primary/50 transition whitespace-nowrap"
+            >
+              {copiedField === 'link' ? (
+                <Check size={15} className="text-emerald-600" />
+              ) : (
+                <Copy size={15} />
+              )}
+              Copy link
+            </button>
           </div>
-          <ul className="space-y-3 text-sm text-muted-foreground">
-            <li className="flex gap-2">
-              <span className="text-primary">•</span>
-              You earn 50% of the advertiser's clearing price per validated impression.
-            </li>
-            <li className="flex gap-2">
-              <span className="text-primary">•</span>
-              Referrers earn an extra 10% of what their referred creators earn.
-            </li>
-            <li className="flex gap-2">
-              <span className="text-primary">•</span>
-              Payouts are sent via Wise or Payoneer once you reach $20.
-            </li>
-            <li className="flex gap-2">
-              <span className="text-primary">•</span>
-              Impressions may be held while our fraud checks run.
-            </li>
-          </ul>
         </div>
-      </div>
+      )}
 
       {/* Charts row */}
       <div className="grid lg:grid-cols-3 gap-6 mb-8">
