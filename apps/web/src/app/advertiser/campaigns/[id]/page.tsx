@@ -18,6 +18,7 @@ import {
 import { CONTEXT_OPTIONS } from '@/lib/campaign-contexts'
 import { IconUpload } from '@/components/IconUpload'
 import { AdPreview } from '@/components/AdPreview'
+import { CampaignCreatives } from '@/components/advertiser/CampaignCreatives'
 
 interface Campaign {
   id: string
@@ -456,6 +457,10 @@ export default function EditCampaignPage() {
               </button>
             </div>
           </form>
+
+          <div className="mt-6">
+            <CampaignCreatives campaignId={id} />
+          </div>
         </div>
       </div>
     </DashboardShell>
