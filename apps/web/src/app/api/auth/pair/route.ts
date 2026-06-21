@@ -76,10 +76,12 @@ export async function POST(req: NextRequest) {
     if (!rate.success) return rateLimitResponse(rate.limit, rate.resetAt)
 
     const apiKey = generateDeviceApiKey()
+    // Don't store a placeholder fingerprint here — the browser pairing call can't
+    // see the overlay's device. The credential's fingerprint is established by
+    // trust-on-first-use from the first impression the overlay reports.
     await registerDeviceCredential({
       anonymousUserId: user.id,
       apiKey,
-      fingerprint: { source: 'overlay-pair' },
       ip: getClientIp(req),
     })
     await kvSet(PAIR_PREFIX + code, apiKey, { ex: PAIR_TTL_SECONDS })

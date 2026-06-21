@@ -4,6 +4,7 @@ import {
   getDeviceCredentialByUserId,
   hashFingerprint,
   incrementFingerprintMismatchCount,
+  setDeviceFingerprintHash,
 } from './device-keys'
 
 export interface FraudSignals {
@@ -201,10 +202,12 @@ export async function evaluateFraud(
     getUserCampaignRecentCount(supabase, userId, campaignId),
   ])
 
-  // 5. Per-user daily cap.
+  // 5. Per-user daily volume. A heavy but legitimate AI user can genuinely cross
+  // this, so it is only a soft flag for monitoring, not a block. The per-campaign
+  // frequency cap is the real economic ceiling on what one user can earn.
   if (dailyCount >= MAX_DAILY_IMPRESSIONS_PER_USER) {
     reasons.push('daily_user_impression_cap')
-    score += BLOCK_WEIGHT
+    score += FLAG_WEIGHT
   }
 
   // 6. Too fast between impressions (minimum human reaction time).
@@ -222,13 +225,14 @@ export async function evaluateFraud(
     score += FLAG_WEIGHT
   }
 
-  // 8. Repeated identical context (copy-paste / replay bots).
+  // 8. Repeated identical context. For an "ad while the AI thinks" product a
+  // focused user legitimately keeps near-identical context, and exact replay is
+  // already prevented by the single-use impression-token nonce. So this is kept
+  // only as an informational signal (no score), never a block.
   if (identicalContextCount >= MAX_IDENTICAL_CONTEXTS_PER_HOUR) {
     reasons.push('repeated_context_fingerprint')
-    score += BLOCK_WEIGHT
   } else if (identicalContextCount >= 2) {
     reasons.push('duplicate_context_fingerprint')
-    score += FLAG_WEIGHT
   }
 
   // 9. DB-backed user-campaign velocity (defense if Redis is unavailable).
@@ -249,12 +253,24 @@ export async function evaluateDeviceFingerprint(
   fingerprint: unknown
 ): Promise<FraudResult> {
   const credential = await getDeviceCredentialByUserId(userId)
-  if (!credential || !credential.fingerprint_hash) {
+  if (!credential) {
+    return { blocked: false, reasons: [], score: 0 }
+  }
+
+  if (!credential.fingerprint_hash) {
+    // Trust on first use: establish the device fingerprint from the first
+    // impression that carries one, with no penalty either way. Pairing no longer
+    // stores a placeholder, so this is where a real device gets bound.
+    if (fingerprint) {
+      const hash = await hashFingerprint(fingerprint)
+      if (hash) await setDeviceFingerprintHash(userId, hash)
+    }
     return { blocked: false, reasons: [], score: 0 }
   }
 
   if (!fingerprint) {
-    // A registered device that stops sending a fingerprint is mildly suspicious.
+    // A device with an established fingerprint that stops sending one is mildly
+    // suspicious, but never enough to block on its own.
     return {
       blocked: false,
       reasons: ['missing_device_fingerprint'],

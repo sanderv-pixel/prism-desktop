@@ -11,6 +11,24 @@ static NSDictionary *AdContext(void) {
               @"intent": @"coding", @"audience": @"developers", @"waitState": @YES };
 }
 
+// Stable per-device id, generated once and persisted. Lets the backend bind the
+// account's key to this device (trust-on-first-use) and detect the key being
+// copied to another machine. Not hardware-derived, so a reinstall makes a new id;
+// re-pairing re-establishes it.
+static NSString *DeviceId(void) {
+    NSUserDefaults *def = [NSUserDefaults standardUserDefaults];
+    NSString *did = [def stringForKey:@"PrismDeviceId"];
+    if (!did.length) {
+        did = [[NSUUID UUID].UUIDString stringByReplacingOccurrencesOfString:@"-" withString:@""];
+        [def setObject:did forKey:@"PrismDeviceId"];
+    }
+    return did;
+}
+
+static NSDictionary *DeviceFingerprint(void) {
+    return @{ @"deviceId": DeviceId(), @"platform": @"macos" };
+}
+
 static NSColor *ColorHex(uint32_t rgb) {
     return [NSColor colorWithSRGBRed:((rgb >> 16) & 0xff) / 255.0
                                green:((rgb >> 8) & 0xff) / 255.0
@@ -120,6 +138,7 @@ static NSColor *ColorHex(uint32_t rgb) {
     NSDictionary *body = @{ @"userId": uid, @"sessionId": sid,
                             @"campaignId": ad.adId, @"impressionToken": ad.impressionToken,
                             @"durationMs": @(durationMs), @"context": AdContext(),
+                            @"fingerprint": DeviceFingerprint(),
                             @"source": source.length ? source : @"unknown" };
     [[[NSURLSession sharedSession] dataTaskWithRequest:[self postTo:@"impressions" body:body]
         completionHandler:^(NSData *d, NSURLResponse *r, NSError *e) { /* fire and forget */ }] resume];

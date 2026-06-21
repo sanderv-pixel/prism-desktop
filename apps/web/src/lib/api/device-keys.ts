@@ -153,6 +153,23 @@ export async function getDeviceCredentialByUserId(
   return (data as DeviceCredentialRow | null) ?? null
 }
 
+// Trust on first use: record the device fingerprint the first time one arrives,
+// but only when none is established yet (the `is null` guard avoids overwriting a
+// known device and is race-safe). Later impressions from a different device then
+// mismatch and get caught.
+export async function setDeviceFingerprintHash(
+  anonymousUserId: string,
+  fingerprintHash: string
+): Promise<void> {
+  if (!fingerprintHash) return
+  const supabase = createAdminClient()
+  await supabase
+    .from('device_credentials')
+    .update({ fingerprint_hash: fingerprintHash })
+    .eq('anonymous_user_id', anonymousUserId)
+    .is('fingerprint_hash', null)
+}
+
 export async function incrementFingerprintMismatchCount(
   anonymousUserId: string
 ): Promise<number> {
