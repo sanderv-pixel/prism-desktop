@@ -20,6 +20,8 @@ export type AuditAction =
   | 'advertiser.activate'
   | 'advertiser.deactivate'
   | 'advertiser.deposit'
+  | 'advertiser.pause_all'
+  | 'advertiser.close'
   | 'impression.blocked'
   | 'admin.user.set_hold'
   | 'admin.user.release_hold'
