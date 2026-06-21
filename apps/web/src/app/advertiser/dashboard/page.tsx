@@ -568,6 +568,9 @@ export default function AdvertiserDashboardPage() {
           <Button variant="outline" size="md" href="/advertiser/billing">
             Billing
           </Button>
+          <Button variant="outline" size="md" href="/advertiser/conversions">
+            Tracking
+          </Button>
           <Button size="md" href="/advertiser/campaigns/new" disabled={!isActive}>
             <Plus size={16} className="mr-2" />
             New campaign
