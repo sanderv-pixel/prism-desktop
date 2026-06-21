@@ -159,8 +159,12 @@ export async function POST(req: NextRequest) {
       throw new ApiError(400, 'CPM bid must be at least $0.08', 'INVALID_BID')
     }
 
-    // Performance campaigns need conversion tracking; keep them pending for now.
-    const initialStatus = objective === 'performance' ? 'pending_review' : 'active'
+    // Performance campaigns need conversion tracking, so they default to manual
+    // review. Opt-in PRISM_AUTO_APPROVE_CAMPAIGNS=true skips that and activates them
+    // immediately. Default (unset) preserves today's manual-review behavior.
+    const autoApproveCampaigns = process.env.PRISM_AUTO_APPROVE_CAMPAIGNS === 'true'
+    const initialStatus =
+      objective === 'performance' && !autoApproveCampaigns ? 'pending_review' : 'active'
 
     const { data, error } = await supabase
       .from('campaigns')
