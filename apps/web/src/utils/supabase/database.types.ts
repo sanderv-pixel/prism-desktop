@@ -83,6 +83,9 @@ export type Database = {
           id: string
           lifetime_deposits_cents: number
           name: string
+          notify_budget: boolean
+          notify_campaign_status: boolean
+          notify_low_balance: boolean
           status: string
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
@@ -104,6 +107,9 @@ export type Database = {
           email: string
           id?: string
           lifetime_deposits_cents?: number
+          notify_budget?: boolean
+          notify_campaign_status?: boolean
+          notify_low_balance?: boolean
           name: string
           status?: string
           stripe_customer_id?: string | null
@@ -126,6 +132,9 @@ export type Database = {
           email?: string
           id?: string
           lifetime_deposits_cents?: number
+          notify_budget?: boolean
+          notify_campaign_status?: boolean
+          notify_low_balance?: boolean
           name?: string
           status?: string
           stripe_customer_id?: string | null

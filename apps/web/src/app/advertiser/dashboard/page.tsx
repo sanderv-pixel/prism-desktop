@@ -558,6 +558,7 @@ export default function AdvertiserDashboardPage() {
           <a href="/advertiser/campaigns" className="px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition">Campaigns</a>
           <a href="/advertiser/billing" className="px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition">Billing</a>
           <a href="/advertiser/conversions" className="px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition">Tracking</a>
+          <a href="/advertiser/settings" className="px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition">Settings</a>
           <a href="/dashboard" className="px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition">Creator</a>
           <Button size="md" href="/advertiser/campaigns/new" disabled={!isActive} className="ml-1.5">
             <Plus size={16} className="mr-2" />
