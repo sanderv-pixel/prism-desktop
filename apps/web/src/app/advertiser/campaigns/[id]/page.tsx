@@ -30,6 +30,8 @@ interface Campaign {
   budget_cents: number
   spent_cents: number
   max_bid_cpm: number
+  max_bid_cpc: number | null
+  bid_type: string
   daily_budget_cents: number | null
   frequency_cap: number | null
   frequency_window_hours: number | null
@@ -53,6 +55,7 @@ export default function EditCampaignPage() {
   const [contexts, setContexts] = useState<string[]>([])
   const [targetSources, setTargetSources] = useState<string[]>([])
   const [maxBidCpm, setMaxBidCpm] = useState('12')
+  const [maxBidCpc, setMaxBidCpc] = useState('0.50')
   const [dailyBudget, setDailyBudget] = useState('')
   const [frequencyCap, setFrequencyCap] = useState('')
   const [frequencyWindow, setFrequencyWindow] = useState('24')
@@ -77,6 +80,7 @@ export default function EditCampaignPage() {
       setContexts(data.contexts ?? [])
       setTargetSources(data.target_sources ?? [])
       setMaxBidCpm(((data.max_bid_cpm ?? 1200) / 100).toString())
+      setMaxBidCpc(((data.max_bid_cpc ?? 50) / 100).toString())
       setDailyBudget(data.daily_budget_cents ? (data.daily_budget_cents / 100).toString() : '')
       setFrequencyCap(data.frequency_cap ? data.frequency_cap.toString() : '')
       setFrequencyWindow(data.frequency_window_hours ? data.frequency_window_hours.toString() : '24')
@@ -111,7 +115,13 @@ export default function EditCampaignPage() {
         icon_url: iconUrl || null,
         contexts,
         target_sources: targetSources.length > 0 ? targetSources : null,
-        max_bid_cpm: Math.round(parseFloat(maxBidCpm) * 100),
+      }
+
+      // The pricing model is fixed at creation; only edit the relevant bid amount.
+      if (campaign?.bid_type === 'cpc') {
+        body.max_bid_cpc = Math.round(parseFloat(maxBidCpc) * 100)
+      } else {
+        body.max_bid_cpm = Math.round(parseFloat(maxBidCpm) * 100)
       }
 
       if (dailyBudget) body.daily_budget_cents = Math.round(parseFloat(dailyBudget) * 100)
@@ -398,21 +408,41 @@ export default function EditCampaignPage() {
             </div>
 
             <div className="grid sm:grid-cols-2 gap-5">
-              <div>
-                <label className="block text-sm font-medium text-foreground/80 mb-1.5">
-                  Max CPM bid (USD)
-                </label>
-                <input
-                  type="number"
-                  required
-                  min="8"
-                  step="0.5"
-                  value={maxBidCpm}
-                  onChange={(e) => setMaxBidCpm(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-input px-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
-                />
-                <p className="text-xs text-muted-foreground mt-1.5">Floor $8, typical $8–$25</p>
-              </div>
+              {campaign?.bid_type === 'cpc' ? (
+                <div>
+                  <label className="block text-sm font-medium text-foreground/80 mb-1.5">
+                    Max CPC bid (USD per click)
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min="0.01"
+                    step="0.05"
+                    value={maxBidCpc}
+                    onChange={(e) => setMaxBidCpc(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-input px-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    You only pay per click. Ranked by effective CPM (bid x predicted CTR).
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-foreground/80 mb-1.5">
+                    Max CPM bid (USD)
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min="8"
+                    step="0.5"
+                    value={maxBidCpm}
+                    onChange={(e) => setMaxBidCpm(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-input px-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1.5">Floor $8, typical $8–$25</p>
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-foreground/80 mb-1.5">
                   Daily budget (USD)
