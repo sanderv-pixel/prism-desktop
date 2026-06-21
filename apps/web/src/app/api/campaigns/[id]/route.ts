@@ -169,6 +169,27 @@ export async function PATCH(
       throw error
     }
 
+    // A/B: the served ad comes from campaign_creatives, so keep the primary (oldest)
+    // creative in sync when the campaign's base creative fields are edited. Additional
+    // A/B variants are managed separately under /creatives.
+    const creativeSync: Record<string, unknown> = {}
+    if ('copy' in data) creativeSync.copy = updateData.copy
+    if ('brand_name' in data) creativeSync.brand_name = (updateData.brand_name as string) || null
+    if ('url' in data) creativeSync.url = updateData.url
+    if ('icon_url' in data) creativeSync.icon_url = (updateData.icon_url as string) || null
+    if (Object.keys(creativeSync).length > 0) {
+      const { data: primary } = await supabase
+        .from('campaign_creatives')
+        .select('id')
+        .eq('campaign_id', params.id)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle()
+      if (primary) {
+        await supabase.from('campaign_creatives').update(creativeSync as any).eq('id', primary.id)
+      }
+    }
+
     // Re-fetch so budget changes made via wallet RPC are reflected in the response.
     const { data: freshCampaign, error: freshError } = await supabase
       .from('campaigns')
