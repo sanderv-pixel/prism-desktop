@@ -245,6 +245,8 @@ export type Database = {
           currency: string | null
           id: string
           kyc_status: string
+          notify_payout: boolean
+          notify_product: boolean
           onboarding_complete: boolean
           payout_provider: string | null
           payouts_enabled: boolean
@@ -260,6 +262,8 @@ export type Database = {
           currency?: string | null
           id?: string
           kyc_status?: string
+          notify_payout?: boolean
+          notify_product?: boolean
           onboarding_complete?: boolean
           payout_provider?: string | null
           payouts_enabled?: boolean
@@ -275,6 +279,8 @@ export type Database = {
           currency?: string | null
           id?: string
           kyc_status?: string
+          notify_payout?: boolean
+          notify_product?: boolean
           onboarding_complete?: boolean
           payout_provider?: string | null
           payouts_enabled?: boolean
@@ -934,6 +940,10 @@ export type Database = {
       campaign_analytics_breakdowns: {
         Args: { p_campaign_ids: string[]; p_since?: string }
         Returns: Json
+      }
+      creator_daily_earnings: {
+        Args: { p_user_ids: string[]; p_since?: string }
+        Returns: { day: string; impressions: number; earnings_millicents: number }[]
       }
       credit_advertiser_balance:
         | {

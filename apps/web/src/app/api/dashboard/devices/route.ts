@@ -44,23 +44,24 @@ export async function GET() {
   return NextResponse.json({ devices })
 }
 
-const RevokeSchema = z.object({ id: z.string().uuid() })
+const RevokeSchema = z.object({ id: z.string().uuid().optional(), all: z.boolean().optional() })
 
-// Revoke (disconnect) a device. Takes effect within ~5 minutes (key cache TTL).
+// Revoke (disconnect) a device, or all of them. Takes effect within ~5 minutes
+// (key cache TTL). Scoped to the creator's own devices.
 export async function POST(req: NextRequest) {
   const authClient = await createClient()
   const { data: { user } } = await authClient.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const parsed = RevokeSchema.safeParse(await req.json().catch(() => ({})))
-  if (!parsed.success) return NextResponse.json({ error: 'Invalid device' }, { status: 400 })
+  if (!parsed.success || (!parsed.data.id && !parsed.data.all)) {
+    return NextResponse.json({ error: 'Invalid device' }, { status: 400 })
+  }
 
   const supabase = createAdminClient()
   const ids = await linkedUserIds(user.id)
-  const { error } = await supabase
-    .from('device_credentials')
-    .update({ revoked: true })
-    .eq('id', parsed.data.id)
-    .in('anonymous_user_id', ids)
+  let query = supabase.from('device_credentials').update({ revoked: true }).in('anonymous_user_id', ids)
+  if (!parsed.data.all && parsed.data.id) query = query.eq('id', parsed.data.id)
+  const { error } = await query
   if (error) return NextResponse.json({ error: 'Could not revoke device' }, { status: 500 })
   return NextResponse.json({ ok: true })
 }
