@@ -43,7 +43,7 @@ export async function getAdvertiserById(advertiserId: string) {
   const adminClient = createAdminClient()
   const { data, error } = await adminClient
     .from('advertisers')
-    .select('id, name, email, status, balance_cents')
+    .select('id, name, email, status, balance_cents, notify_budget, notify_low_balance, notify_campaign_status')
     .eq('id', advertiserId)
     .single()
 
@@ -69,7 +69,7 @@ export async function getCampaignWithAdvertiser(campaignId: string) {
 
   const { data: advertiser, error: advertiserError } = await adminClient
     .from('advertisers')
-    .select('id, name, email, status, balance_cents')
+    .select('id, name, email, status, balance_cents, notify_budget, notify_low_balance, notify_campaign_status')
     .eq('id', campaign.advertiser_id)
     .single()
 
@@ -174,6 +174,7 @@ export async function sendCampaignLiveEmail(campaignId: string) {
   const campaign = await getCampaignWithAdvertiser(campaignId)
   if (!campaign?.advertiser?.email) return
   const advertiser = campaign.advertiser
+  if (advertiser.notify_campaign_status === false) return
   const { subject, html, text } = campaignLiveEmail(advertiser.name || advertiser.email, campaign.title)
   await sendEmail({ to: advertiser.email, subject, html, text }).catch(() => {})
 }
@@ -182,6 +183,7 @@ export async function sendCampaignBudgetExhaustedEmail(campaignId: string) {
   const campaign = await getCampaignWithAdvertiser(campaignId)
   if (!campaign?.advertiser?.email) return
   const advertiser = campaign.advertiser
+  if (advertiser.notify_budget === false) return
   const { subject, html, text } = campaignBudgetExhaustedEmail(
     advertiser.name || advertiser.email,
     campaign.title,
@@ -199,6 +201,7 @@ export async function maybeSendLowBalanceEmail(advertiserId: string, balanceCent
 
   const advertiser = await getAdvertiserById(advertiserId)
   if (!advertiser?.email) return
+  if (advertiser.notify_low_balance === false) return
 
   const { subject, html, text } = lowBalanceEmail(advertiser.name || advertiser.email, balanceCents)
   await sendEmail({ to: advertiser.email, subject, html, text }).catch(() => {})
