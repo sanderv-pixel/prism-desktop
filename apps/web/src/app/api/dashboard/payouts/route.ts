@@ -15,7 +15,7 @@ import {
 
 export const dynamic = 'force-dynamic'
 
-const MIN_PAYOUT_CENTS = 5000 // $50.00
+const MIN_PAYOUT_CENTS = 2000 // $20.00
 const payoutRateLimiter = new RateLimiter(3, 60 * 60 * 1000)
 
 async function getLinkedUserIds(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
