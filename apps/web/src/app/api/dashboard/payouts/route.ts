@@ -192,11 +192,25 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Optional partial withdrawal: default to the full available balance.
+    const body = (await req.json().catch(() => ({}))) as { amountCents?: number }
+    const requestedCents =
+      typeof body?.amountCents === 'number' ? Math.round(body.amountCents) : availableCents
+    if (requestedCents < MIN_PAYOUT_CENTS) {
+      return NextResponse.json(
+        { error: `Minimum payout is $${(MIN_PAYOUT_CENTS / 100).toFixed(2)}` },
+        { status: 400 }
+      )
+    }
+    if (requestedCents > availableCents) {
+      return NextResponse.json({ error: 'Amount exceeds your available balance.' }, { status: 400 })
+    }
+
     const { data: payout, error } = await supabase
       .from('payouts')
       .insert({
         user_id: user.id,
-        amount_cents: availableCents,
+        amount_cents: requestedCents,
         status: 'pending_review',
       })
       .select()
