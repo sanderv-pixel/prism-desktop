@@ -87,6 +87,13 @@ function formatCents(cents: number) {
   return `$${(cents / 100).toFixed(2)}`
 }
 
+// A single impression now earns a fraction of a cent (50% of the bid), so show
+// sub-dollar amounts in cents and only switch to dollars at $1+.
+function formatEarning(cents: number) {
+  if (cents < 100) return `${cents.toFixed(cents < 10 ? 2 : 1)}¢`
+  return `$${(cents / 100).toFixed(2)}`
+}
+
 function formatNumber(n: number) {
   return new Intl.NumberFormat('en-US').format(n)
 }
@@ -534,7 +541,7 @@ export default function BuilderDashboardPage() {
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-medium text-emerald-600">
-                      +{formatCents(imp.payoutCents)}
+                      +{formatEarning(imp.payoutCents)}
                     </p>
                     <p className="text-xs text-muted-foreground">{timeAgo(imp.createdAt)}</p>
                   </div>

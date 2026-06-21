@@ -340,6 +340,7 @@ export async function POST(req: NextRequest) {
           auction_price_cpm: 1200,
           currency: 'usd',
           payout_cents: 1,
+          payout_millicents: 1000,
           created_at: daysAgo(0),
         },
         {
@@ -352,6 +353,7 @@ export async function POST(req: NextRequest) {
           auction_price_cpm: 1200,
           currency: 'usd',
           payout_cents: 1,
+          payout_millicents: 1000,
           created_at: daysAgo(1),
         },
         {
@@ -364,6 +366,7 @@ export async function POST(req: NextRequest) {
           auction_price_cpm: 1200,
           currency: 'usd',
           payout_cents: 2,
+          payout_millicents: 2000,
           created_at: daysAgo(2),
         },
       ])
