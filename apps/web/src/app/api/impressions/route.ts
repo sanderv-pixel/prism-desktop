@@ -131,6 +131,7 @@ export async function POST(req: NextRequest) {
     }
     const sessionIdForRow = tokenPayload.sessionId || sessionId
     const auctionPriceCpm = tokenPayload.auctionPriceCpm || 0
+    const bidType: 'cpm' | 'cpc' = tokenPayload.bidType === 'cpc' ? 'cpc' : 'cpm'
     if (await isNonceUsed(tokenPayload.nonce)) {
       return NextResponse.json(
         { error: 'Duplicate impression token', code: 'DUPLICATE_TOKEN' },
@@ -219,6 +220,7 @@ export async function POST(req: NextRequest) {
         context_hash: ctxHash,
         duration_ms: durationMs,
         auction_price_cpm: auctionPriceCpm,
+        bid_type: bidType,
         token_nonce: tokenNonce,
         currency: 'usd',
         source: impressionSource,
@@ -269,7 +271,12 @@ export async function POST(req: NextRequest) {
 
     let referrerUserId: string | null = null
 
-    if (validated) {
+    if (validated && bidType === 'cpc') {
+      // CPC: nothing is charged or earned at impression time. The advertiser pays
+      // per click and the creator earns 50% of that click price (see /api/clicks).
+      // Record the referrer now so the click can credit them.
+      referrerUserId = await getReferrerUserId(supabase, userId)
+    } else if (validated) {
       // The advertiser pays the full auction clearing price per impression
       // (auction_price_cpm is cents per 1000 impressions, so per impression it is
       // auction_price_cpm millicents). The creator earns exactly 50% of that, with
@@ -317,6 +324,7 @@ export async function POST(req: NextRequest) {
         context_hash: ctxHash,
         duration_ms: durationMs,
         auction_price_cpm: auctionPriceCpm,
+        bid_type: bidType,
         token_nonce: tokenNonce,
         currency: 'usd',
         source: impressionSource,

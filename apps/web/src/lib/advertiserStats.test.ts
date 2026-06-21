@@ -22,6 +22,8 @@ describe('computeAdvertiserStats', () => {
       max_bid_cpm: 1200,
       budget_cents: 25000,
       spent_cents: 4200,
+      impression_count: 2,
+      click_count: 1,
       status: 'active',
       contexts: ['cursor', 'vscode'],
       created_at: '2024-01-01T00:00:00Z',
@@ -36,6 +38,8 @@ describe('computeAdvertiserStats', () => {
       max_bid_cpm: 1500,
       budget_cents: 50000,
       spent_cents: 8900,
+      impression_count: 2,
+      click_count: 1,
       status: 'active',
       contexts: ['postgresql'],
       created_at: '2024-01-01T00:00:00Z',
@@ -61,8 +65,12 @@ describe('computeAdvertiserStats', () => {
     const conversions = [
       { campaign_id: 'camp-a', value_cents: 4999, created_at: dayAgo(0) },
     ]
+    // Daily impressions for the chart come from the maintained daily-spend counters.
+    const dailySpendRows = [
+      { campaign_id: 'camp-a', spend_date: dayAgo(0).split('T')[0], spent_cents: 12, impressions: 1 },
+    ]
 
-    const result = computeAdvertiserStats(advertiser, campaigns, impressions, clicks, conversions, 30, now)
+    const result = computeAdvertiserStats(advertiser, campaigns, impressions, clicks, conversions, 30, now, dailySpendRows)
 
     assert.strictEqual(result.advertiser.name, 'Atlas Digital')
     assert.strictEqual(result.stats.totalImpressions, 4)
@@ -94,7 +102,8 @@ describe('computeAdvertiserStats', () => {
   })
 
   it('handles empty data without crashing', () => {
-    const result = computeAdvertiserStats(advertiser, campaigns, [], [], [], 30, now)
+    const emptyCampaigns = campaigns.map((c) => ({ ...c, impression_count: 0, click_count: 0 }))
+    const result = computeAdvertiserStats(advertiser, emptyCampaigns, [], [], [], 30, now)
     assert.strictEqual(result.stats.totalImpressions, 0)
     assert.strictEqual(result.stats.ctr, 0)
     assert.strictEqual(result.campaigns[0].impressions, 0)

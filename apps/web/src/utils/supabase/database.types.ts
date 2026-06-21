@@ -396,6 +396,7 @@ export type Database = {
           id: string
           impression_count: number
           max_bid_cpm: number
+          max_bid_cpc: number | null
           objective: string
           reviewed_at: string | null
           reviewed_by: string | null
@@ -425,6 +426,7 @@ export type Database = {
           id?: string
           impression_count?: number
           max_bid_cpm: number
+          max_bid_cpc?: number | null
           objective?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -454,6 +456,7 @@ export type Database = {
           id?: string
           impression_count?: number
           max_bid_cpm?: number
+          max_bid_cpc?: number | null
           objective?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -632,6 +635,7 @@ export type Database = {
       impressions: {
         Row: {
           auction_price_cpm: number
+          bid_type: string
           campaign_id: string
           click_id: string | null
           client_ip: string | null
@@ -658,6 +662,7 @@ export type Database = {
         }
         Insert: {
           auction_price_cpm?: number
+          bid_type?: string
           campaign_id: string
           click_id?: string | null
           client_ip?: string | null
@@ -684,6 +689,7 @@ export type Database = {
         }
         Update: {
           auction_price_cpm?: number
+          bid_type?: string
           campaign_id?: string
           click_id?: string | null
           client_ip?: string | null

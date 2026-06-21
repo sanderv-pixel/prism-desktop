@@ -18,9 +18,10 @@ const CampaignSchema = z.object({
   brandName: z.string().max(14).optional(), // brand name only, per ad-unit guidelines
   url: httpUrl(),
   iconUrl: iconUrlSchema().optional().or(z.literal('')),
-  objective: z.enum(['awareness', 'performance']).default('awareness'),
+  objective: z.enum(['awareness', 'traffic', 'performance']).default('awareness'),
   bidType: z.enum(['cpm', 'cpc', 'cpa']).default('cpm'),
-  maxBidCpm: z.number().int().min(8).max(10000),
+  maxBidCpm: z.number().int().min(0).max(10000).optional(),
+  maxBidCpc: z.number().int().min(1).max(100000).optional(),
   budgetCents: z.number().int().min(1000).max(10000000),
   dailyBudgetCents: z.number().int().min(0).max(10000000).optional(),
   startDate: z.string().datetime().optional().or(z.literal('')),
@@ -129,6 +130,7 @@ export async function POST(req: NextRequest) {
       objective,
       bidType,
       maxBidCpm,
+      maxBidCpc,
       budgetCents,
       dailyBudgetCents,
       startDate,
@@ -148,6 +150,15 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // The bid relevant to the chosen pricing model must be present.
+    if (bidType === 'cpc') {
+      if (!maxBidCpc || maxBidCpc < 1) {
+        throw new ApiError(400, 'A cost-per-click bid is required for CPC campaigns', 'INVALID_BID')
+      }
+    } else if ((maxBidCpm ?? 0) < 8) {
+      throw new ApiError(400, 'CPM bid must be at least $0.08', 'INVALID_BID')
+    }
+
     // Performance campaigns need conversion tracking; keep them pending for now.
     const initialStatus = objective === 'performance' ? 'pending_review' : 'active'
 
@@ -162,7 +173,8 @@ export async function POST(req: NextRequest) {
         icon_url: iconUrl || null,
         objective,
         bid_type: bidType,
-        max_bid_cpm: maxBidCpm,
+        max_bid_cpm: maxBidCpm ?? 0,
+        max_bid_cpc: bidType === 'cpc' ? maxBidCpc ?? null : null,
         budget_cents: budgetCents,
         daily_budget_cents: dailyBudgetCents || null,
         start_date: startDate || null,

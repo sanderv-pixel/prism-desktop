@@ -27,6 +27,8 @@ export interface Campaign {
 export interface Impression {
   campaign_id: string
   auction_price_cpm: number | null
+  bid_type?: string | null
+  payout_millicents?: number | null
   session_id?: string | null
   context?: string | null
   source?: string | null
@@ -119,11 +121,13 @@ function getStartOfDay(daysAgo: number, now: Date) {
   return d
 }
 
-// Advertiser cost for one impression = the full auction clearing price
-// (auction_price_cpm is cents per 1000 impressions), as fractional cents. No 1c
-// floor, matching the millicent ledger that maintains spent_cents.
-function impressionSpendCents(auctionPriceCpm: number | null) {
-  return (auctionPriceCpm ?? 0) / 1000
+// Advertiser cost for one impression. CPM impressions cost the full auction
+// clearing price (auction_price_cpm is cents per 1000 impressions). CPC impressions
+// cost nothing until clicked, when the realized cost is 2x the creator payout
+// recorded on the row (the creator earns 50%). Matches the millicent spent_cents ledger.
+function impressionSpendCents(i: Impression) {
+  if (i.bid_type === 'cpc') return ((i.payout_millicents ?? 0) * 2) / 1000
+  return (i.auction_price_cpm ?? 0) / 1000
 }
 
 export function computeAdvertiserStats(
@@ -158,7 +162,7 @@ export function computeAdvertiserStats(
   })
 
   const spendFromImpressions = (items: Impression[]) =>
-    items.reduce((sum, i) => sum + impressionSpendCents(i.auction_price_cpm), 0)
+    items.reduce((sum, i) => sum + impressionSpendCents(i), 0)
 
   const recentSpend = spendFromImpressions(recentImpressions)
   const previousSpend = spendFromImpressions(previousImpressions)

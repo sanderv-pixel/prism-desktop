@@ -72,11 +72,35 @@ function generateSessionId(): string {
 const SESSION_LAST_ADVERTISER_TTL_SECONDS = 60
 const TOP_N_FOR_ROTATION = 3
 
-function weightedRandomByBid(candidates: any[]): any {
-  const totalWeight = candidates.reduce((sum, c) => sum + c.max_bid_cpm, 0)
+// Smoothed click-through rate for ranking CPC bids: blend the campaign's own
+// history with a network prior so a brand-new campaign still competes and one
+// lucky early click can't spike its rank. Capped to a sane ceiling.
+const PCTR_PRIOR_CLICKS = 3
+const PCTR_PRIOR_IMPRESSIONS = 200 // prior CTR = 1.5%
+const MAX_PCTR = 0.15
+
+function predictedCtr(c: any): number {
+  const clicks = c.click_count ?? 0
+  const impressions = c.impression_count ?? 0
+  const ctr = (clicks + PCTR_PRIOR_CLICKS) / (impressions + PCTR_PRIOR_IMPRESSIONS)
+  return Math.min(MAX_PCTR, ctr)
+}
+
+// Effective CPM (cents per 1000 impressions) — the common axis that lets CPM and
+// CPC bids compete. For CPC, expected revenue per 1000 impressions = cpc x CTR x 1000.
+function effectiveCpm(c: any): number {
+  if (c.bid_type === 'cpc') {
+    return Math.round((c.max_bid_cpc ?? 0) * predictedCtr(c) * 1000)
+  }
+  return c.max_bid_cpm ?? 0
+}
+
+function weightedRandomByEcpm(candidates: any[]): any {
+  const totalWeight = candidates.reduce((sum, c) => sum + (c._ecpm ?? 0), 0)
+  if (totalWeight <= 0) return candidates[0]
   let roll = Math.random() * totalWeight
   for (const c of candidates) {
-    roll -= c.max_bid_cpm
+    roll -= c._ecpm ?? 0
     if (roll <= 0) return c
   }
   return candidates[candidates.length - 1]
@@ -185,14 +209,14 @@ export async function POST(req: NextRequest) {
     const reqSource = source ?? 'unknown'
     const signals = getSignals(context)
 
-    // Active awareness/CPM campaigns.
+    // Active ad campaigns: CPM awareness and CPC traffic, ranked together by eCPM.
     const now = new Date()
     const { data, error } = await supabase
       .from('campaigns')
       .select('*')
       .eq('status', 'active')
-      .eq('objective', 'awareness')
-      .eq('bid_type', 'cpm')
+      .in('objective', ['awareness', 'traffic'])
+      .in('bid_type', ['cpm', 'cpc'])
       .gt('budget_cents', 0)
     if (error) throw error
 
@@ -262,9 +286,10 @@ export async function POST(req: NextRequest) {
       .map((s) => s.toLowerCase())
     const floorCpm = await getFloorCpm(supabase, contextTags)
 
-    const eligibleByFloor = eligibleByFrequency.filter(
-      (c) => c.max_bid_cpm >= floorCpm
-    )
+    // Rank on effective CPM so CPM and CPC bids compete on one axis.
+    for (const c of eligibleByFrequency) c._ecpm = effectiveCpm(c)
+
+    const eligibleByFloor = eligibleByFrequency.filter((c) => c._ecpm >= floorCpm)
     if (eligibleByFloor.length === 0) {
       return new NextResponse(null, { status: 204, headers: corsHeaders() })
     }
@@ -283,15 +308,27 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const sorted = eligibleByFloor.sort((a, b) => b.max_bid_cpm - a.max_bid_cpm)
-    const topCandidates = candidates
-      .sort((a, b) => b.max_bid_cpm - a.max_bid_cpm)
+    const sorted = [...eligibleByFloor].sort((a, b) => b._ecpm - a._ecpm)
+    const topCandidates = [...candidates]
+      .sort((a, b) => b._ecpm - a._ecpm)
       .slice(0, TOP_N_FOR_ROTATION)
-    const winner = weightedRandomByBid(topCandidates)
+    const winner = weightedRandomByEcpm(topCandidates)
 
-    // Second-price auction: winner pays max(floor, second-highest bid).
-    const secondPrice = sorted.length > 1 ? sorted[1].max_bid_cpm : floorCpm
-    const clearingPrice = Math.max(secondPrice, floorCpm)
+    // Second-price auction on the eCPM axis: winner clears at max(floor, 2nd eCPM),
+    // but never above its own eCPM — so a rotation-selected (non-top) winner falls
+    // back to first-price rather than overpaying.
+    const secondEcpm = sorted.length > 1 ? sorted[1]._ecpm : floorCpm
+    const clearingPrice = Math.max(floorCpm, Math.min(secondEcpm, winner._ecpm))
+
+    // CPC winners are charged per click; convert the clearing eCPM into a per-click
+    // price (capped at their max CPC). CPM winners are charged per impression.
+    const winnerBidType: 'cpm' | 'cpc' = winner.bid_type === 'cpc' ? 'cpc' : 'cpm'
+    let clickChargeCents = 0
+    if (winnerBidType === 'cpc') {
+      const pctr = predictedCtr(winner)
+      const rawCpc = pctr > 0 ? Math.round(clearingPrice / (pctr * 1000)) : winner.max_bid_cpc ?? 0
+      clickChargeCents = Math.max(0, Math.min(winner.max_bid_cpc ?? 0, rawCpc))
+    }
 
     const winnerAdvertiserName = advertiserMap.get(winner.advertiser_id)?.name ?? 'Prism'
     await setLastAdvertiserForSession(session, winnerAdvertiserName)
@@ -321,6 +358,8 @@ export async function POST(req: NextRequest) {
       sessionId: session,
       auctionPriceCpm: clearingPrice,
       creativeId: creative?.id ?? null,
+      bidType: winnerBidType,
+      clickChargeCents,
     })
 
     const conversionToken = await createConversionToken({

@@ -292,10 +292,19 @@ export async function GET() {
         .sort((a, b) => b.earnings - a.earnings),
       recentImpressions: recentList.map((imp) => {
         const flags: string[] = imp.fraud_flags ?? []
-        const paid = imp.validated && !imp.payout_hold
+        // A CPC impression earns only when its ad is clicked; until then it is a
+        // legitimate unpaid impression, not a rejected one.
+        const cpcAwaitingClick =
+          imp.bid_type === 'cpc' &&
+          imp.validated &&
+          !imp.payout_hold &&
+          (imp.payout_millicents ?? 0) === 0
+        const paid = imp.validated && !imp.payout_hold && !cpcAwaitingClick
         const notPaidReason = paid
           ? null
-          : flags.includes('frequency_cap')
+          : cpcAwaitingClick
+            ? 'Pays when clicked'
+            : flags.includes('frequency_cap')
             ? 'Frequency cap reached'
             : flags.some((f) => f.startsWith('budget'))
               ? 'Advertiser out of budget'
