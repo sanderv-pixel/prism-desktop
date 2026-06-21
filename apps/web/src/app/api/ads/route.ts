@@ -288,18 +288,31 @@ export async function POST(req: NextRequest) {
     const winnerAdvertiserName = advertiserMap.get(winner.advertiser_id)?.name ?? 'Prism'
     await setLastAdvertiserForSession(session, winnerAdvertiserName)
 
-    // The name shown in the ad is advertiser-controlled (campaign.brand_name).
+    // A/B rotation: serve the winner's active creative with the fewest impressions
+    // so variants split evenly. Fall back to the campaign's own fields if none exist.
+    const { data: creatives } = await supabase
+      .from('campaign_creatives')
+      .select('id, copy, brand_name, url, icon_url')
+      .eq('campaign_id', winner.id)
+      .eq('status', 'active')
+      .order('impression_count', { ascending: true })
+      .limit(1)
+    const creative = creatives?.[0] ?? null
+    const adCopy = creative?.copy ?? winner.copy
+    const adUrl = creative?.url ?? winner.url
+    const adIconUrl = creative ? creative.icon_url : winner.icon_url
+    const adBrand = creative ? creative.brand_name : winner.brand_name
+
+    // The name shown in the ad is advertiser-controlled (creative/campaign brand_name).
     // Empty means show no name — the internal account name is never exposed.
-    const displayName =
-      typeof winner.brand_name === 'string' && winner.brand_name.trim()
-        ? winner.brand_name.trim()
-        : ''
+    const displayName = typeof adBrand === 'string' && adBrand.trim() ? adBrand.trim() : ''
 
     const impressionToken = await createImpressionToken({
       campaignId: winner.id,
       userId: resolvedUserId,
       sessionId: session,
       auctionPriceCpm: clearingPrice,
+      creativeId: creative?.id ?? null,
     })
 
     const conversionToken = await createConversionToken({
@@ -312,10 +325,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         id: winner.id,
-        copy: winner.copy,
-        url: winner.url,
+        copy: adCopy,
+        url: adUrl,
         clickUrl,
-        iconUrl: getIconUrl(winner.url, winner.icon_url),
+        iconUrl: getIconUrl(adUrl, adIconUrl),
         advertiserName: displayName,
         impressionToken,
         conversionToken,

@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
               .in('campaign_id', campaignIds)
               .gte('spend_date', startIso.slice(0, 10)),
             // Breakdowns + reach aggregated in the DB (uncapped, lifetime, billable).
-            supabase.rpc('campaign_analytics_breakdowns', { p_campaign_ids: campaignIds, p_since: null }),
+            supabase.rpc('campaign_analytics_breakdowns', { p_campaign_ids: campaignIds, p_since: undefined }),
           ])
         : [
             { data: [], error: null },

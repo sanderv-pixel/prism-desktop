@@ -319,6 +319,7 @@ export async function POST(req: NextRequest) {
         token_nonce: tokenNonce,
         currency: 'usd',
         source: impressionSource,
+        creative_id: tokenPayload.creativeId ?? null,
         validated,
         payout_cents: Math.round(payoutMillicents / 1000),
         payout_millicents: payoutMillicents,
@@ -357,6 +358,13 @@ export async function POST(req: NextRequest) {
           { ok: true, validated: false, payoutCents: 0, trustScore },
           { headers: corsHeaders() }
         )
+      }
+
+      // Count the billable impression toward its A/B creative variant.
+      if (tokenPayload.creativeId) {
+        supabase
+          .rpc('bump_creative_counts', { p_creative_id: tokenPayload.creativeId, p_imp: 1 })
+          .then(() => {}, () => {})
       }
 
       if (newSpent >= campaign.budget_cents) {

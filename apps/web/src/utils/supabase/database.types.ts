@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       advertiser_transactions: {
@@ -282,6 +257,53 @@ export type Database = {
         }
         Relationships: []
       }
+      campaign_creatives: {
+        Row: {
+          brand_name: string | null
+          campaign_id: string
+          click_count: number
+          copy: string
+          created_at: string
+          icon_url: string | null
+          id: string
+          impression_count: number
+          status: string
+          url: string
+        }
+        Insert: {
+          brand_name?: string | null
+          campaign_id: string
+          click_count?: number
+          copy: string
+          created_at?: string
+          icon_url?: string | null
+          id?: string
+          impression_count?: number
+          status?: string
+          url: string
+        }
+        Update: {
+          brand_name?: string | null
+          campaign_id?: string
+          click_count?: number
+          copy?: string
+          created_at?: string
+          icon_url?: string | null
+          id?: string
+          impression_count?: number
+          status?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_creatives_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_daily_spend: {
         Row: {
           campaign_id: string
@@ -327,11 +349,11 @@ export type Database = {
         Row: {
           advertiser_id: string
           bid_type: string
+          brand_name: string | null
           budget_cents: number
           click_count: number
           contexts: string[]
           copy: string
-          brand_name: string | null
           created_at: string
           daily_budget_cents: number | null
           end_date: string | null
@@ -355,11 +377,11 @@ export type Database = {
         Insert: {
           advertiser_id: string
           bid_type?: string
+          brand_name?: string | null
           budget_cents: number
           click_count?: number
           contexts?: string[]
           copy: string
-          brand_name?: string | null
           created_at?: string
           daily_budget_cents?: number | null
           end_date?: string | null
@@ -383,11 +405,11 @@ export type Database = {
         Update: {
           advertiser_id?: string
           bid_type?: string
+          brand_name?: string | null
           budget_cents?: number
           click_count?: number
           contexts?: string[]
           copy?: string
-          brand_name?: string | null
           created_at?: string
           daily_budget_cents?: number | null
           end_date?: string | null
@@ -424,6 +446,7 @@ export type Database = {
           client_ip: string | null
           context: string | null
           created_at: string
+          creative_id: string | null
           fraud_flags: string[]
           id: string
           impression_id: string | null
@@ -438,6 +461,7 @@ export type Database = {
           client_ip?: string | null
           context?: string | null
           created_at?: string
+          creative_id?: string | null
           fraud_flags?: string[]
           id?: string
           impression_id?: string | null
@@ -452,6 +476,7 @@ export type Database = {
           client_ip?: string | null
           context?: string | null
           created_at?: string
+          creative_id?: string | null
           fraud_flags?: string[]
           id?: string
           impression_id?: string | null
@@ -577,6 +602,7 @@ export type Database = {
           context: string | null
           context_hash: string | null
           created_at: string
+          creative_id: string | null
           currency: string
           duration_ms: number | null
           fraud_flags: string[]
@@ -602,6 +628,7 @@ export type Database = {
           context?: string | null
           context_hash?: string | null
           created_at?: string
+          creative_id?: string | null
           currency?: string
           duration_ms?: number | null
           fraud_flags?: string[]
@@ -627,6 +654,7 @@ export type Database = {
           context?: string | null
           context_hash?: string | null
           created_at?: string
+          creative_id?: string | null
           currency?: string
           duration_ms?: number | null
           fraud_flags?: string[]
@@ -869,6 +897,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      bump_creative_counts: {
+        Args: { p_clk?: number; p_creative_id: string; p_imp?: number }
+        Returns: undefined
+      }
+      campaign_analytics_breakdowns: {
+        Args: { p_campaign_ids: string[]; p_since?: string }
+        Returns: Json
+      }
       credit_advertiser_balance:
         | {
             Args: {
@@ -897,11 +933,6 @@ export type Database = {
         }
         Returns: number
       }
-      campaign_analytics_breakdowns: {
-        Args: { p_campaign_ids: string[]; p_since?: string | null }
-        Returns: Json
-      }
-      safe_context_key: { Args: { p: string }; Returns: string }
       generate_referral_code: { Args: never; Returns: string }
       get_admin_metrics: { Args: never; Returns: Json }
       get_admin_revenue_timeseries: { Args: { p_days?: number }; Returns: Json }
@@ -961,6 +992,7 @@ export type Database = {
         }
         Returns: number
       }
+      safe_context_key: { Args: { p: string }; Returns: string }
       set_payout_hold: {
         Args: { p_hold: boolean; p_user_id: string }
         Returns: undefined
@@ -1102,9 +1134,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },

@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
       throw new ApiError(401, 'Invalid or expired click token', 'INVALID_TOKEN')
     }
 
-    const { campaignId, userId, sessionId, nonce } = payload
+    const { campaignId, userId, sessionId, nonce, creativeId } = payload
     const clientIp = getClientIp(req)
 
     const rateLimitKey = `clicks:${sessionId}:${clientIp}`
@@ -80,6 +80,18 @@ export async function GET(req: NextRequest) {
       throw new ApiError(404, 'Campaign not found', 'CAMPAIGN_NOT_FOUND')
     }
 
+    // A/B: redirect to the served creative's URL (variants can differ) and count
+    // the click toward that variant. Fall back to the campaign URL.
+    let destUrl = campaign.url
+    if (creativeId) {
+      const { data: cr } = await supabase
+        .from('campaign_creatives')
+        .select('url')
+        .eq('id', creativeId)
+        .single()
+      if (cr?.url) destUrl = cr.url
+    }
+
     // Idempotent click recording keyed by the impression token nonce.
     const { error: clickError } = await supabase.from('clicks').insert({
       campaign_id: campaignId,
@@ -87,26 +99,30 @@ export async function GET(req: NextRequest) {
       session_id: sessionId,
       token_nonce: nonce,
       context: req.headers.get('referer') ?? '',
-      url: campaign.url,
+      url: destUrl,
       redirected: true,
+      creative_id: creativeId ?? null,
     })
 
     if (clickError) {
       // Duplicate nonce -> this token was already clicked. Still redirect the user.
       if (clickError.code === '23505') {
-        return NextResponse.redirect(campaign.url, 302)
+        return NextResponse.redirect(destUrl, 302)
       }
       console.error('Click tracking error:', clickError)
     } else {
-      // Best-effort increment on successful first insert.
+      // Best-effort increments on successful first insert.
       try {
         await supabase.rpc('increment_campaign_click_count', { p_campaign_id: campaignId })
+        if (creativeId) {
+          await supabase.rpc('bump_creative_counts', { p_creative_id: creativeId, p_clk: 1 })
+        }
       } catch {
         // ignore
       }
     }
 
-    return NextResponse.redirect(campaign.url, 302)
+    return NextResponse.redirect(destUrl, 302)
   } catch (err) {
     return handleApiError(err)
   }
