@@ -28,6 +28,7 @@ const CampaignSchema = z.object({
   frequencyCap: z.number().int().min(1).max(100).optional(),
   frequencyWindowHours: z.number().int().min(1).max(168).optional(),
   contexts: z.array(z.string().min(1).max(50)).max(50).optional(),
+  targetSources: z.array(z.enum(['claude', 'cursor', 'codex', 'terminal'])).max(4).optional(),
 })
 
 export async function GET() {
@@ -135,6 +136,7 @@ export async function POST(req: NextRequest) {
       frequencyCap,
       frequencyWindowHours,
       contexts,
+      targetSources,
     } = parseResult.data
 
     if (iconUrl) {
@@ -168,6 +170,7 @@ export async function POST(req: NextRequest) {
         frequency_cap: frequencyCap || null,
         frequency_window_hours: frequencyWindowHours || null,
         contexts: contexts ?? [],
+        target_sources: targetSources && targetSources.length > 0 ? targetSources : null,
         status: initialStatus,
       })
       .select()

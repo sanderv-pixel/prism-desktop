@@ -51,6 +51,7 @@ export default function EditCampaignPage() {
   const [url, setUrl] = useState('')
   const [iconUrl, setIconUrl] = useState('')
   const [contexts, setContexts] = useState<string[]>([])
+  const [targetSources, setTargetSources] = useState<string[]>([])
   const [maxBidCpm, setMaxBidCpm] = useState('12')
   const [dailyBudget, setDailyBudget] = useState('')
   const [frequencyCap, setFrequencyCap] = useState('')
@@ -74,6 +75,7 @@ export default function EditCampaignPage() {
       setUrl(data.url)
       setIconUrl(data.icon_url ?? '')
       setContexts(data.contexts ?? [])
+      setTargetSources(data.target_sources ?? [])
       setMaxBidCpm(((data.max_bid_cpm ?? 1200) / 100).toString())
       setDailyBudget(data.daily_budget_cents ? (data.daily_budget_cents / 100).toString() : '')
       setFrequencyCap(data.frequency_cap ? data.frequency_cap.toString() : '')
@@ -108,6 +110,7 @@ export default function EditCampaignPage() {
         url,
         icon_url: iconUrl || null,
         contexts,
+        target_sources: targetSources.length > 0 ? targetSources : null,
         max_bid_cpm: Math.round(parseFloat(maxBidCpm) * 100),
       }
 
@@ -362,6 +365,33 @@ export default function EditCampaignPage() {
                     }`}
                   >
                     {ctx}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-foreground/80 mb-1.5">Surfaces</label>
+              <p className="text-xs text-muted-foreground mb-3">
+                Restrict delivery to specific AI tools. Leave empty to target all surfaces.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {(['claude', 'cursor', 'codex', 'terminal'] as const).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() =>
+                      setTargetSources((prev) =>
+                        prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]
+                      )
+                    }
+                    className={`text-xs px-3 py-1.5 rounded-full border capitalize transition ${
+                      targetSources.includes(s)
+                        ? 'bg-violet-50 border-violet-200 text-primary'
+                        : 'bg-muted border-border text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {s}
                   </button>
                 ))}
               </div>

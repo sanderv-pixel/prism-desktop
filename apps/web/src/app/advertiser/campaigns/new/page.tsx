@@ -35,6 +35,7 @@ export default function NewCampaignPage() {
   const [frequencyCap, setFrequencyCap] = useState('')
   const [frequencyWindow, setFrequencyWindow] = useState('24')
   const [contexts, setContexts] = useState<string[]>(['chatgpt', 'general', 'productivity'])
+  const [targetSources, setTargetSources] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [iconError, setIconError] = useState('')
@@ -109,6 +110,8 @@ export default function NewCampaignPage() {
         maxBidCpm: Math.round(parseFloat(maxBidCpm) * 100),
         contexts,
       }
+
+      if (targetSources.length > 0) body.targetSources = targetSources
 
       if (dailyBudget) body.dailyBudgetCents = Math.round(parseFloat(dailyBudget) * 100)
       if (startDate) body.startDate = new Date(startDate).toISOString()
@@ -434,6 +437,33 @@ export default function NewCampaignPage() {
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
                   Select the editors, languages, AI tools, and intents where your ad should be eligible to compete.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Surfaces</label>
+                <div className="flex flex-wrap gap-2">
+                  {(['claude', 'cursor', 'codex', 'terminal'] as const).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() =>
+                        setTargetSources((prev) =>
+                          prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]
+                        )
+                      }
+                      className={`text-xs px-3 py-1.5 rounded-full border capitalize transition ${
+                        targetSources.includes(s)
+                          ? 'bg-violet-50 border-violet-200 text-primary'
+                          : 'bg-muted border-border text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Restrict delivery to specific AI tools. Leave empty to target all surfaces.
                 </p>
               </div>
 
