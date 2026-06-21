@@ -255,6 +255,16 @@ export default function BuilderDashboardPage() {
             <Target size={16} className="mr-2" />
             Advertiser dashboard
           </Button>
+          <a
+            href="/api/dashboard/export"
+            download
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-foreground hover:bg-muted whitespace-nowrap"
+          >
+            <Download size={15} /> Export
+          </a>
+          <Button variant="outline" size="md" href="/dashboard/settings">
+            Settings
+          </Button>
           {!data.user.connectStatus.configured ? (
             <Button size="md" onClick={handleSetupPayouts}>
               <Download size={16} className="mr-2" />
