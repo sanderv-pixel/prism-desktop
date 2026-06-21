@@ -96,6 +96,7 @@ export type Database = {
       advertisers: {
         Row: {
           balance_cents: number
+          balance_millicents: number
           created_at: string
           email: string
           id: string
@@ -111,6 +112,7 @@ export type Database = {
         }
         Insert: {
           balance_cents?: number
+          balance_millicents?: number
           created_at?: string
           email: string
           id?: string
@@ -126,6 +128,7 @@ export type Database = {
         }
         Update: {
           balance_cents?: number
+          balance_millicents?: number
           created_at?: string
           email?: string
           id?: string
