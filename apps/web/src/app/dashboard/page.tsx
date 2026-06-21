@@ -43,6 +43,7 @@ interface DashboardData {
     id: string
     email: string
     payoutEnabled: boolean
+    payoutHold: boolean
     connectStatus: ConnectStatus
   }
   stats: {
@@ -73,6 +74,8 @@ interface DashboardData {
     campaignTitle: string
     context: unknown
     validated: boolean
+    paid: boolean
+    notPaidReason: string | null
     payoutCents: number
     durationMs: number | null
     createdAt: string
@@ -356,6 +359,19 @@ export default function BuilderDashboardPage() {
           )}
         </div>
       </div>
+
+      {data.user.payoutHold && (
+        <div className="mb-8 rounded-2xl border border-amber-200 bg-amber-50 p-5 flex items-start gap-3">
+          <AlertCircle size={20} className="text-amber-500 mt-0.5 shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-amber-800">Payouts on hold</p>
+            <p className="text-sm text-amber-700">
+              Your account is under review by our fraud checks, so new earnings are held and withdrawals are
+              paused. This usually clears as normal activity accrues. Contact support if it persists.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Devices */}
       <div className="rounded-2xl card p-6 hover:shadow-md transition mb-8">
@@ -651,14 +667,18 @@ export default function BuilderDashboardPage() {
                         {imp.advertiserName}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {imp.validated ? 'Validated impression' : 'Impression'}
+                        {imp.paid ? 'Paid impression' : imp.notPaidReason ?? 'Not paid'}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-medium text-emerald-600">
-                      +{formatEarning(imp.payoutCents)}
-                    </p>
+                    {imp.paid ? (
+                      <p className="text-sm font-medium text-emerald-600">
+                        +{formatEarning(imp.payoutCents)}
+                      </p>
+                    ) : (
+                      <p className="text-sm font-medium text-muted-foreground">Not paid</p>
+                    )}
                     <p className="text-xs text-muted-foreground">{timeAgo(imp.createdAt)}</p>
                   </div>
                 </div>
