@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { createAdminClient } from '@/utils/supabase/admin'
-import { computeAdvertiserStats } from '@/lib/advertiserStats'
+import { computeAdvertiserStats, type AnalyticsBreakdowns } from '@/lib/advertiserStats'
 
 export const dynamic = 'force-dynamic'
 
@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
     const startIso = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
 
     // Parallel query impressions, clicks, and conversions.
-    const [impressionsResult, clicksResult, conversionsResult, dailySpendResult] =
+    const [impressionsResult, clicksResult, conversionsResult, dailySpendResult, breakdownsResult] =
       campaignIds.length > 0
         ? await Promise.all([
             supabase
@@ -78,12 +78,15 @@ export async function GET(req: NextRequest) {
               .select('campaign_id, spend_date, spent_cents, impressions')
               .in('campaign_id', campaignIds)
               .gte('spend_date', startIso.slice(0, 10)),
+            // Breakdowns + reach aggregated in the DB (uncapped, lifetime, billable).
+            supabase.rpc('campaign_analytics_breakdowns', { p_campaign_ids: campaignIds, p_since: null }),
           ])
         : [
             { data: [], error: null },
             { data: [], error: null },
             { data: [], error: null },
             { data: [], error: null },
+            { data: null, error: null },
           ]
 
     const result = computeAdvertiserStats(
@@ -94,7 +97,8 @@ export async function GET(req: NextRequest) {
       conversionsResult.data ?? [],
       range,
       undefined,
-      dailySpendResult.data ?? []
+      dailySpendResult.data ?? [],
+      (breakdownsResult.data as AnalyticsBreakdowns | null) ?? { reach: 0, source: [], context: [] }
     )
 
     return NextResponse.json(result)

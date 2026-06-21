@@ -894,6 +894,11 @@ export type Database = {
         }
         Returns: number
       }
+      campaign_analytics_breakdowns: {
+        Args: { p_campaign_ids: string[]; p_since?: string | null }
+        Returns: Json
+      }
+      safe_context_key: { Args: { p: string }; Returns: string }
       generate_referral_code: { Args: never; Returns: string }
       get_admin_metrics: { Args: never; Returns: Json }
       get_admin_revenue_timeseries: { Args: { p_days?: number }; Returns: Json }
