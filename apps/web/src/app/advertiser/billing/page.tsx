@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { DashboardShell } from '@/components/dashboard/DashboardShell'
 import { ArrowLeft, Download, Receipt as ReceiptIcon, ArrowDownLeft, ArrowUpRight } from 'lucide-react'
+import { AutoRechargeSettings } from '@/components/advertiser/AutoRechargeSettings'
 
 interface Txn {
   id: string
@@ -84,6 +85,10 @@ export default function BillingPage() {
           <p className="text-sm text-muted-foreground mb-1">Lifetime ad spend</p>
           <p className="text-3xl font-semibold">{fmt(summary.lifetimeSpentCents)}</p>
         </div>
+      </div>
+
+      <div className="mb-8">
+        <AutoRechargeSettings />
       </div>
 
       <div className="rounded-xl border bg-card overflow-hidden">

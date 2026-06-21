@@ -70,11 +70,16 @@ export type Database = {
       }
       advertisers: {
         Row: {
+          auto_recharge_amount_cents: number
+          auto_recharge_enabled: boolean
+          auto_recharge_threshold_cents: number
           balance_cents: number
           balance_millicents: number
           conversion_api_key: string | null
           created_at: string
+          default_payment_method_id: string | null
           email: string
+          last_auto_recharge_at: string | null
           id: string
           lifetime_deposits_cents: number
           name: string
@@ -89,8 +94,13 @@ export type Database = {
         Insert: {
           balance_cents?: number
           balance_millicents?: number
+          auto_recharge_amount_cents?: number
+          auto_recharge_enabled?: boolean
+          auto_recharge_threshold_cents?: number
           conversion_api_key?: string | null
           created_at?: string
+          default_payment_method_id?: string | null
+          last_auto_recharge_at?: string | null
           email: string
           id?: string
           lifetime_deposits_cents?: number
@@ -106,8 +116,13 @@ export type Database = {
         Update: {
           balance_cents?: number
           balance_millicents?: number
+          auto_recharge_amount_cents?: number
+          auto_recharge_enabled?: boolean
+          auto_recharge_threshold_cents?: number
           conversion_api_key?: string | null
           created_at?: string
+          default_payment_method_id?: string | null
+          last_auto_recharge_at?: string | null
           email?: string
           id?: string
           lifetime_deposits_cents?: number

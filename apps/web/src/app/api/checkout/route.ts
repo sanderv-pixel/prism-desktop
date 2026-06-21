@@ -140,6 +140,8 @@ export async function POST(req: NextRequest) {
         amount: depositCents,
         currency,
         automatic_payment_methods: { enabled: true },
+        // Save the card to the customer so auto-recharge can charge it off-session.
+        setup_future_usage: 'off_session',
         description: 'Prism campaign budget deposit',
         metadata,
       })
@@ -149,6 +151,8 @@ export async function POST(req: NextRequest) {
         customer: customerId,
         mode: 'payment',
         payment_method_types: ['card', 'link'],
+        // Save the card to the customer so auto-recharge can charge it off-session.
+        payment_intent_data: { setup_future_usage: 'off_session' },
         line_items: [
           {
             price_data: {

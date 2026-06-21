@@ -13,6 +13,7 @@ import {
 } from '@/lib/api/fraud'
 import { verifyImpressionToken, isNonceUsed } from '@/lib/api/tokens'
 import { detectImpressionAnomalies, detectBudgetDrainAnomaly } from '@/lib/anomaly'
+import { maybeAutoRecharge } from '@/lib/autoRecharge'
 import {
   sendCampaignBudgetExhaustedEmail,
   maybeSendLowBalanceEmail,
@@ -374,6 +375,11 @@ export async function POST(req: NextRequest) {
       const advertiser = await getAdvertiserById(campaign.advertiser_id)
       if (advertiser) {
         maybeSendLowBalanceEmail(campaign.advertiser_id, advertiser.balance_cents).catch(() => {})
+        // Pre-filter on a generous ceiling; maybeAutoRecharge does the precise
+        // threshold + saved-card + throttle checks and charges off-session.
+        if (advertiser.balance_cents < 50000) {
+          maybeAutoRecharge(campaign.advertiser_id).catch(() => {})
+        }
       }
 
       detectBudgetDrainAnomaly({
