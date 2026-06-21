@@ -5,7 +5,7 @@ import { CopyCommand } from '@/components/install/CopyCommand'
 
 export const metadata = {
   title: 'Install Prism',
-  description: 'Install Prism on your Mac in one line. Earn while your AI thinks — across Claude, Cursor, Codex, and your terminal.',
+  description: 'Install Prism on your Mac in one line. Earn while your AI thinks, across Claude, Cursor, Codex, and your terminal.',
 }
 
 const DISPLAY = 'var(--font-display), sans-serif'
@@ -36,7 +36,7 @@ export default function InstallPage() {
       </header>
 
       <main style={{ maxWidth: 820, margin: '0 auto', padding: '32px 24px 80px' }}>
-        {/* Step 1 — the command */}
+        {/* Step 1: the command */}
         <div style={{ display: 'flex', gap: 16, marginBottom: 40 }}>
           <div style={stepNum}>1</div>
           <div style={{ flex: 1, minWidth: 0 }}>
