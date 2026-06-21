@@ -25,6 +25,8 @@ import {
   Copy,
   Check,
   Info,
+  Monitor,
+  Plus,
 } from 'lucide-react'
 
 interface ConnectStatus {
@@ -109,9 +111,20 @@ function timeAgo(iso: string) {
   return `${Math.floor(hours / 24)}d ago`
 }
 
+interface DeviceInfo {
+  id: string
+  createdAt: string
+  lastUsedAt: string | null
+  lastSeenIp: string | null
+  hasFingerprint: boolean
+  revoked: boolean
+  active: boolean
+}
+
 export default function BuilderDashboardPage() {
   const { user, loading: authLoading } = useAuth()
   const [data, setData] = useState<DashboardData | null>(null)
+  const [devices, setDevices] = useState<DeviceInfo[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [withdrawing, setWithdrawing] = useState(false)
@@ -144,6 +157,30 @@ export default function BuilderDashboardPage() {
     }
   }
 
+  async function fetchDevices() {
+    try {
+      const res = await fetch('/api/dashboard/devices')
+      if (res.ok) setDevices((await res.json()).devices ?? [])
+    } catch {
+      // non-critical
+    }
+  }
+
+  async function revokeDevice(id: string) {
+    if (!confirm('Disconnect this device? Its key stops working and the overlay must re-pair to earn again.')) return
+    const res = await fetch('/api/dashboard/devices', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+    if (res.ok) {
+      toast.success('Device disconnected')
+      fetchDevices()
+    } else {
+      toast.error('Could not disconnect device')
+    }
+  }
+
   async function handleWithdraw() {
     setWithdrawing(true)
     try {
@@ -167,6 +204,7 @@ export default function BuilderDashboardPage() {
 
   useEffect(() => {
     fetchDashboard()
+    fetchDevices()
   }, [])
 
   if (authLoading || loading) {
@@ -309,6 +347,75 @@ export default function BuilderDashboardPage() {
         </div>
       </div>
 
+      {/* Devices */}
+      <div className="rounded-2xl card p-6 hover:shadow-md transition mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-medium text-foreground">Your devices</h3>
+            <p className="text-sm text-muted-foreground">Where Prism is connected and earning.</p>
+          </div>
+          <a
+            href="/install"
+            className="text-sm text-primary hover:underline inline-flex items-center gap-1 whitespace-nowrap"
+          >
+            <Plus size={15} /> Connect a device
+          </a>
+        </div>
+        {devices.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border p-8 text-center">
+            <Monitor size={28} className="mx-auto mb-3 text-muted-foreground opacity-40" />
+            <p className="text-sm font-medium text-foreground">No device connected</p>
+            <p className="text-sm text-muted-foreground mt-1 mb-4">
+              Install Prism on your Mac to start earning while your AI thinks.
+            </p>
+            <Button size="md" href="/install">
+              <Download size={15} className="mr-2" /> Install Prism
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {devices.map((d) => (
+              <div
+                key={d.id}
+                className="flex items-center justify-between py-3 px-4 rounded-xl bg-muted/50 border border-border"
+              >
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                      d.revoked ? 'bg-muted-foreground' : d.active ? 'bg-emerald-500' : 'bg-amber-400'
+                    }`}
+                  />
+                  <div>
+                    <p className="text-sm font-medium text-foreground/90 flex items-center gap-2">
+                      <Monitor size={14} /> macOS overlay
+                      {d.revoked && <span className="text-xs text-muted-foreground">disconnected</span>}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {d.revoked
+                        ? 'Revoked'
+                        : d.active
+                          ? 'Active now'
+                          : d.lastUsedAt
+                            ? `Last seen ${timeAgo(d.lastUsedAt)}`
+                            : 'Never used'}
+                      {d.lastSeenIp ? ` · ${d.lastSeenIp}` : ''}
+                    </p>
+                  </div>
+                </div>
+                {!d.revoked && (
+                  <button
+                    onClick={() => revokeDevice(d.id)}
+                    className="text-xs text-red-500 hover:text-red-600 hover:underline whitespace-nowrap"
+                  >
+                    Disconnect
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Stats grid */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard
@@ -441,7 +548,7 @@ export default function BuilderDashboardPage() {
             </li>
             <li className="flex gap-2">
               <span className="text-primary">•</span>
-              Payouts are sent via Wise or Payoneer once you reach $50.
+              Payouts are sent via Wise or Payoneer once you reach $20.
             </li>
             <li className="flex gap-2">
               <span className="text-primary">•</span>
