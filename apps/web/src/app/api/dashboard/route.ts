@@ -185,7 +185,7 @@ export async function GET() {
         ? 100
         : Math.round(((recentCount - previousCount) / previousCount) * 100)
 
-    const MIN_PAYOUT_CENTS = 5000
+    const MIN_PAYOUT_CENTS = 2000
     const totalPayoutCents = payouts
       .filter((p) => p.status === 'paid')
       .reduce((sum, p) => sum + p.amount_cents, 0)
@@ -266,6 +266,9 @@ export async function GET() {
         earningsChange,
         impressionsChange,
         pendingPayoutCents: inFlightPayoutCents,
+        // Precise last-30-day total (own + referral), summed from millicents, so
+        // the 30-day card never disagrees with the balance for low-volume creators.
+        last30EarningsCents: totalRecentEarnings,
       },
       referral: {
         referralCode: referralSnapshot.referralCode,
@@ -274,7 +277,7 @@ export async function GET() {
       },
       chartData: Object.entries(dailyEarnings).map(([date, earnings]) => ({
         date,
-        earnings: Number(earnings.toFixed(2)),
+        earnings: Number(earnings.toFixed(4)),
         impressions: dailyImpressions[date],
       })),
       toolBreakdown: Object.entries(toolBreakdown)

@@ -56,6 +56,7 @@ interface DashboardData {
     earningsChange: number
     impressionsChange: number
     pendingPayoutCents: number
+    last30EarningsCents: number
   }
   referral: {
     referralCode: string | null
@@ -287,20 +288,20 @@ export default function BuilderDashboardPage() {
                   Payout method required
                 </p>
                 <p className="text-sm text-amber-700">
-                  Add your Wise or Payoneer details to withdraw earnings. Minimum payout is $50.
+                  Add your Wise or Payoneer details to withdraw earnings. Minimum payout is $20.
                 </p>
               </div>
             </div>
           )}
-          {data.user.connectStatus.configured && !data.user.payoutEnabled && stats.balanceCents < 5000 && (
+          {data.user.connectStatus.configured && !data.user.payoutEnabled && stats.balanceCents < 2000 && (
             <div className="mt-6 rounded-xl bg-blue-50 border border-blue-200 p-4 flex items-start gap-3">
               <Clock size={18} className="text-blue-500 mt-0.5" />
               <div>
                 <p className="text-sm font-medium text-blue-800">
-                  Minimum payout: $50
+                  Minimum payout: $20
                 </p>
                 <p className="text-sm text-blue-700">
-                  Your payout method is set up. Withdraw unlocks once your balance reaches $50.
+                  Your payout method is set up. Withdraw unlocks once your balance reaches $20.
                 </p>
               </div>
             </div>
@@ -313,9 +314,7 @@ export default function BuilderDashboardPage() {
         <StatCard
           icon={Wallet}
           label="30-day earnings"
-          value={formatCents(
-            chartData.reduce((sum, d) => sum + Math.round(d.earnings * 100), 0)
-          )}
+          value={formatCents(stats.last30EarningsCents)}
           change={stats.earningsChange}
         />
         <StatCard
@@ -590,7 +589,7 @@ export default function BuilderDashboardPage() {
               <Wallet size={32} className="mx-auto mb-3 opacity-30" />
               <p>No payouts yet</p>
               <p className="text-sm mt-1">
-                Request your first withdrawal once you hit $50.00.
+                Request your first withdrawal once you hit $20.00.
               </p>
             </div>
           )}

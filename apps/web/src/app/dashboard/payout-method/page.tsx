@@ -199,7 +199,7 @@ export default function PayoutMethodPage() {
             Set up your payout method
           </h1>
           <p className="text-muted-foreground">
-            Choose how you want to receive your earnings. Minimum payout is $50.
+            Choose how you want to receive your earnings. Minimum payout is $20.
           </p>
         </div>
 

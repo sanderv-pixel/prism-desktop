@@ -144,7 +144,7 @@ export default function TransparencyPage() {
 
           <div className="grid sm:grid-cols-3 gap-4 mb-10">
             {[
-              { label: 'Minimum payout', value: '$50.00' },
+              { label: 'Minimum payout', value: '$20.00' },
               { label: 'Review', value: 'Manual' },
               { label: 'Providers', value: 'Wise / Payoneer' },
             ].map((stat) => (
