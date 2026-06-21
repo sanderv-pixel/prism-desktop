@@ -563,6 +563,9 @@ export default function AdvertiserDashboardPage() {
           <Button variant="outline" size="md" href="/advertiser/campaigns">
             All campaigns
           </Button>
+          <Button variant="outline" size="md" href="/advertiser/billing">
+            Billing
+          </Button>
           <Button size="md" href="/advertiser/campaigns/new" disabled={!isActive}>
             <Plus size={16} className="mr-2" />
             New campaign
@@ -576,8 +579,8 @@ export default function AdvertiserDashboardPage() {
           <div className="flex-1">
             <p className="text-sm font-medium text-amber-800">Top up your wallet to go live</p>
             <p className="text-sm text-amber-700">
-              Deposit funds to activate your advertiser account. Campaigns require an available
-              wallet balance equal to their budget.
+              Deposit funds to activate your advertiser account. Your campaign budget is a spend
+              cap; the wallet is drawn down only as ads actually deliver.
             </p>
           </div>
         </div>
