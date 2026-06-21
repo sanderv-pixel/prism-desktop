@@ -111,12 +111,13 @@ export async function GET(
     const conversions = (conversionsResult.data ?? []) as any[]
     const dailySpendRows = (dailySpendResult.data ?? []) as any[]
 
-    const totalImpressions = impressions.length
-    const totalClicks = clicks.length
+    // Headline totals come from maintained counters, not row counts (rows are
+    // capped at 1000 by the API). These are the billable lifetime totals and
+    // reconcile with spend; the time-series chart below still uses range rows.
+    const totalImpressions = campaign.impression_count ?? 0
+    const totalClicks = campaign.click_count ?? clicks.length
     const totalConversions = conversions.length
-    const totalSpendCents =
-      dailySpendRows.reduce((sum, r) => sum + (r.spent_cents ?? 0), 0) ||
-      impressions.reduce((sum, i) => sum + impressionSpendCents(i.auction_price_cpm), 0)
+    const totalSpendCents = campaign.spent_cents ?? 0
 
     const ctr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0
     const cpc = totalClicks > 0 ? Math.round(totalSpendCents / totalClicks) : 0

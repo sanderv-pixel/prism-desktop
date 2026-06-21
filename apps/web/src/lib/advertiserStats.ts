@@ -20,6 +20,8 @@ export interface Campaign {
   contexts?: string[]
   created_at: string
   updated_at: string
+  impression_count?: number
+  click_count?: number
 }
 
 export interface Impression {
@@ -156,13 +158,17 @@ export function computeAdvertiserStats(
   const spendChange =
     previousSpend === 0 ? 0 : Math.round(((recentSpend - previousSpend) / previousSpend) * 100)
 
-  const totalImpressions = recentImpressions.length
-  const totalClicks = recentClicks.length
+  // Headline counts come from the maintained per-campaign counters (impression_count,
+  // click_count, spent_cents), not from fetched rows — rows are capped at 1000 by the
+  // API, which made high-volume campaigns appear "stuck at 1000". These counters are
+  // the billable totals and reconcile with spend.
+  const totalImpressions = campaigns.reduce((sum, c) => sum + (c.impression_count ?? 0), 0)
+  const totalClicks = campaigns.reduce((sum, c) => sum + (c.click_count ?? 0), 0)
   const totalConversions = conversions.filter((c) => new Date(c.created_at) >= periodStart).length
   const ctr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0
   const cvr = totalClicks > 0 ? (totalConversions / totalClicks) * 100 : 0
-  const cpm = totalImpressions > 0 ? Math.round((recentSpend / totalImpressions) * 1000) : 0
-  const cpc = totalClicks > 0 ? Math.round(recentSpend / totalClicks) : 0
+  const cpm = totalImpressions > 0 ? Math.round((totalSpendCents / totalImpressions) * 1000) : 0
+  const cpc = totalClicks > 0 ? Math.round(totalSpendCents / totalClicks) : 0
   const cpa = totalConversions > 0 ? Math.round(recentSpend / totalConversions) : 0
 
   const recentSessions = new Set(recentImpressions.map((i) => i.session_id).filter(Boolean))
@@ -194,18 +200,6 @@ export function computeAdvertiserStats(
     }
   }
 
-  const impressionsByCampaign = new Map<string, Impression[]>()
-  for (const imp of impressions) {
-    const list = impressionsByCampaign.get(imp.campaign_id) ?? []
-    list.push(imp)
-    impressionsByCampaign.set(imp.campaign_id, list)
-  }
-  const clicksByCampaign = new Map<string, Click[]>()
-  for (const click of clicks) {
-    const list = clicksByCampaign.get(click.campaign_id) ?? []
-    list.push(click)
-    clicksByCampaign.set(click.campaign_id, list)
-  }
   const conversionsByCampaign = new Map<string, Conversion[]>()
   for (const conv of conversions) {
     const list = conversionsByCampaign.get(conv.campaign_id) ?? []
@@ -214,15 +208,10 @@ export function computeAdvertiserStats(
   }
 
   const campaignStats = campaigns.map((c) => {
-    const campaignImpressions = impressionsByCampaign.get(c.id) ?? []
-    const campaignClicks = clicksByCampaign.get(c.id) ?? []
     const campaignConversions = conversionsByCampaign.get(c.id) ?? []
-    const campaignImpressionsCount = campaignImpressions.length
-    const campaignClicksCount = campaignClicks.length
-    const campaignSpend = campaignImpressions.reduce(
-      (sum, i) => sum + impressionSpendCents(i.auction_price_cpm),
-      0
-    )
+    const campaignImpressionsCount = c.impression_count ?? 0
+    const campaignClicksCount = c.click_count ?? 0
+    const campaignSpend = c.spent_cents ?? 0
     const ctrValue =
       campaignImpressionsCount > 0 ? (campaignClicksCount / campaignImpressionsCount) * 100 : 0
     const cpmValue =
