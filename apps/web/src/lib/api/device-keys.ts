@@ -63,12 +63,20 @@ export async function registerDeviceCredential(input: {
     input.fingerprint ? hashFingerprint(input.fingerprint) : Promise.resolve(null),
   ])
 
-  const { error } = await supabase.from('device_credentials').insert({
-    anonymous_user_id: input.anonymousUserId,
-    api_key_hash: apiKeyHash,
-    fingerprint_hash: fingerprintHash,
-    last_seen_ip: input.ip ?? null,
-  })
+  // anonymous_user_id is UNIQUE (one credential per account). Re-pairing (a new
+  // device, a reinstall, or after clearing the local key) must replace the
+  // existing credential rather than throw a unique-violation 500 — so upsert and
+  // un-revoke. The previous key's hash is overwritten, invalidating it.
+  const { error } = await supabase.from('device_credentials').upsert(
+    {
+      anonymous_user_id: input.anonymousUserId,
+      api_key_hash: apiKeyHash,
+      fingerprint_hash: fingerprintHash,
+      last_seen_ip: input.ip ?? null,
+      revoked: false,
+    },
+    { onConflict: 'anonymous_user_id' }
+  )
 
   if (error) throw error
 }
