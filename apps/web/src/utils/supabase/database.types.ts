@@ -284,6 +284,7 @@ export type Database = {
           campaign_id: string
           created_at: string
           id: string
+          impressions: number
           spend_date: string
           spent_cents: number
           spent_millicents: number
@@ -293,6 +294,7 @@ export type Database = {
           campaign_id: string
           created_at?: string
           id?: string
+          impressions?: number
           spend_date: string
           spent_cents?: number
           spent_millicents?: number
@@ -302,6 +304,7 @@ export type Database = {
           campaign_id?: string
           created_at?: string
           id?: string
+          impressions?: number
           spend_date?: string
           spent_cents?: number
           spent_millicents?: number

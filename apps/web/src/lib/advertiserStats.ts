@@ -44,6 +44,13 @@ export interface Conversion {
   created_at: string
 }
 
+export interface DailySpendRow {
+  campaign_id: string
+  spend_date: string
+  spent_cents: number
+  impressions: number
+}
+
 export interface AdvertiserStatsResult {
   advertiser: {
     id: string
@@ -128,7 +135,8 @@ export function computeAdvertiserStats(
   clicks: Click[],
   conversions: Conversion[],
   days: number | 'all' = 30,
-  now = new Date()
+  now = new Date(),
+  dailySpendRows: DailySpendRow[] = []
 ): AdvertiserStatsResult {
   const daysValue = days === 'all' ? MAX_ALL_DAYS : days
   const periodStart = new Date(now.getTime() - daysValue * 24 * 60 * 60 * 1000)
@@ -186,11 +194,14 @@ export function computeAdvertiserStats(
     dailyClicks[key] = 0
   }
 
-  for (const imp of recentImpressions) {
-    const key = imp.created_at.split('T')[0]
+  // Daily spend + impressions come from the maintained daily counters so the chart
+  // isn't truncated by the 1000-row impression fetch. Summed across the advertiser's
+  // campaigns per day.
+  for (const row of dailySpendRows) {
+    const key = row.spend_date
     if (dailySpend[key] !== undefined) {
-      dailySpend[key] += impressionSpendCents(imp.auction_price_cpm) / 100
-      dailyImpressions[key] += 1
+      dailySpend[key] += (row.spent_cents ?? 0) / 100
+      dailyImpressions[key] += row.impressions ?? 0
     }
   }
   for (const click of recentClicks) {

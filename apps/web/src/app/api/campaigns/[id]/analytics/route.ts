@@ -100,7 +100,7 @@ export async function GET(
           .order('created_at', { ascending: false }),
         supabase
           .from('campaign_daily_spend')
-          .select('spend_date, spent_cents')
+          .select('spend_date, spent_cents, impressions')
           .eq('campaign_id', params.id)
           .gte('spend_date', startIso.slice(0, 10))
           .order('spend_date', { ascending: true }),
@@ -141,19 +141,13 @@ export async function GET(
       dailyClicks[key] = 0
     }
 
+    // Daily spend and impressions come from the maintained daily counters so the
+    // chart isn't truncated by the 1000-row impression fetch.
     for (const row of dailySpendRows) {
       const key = row.spend_date
       if (dailySpend[key] !== undefined) {
         dailySpend[key] = (row.spent_cents ?? 0) / 100
-      }
-    }
-    for (const imp of impressions) {
-      const key = imp.created_at.split('T')[0]
-      if (dailyImpressions[key] !== undefined) {
-        dailyImpressions[key] += 1
-        if (dailySpendRows.length === 0) {
-          dailySpend[key] += impressionSpendCents(imp.auction_price_cpm) / 100
-        }
+        dailyImpressions[key] = row.impressions ?? 0
       }
     }
     for (const click of clicks) {
