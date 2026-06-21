@@ -1,0 +1,11 @@
+# Privacy changes (fix/privacy-p0)
+
+Three surgical fixes so the client matches our public claim ("we never read your prompts or code, and we don't modify your tools"):
+
+- **Fix 1: stop modifying `~/.claude/settings.json`.** `apps/web/public/prism-claude-status-line.sh` no longer contains `update_spinner_verb()`, its call, or the `SETTINGS_FILE` variable, so it never reads or writes any file under `~/.claude/`. The ad still appears during waits via Prism's own printed OSC-8 status line (unchanged); only the spinner-config injection was removed. The script's sole file touch is `~/.prism-user-id`. Verified with `grep` (no `.claude` references), `bash -n`, and a sandboxed dry run that prints the status line, exits 0, and creates only `.prism-user-id`.
+- **Fix 2: remove the Accessibility debug dumps from release builds.** `dumpClaude`, `dumpFront`, `dumpFrontText` (and their dump-only helpers `AXStr` and `DumpRecurse`, plus the `PRISM_DUMP` / `PRISM_DUMPFRONT` / `PRISM_FRONTDUMP` flags in `main.m`) are wrapped in `#if DEBUG`. The project builds without `-DDEBUG`, so the shipped binary contains none of these symbols (verified with `nm`). The real detection path (`detect`, `detectWorkRow:`, `findClaudePid`, `isTrustedPrompt:`, `wakeAccessibility:`, and all class/frame matching) is unchanged.
+- **Fix 3: production AX read is anchor-only.** The Claude, Cursor, and Codex paths read only DOM class names and the matched element's frame. The terminal path scans the text buffer in-process solely to locate the `(Ns · N tokens)` status-line anchor and keeps only that line's on-screen frame. A comment now documents this. `PrismDetection` carries no text field, and the impression payload (`AdContext()`) is hardcoded, so nothing scraped is retained or sent.
+
+**Windows (`UiaDetector.cs`):** already clean. It only reads UIA (no file writes anywhere) and inspects `el.Name` on Text elements to match the verb pattern, returning just `BoundingRectangle`. No changes made.
+
+**Confirmation:** no files under `~/.claude/` are read or written by any of these paths, and no prompt, response, or code text is collected, retained, or transmitted. The GUI overlay's detection timing, ad placement, and appearance are unchanged.

@@ -8,7 +8,6 @@ set -euo pipefail
 API_URL="${PRISM_API_URL:-https://goprism.dev/api}"
 API_KEY="${PRISM_API_KEY:-}"
 USER_ID_FILE="${HOME}/.prism-user-id"
-SETTINGS_FILE="${HOME}/.claude/settings.json"
 
 ensure_user_id() {
   if [ ! -f "$USER_ID_FILE" ]; then
@@ -49,31 +48,6 @@ parse_field() {
   fi
 }
 
-update_spinner_verb() {
-  local text="$1"
-  if [ ! -f "$SETTINGS_FILE" ]; then
-    return 0
-  fi
-
-  if command -v python3 >/dev/null 2>&1; then
-    python3 - "$text" <<'PY'
-import json, os, sys
-text = sys.argv[1]
-path = os.path.expanduser("~/.claude/settings.json")
-try:
-    with open(path, "r") as f:
-        settings = json.load(f)
-except Exception:
-    settings = {}
-settings.setdefault("spinnerVerbs", {"mode": "replace", "verbs": []})
-settings["spinnerVerbs"]["mode"] = "replace"
-settings["spinnerVerbs"]["verbs"] = [text]
-with open(path, "w") as f:
-    json.dump(settings, f, indent=2)
-PY
-  fi
-}
-
 main() {
   local resp adv copy url text
   resp="$(fetch_ad)"
@@ -94,7 +68,6 @@ main() {
   fi
 
   text="${adv} · ${copy}"
-  update_spinner_verb "$text"
 
   # Print a bold black-on-yellow status line with an explicit URL for terminal
   # auto-linkify and an OSC 8 hyperlink for terminals that support it.

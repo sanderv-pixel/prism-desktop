@@ -52,6 +52,7 @@
 
 int main(int argc, const char *argv[]) {
     @autoreleasepool {
+#if DEBUG
         // Debug capture: PRISM_DUMP=1 dumps Claude's live AX tree once per second
         // for ~60s, then exits. Used to discover new surfaces (e.g. Cowork).
         if (getenv("PRISM_DUMP")) {
@@ -86,6 +87,7 @@ int main(int argc, const char *argv[]) {
             }
             return 0;
         }
+#endif  // DEBUG
 
         // Debug: PRISM_DETECT=1 runs the real detection against the live tree and
         // prints found/frame each second (verifies a surface without the ad pipeline).

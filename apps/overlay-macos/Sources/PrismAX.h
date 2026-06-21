@@ -47,6 +47,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// coordinates (top-left origin). Handles waking + per-app detection internally.
 + (PrismDetection *)detect;
 
+// Debug-only AX tree/text dumps. Excluded from release builds (the project builds
+// without -DDEBUG) so the shipped binary carries no symbol that can read arbitrary
+// on-screen UI text or terminal scrollback. Build with -DDEBUG to use them.
+#if DEBUG
 /// Debug: dump Claude's full AX tree (role, DOM classes, text, frame) for any
 /// element carrying classes or short text. Used to discover new surfaces.
 + (NSString *)dumpClaude;
@@ -58,6 +62,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// Debug: dump the tail of the frontmost app's largest AXTextArea (the terminal
 /// scrollback). Used to discover new CLI status-line formats (Codex, Gemini, …).
 + (NSString *)dumpFrontText;
+#endif
 
 @end
 

@@ -218,6 +218,10 @@ static PrismDetection *DetectTerminalThinking(AXUIElementRef app) {
     FindBestTextArea(app, 0, &ta, &len);
     if (!ta) return d;
 
+    // Privacy: the buffer text is scanned in-process ONLY to locate the
+    // "(Ns · N tokens)" status-line anchor. We keep just that line's on-screen
+    // frame (below); no buffer / prompt / response / code text is retained on the
+    // detection result (PrismDetection has no text field) or transmitted.
     NSRange line = WorkingLineRange(AXStringValue(ta));
     if (line.location != NSNotFound) {
         CGRect rect = AXBoundsForCharRange(ta, line);
@@ -254,6 +258,9 @@ static PrismSourceKind SourceKindForBundle(NSString *bundleId) {
 }
 
 // --- Debug tree dump (discovery of new surfaces) ---------------------------
+// Debug-only: reads broad UI text/scrollback, so it is compiled out of release
+// builds (no -DDEBUG). Production detection below never uses these.
+#if DEBUG
 
 static NSString *AXStr(AXUIElementRef el, CFStringRef attr) {
     CFTypeRef v = NULL;
@@ -290,6 +297,8 @@ static void DumpRecurse(AXUIElementRef el, int depth, NSMutableString *out) {
         CFRelease(kids);
     }
 }
+
+#endif  // DEBUG
 
 @implementation PrismAX
 
@@ -344,6 +353,8 @@ static void DumpRecurse(AXUIElementRef el, int depth, NSMutableString *out) {
     return d;
 }
 
+#if DEBUG
+
 + (NSString *)dumpClaude {
     pid_t pid = [self findClaudePid];
     if (!pid) return @"(claude not running)\n";
@@ -386,5 +397,7 @@ static void DumpRecurse(AXUIElementRef el, int depth, NSMutableString *out) {
             front.localizedName, front.bundleIdentifier, (unsigned long)len,
             [lines componentsJoinedByString:@"\n"]];
 }
+
+#endif  // DEBUG
 
 @end
