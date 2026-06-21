@@ -951,6 +951,10 @@ export type Database = {
         Args: { p_user_ids: string[]; p_since?: string }
         Returns: { day: string; impressions: number; earnings_millicents: number }[]
       }
+      creator_earnings_totals: {
+        Args: { p_user_ids: string[]; p_referrer_id: string }
+        Returns: { own_millicents: number; referral_millicents: number }[]
+      }
       credit_advertiser_balance:
         | {
             Args: {

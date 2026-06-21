@@ -48,26 +48,16 @@ async function getPayoutSettings(userId: string) {
   }
 }
 
-async function getTotalEarningsCents(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  userId: string,
-  userIds: string[]
-) {
-  const [{ data: impressions }, { data: referralImpressions }] = await Promise.all([
-    supabase.from('impressions').select('payout_millicents, validated, payout_hold').in('user_id', userIds),
-    supabase.from('impressions').select('referrer_payout_millicents, validated, payout_hold').eq('referrer_user_id', userId),
-  ])
-
-  // Sums are in millicents (1 cent = 1000); convert the total back to cents.
-  const ownEarningsMc = (impressions ?? [])
-    .filter((i) => i.validated && !i.payout_hold)
-    .reduce((sum, i) => sum + i.payout_millicents, 0)
-
-  const referralEarningsMc = (referralImpressions ?? [])
-    .filter((i) => i.validated && !i.payout_hold)
-    .reduce((sum, i) => sum + i.referrer_payout_millicents, 0)
-
-  return Math.floor((ownEarningsMc + referralEarningsMc) / 1000)
+async function getTotalEarningsCents(userId: string, userIds: string[]) {
+  // All-time own earnings + lifelong referral commission, summed in SQL (uncapped,
+  // not subject to the 1000-row fetch cap). Admin client so RLS doesn't zero it.
+  const admin = createAdminClient()
+  const { data } = await admin.rpc('creator_earnings_totals', {
+    p_user_ids: userIds,
+    p_referrer_id: userId,
+  })
+  const t = data?.[0] ?? { own_millicents: 0, referral_millicents: 0 }
+  return Math.floor((Number(t.own_millicents) + Number(t.referral_millicents)) / 1000)
 }
 
 export async function GET() {
@@ -89,7 +79,7 @@ export async function GET() {
       { data: trust },
       payoutSettings,
     ] = await Promise.all([
-      getTotalEarningsCents(supabase, user.id, userIds),
+      getTotalEarningsCents(user.id, userIds),
       supabase
         .from('payouts')
         .select('*')
@@ -154,7 +144,7 @@ export async function POST(req: NextRequest) {
     const userIds = await getLinkedUserIds(supabase, user.id)
 
     const [totalEarningsCents, { data: payouts }, { data: trust }, payoutSettings] = await Promise.all([
-      getTotalEarningsCents(supabase, user.id, userIds),
+      getTotalEarningsCents(user.id, userIds),
       supabase.from('payouts').select('*').eq('user_id', user.id),
       supabase.from('user_trust').select('trust_score, payout_hold').eq('user_id', user.id).maybeSingle(),
       getPayoutSettings(user.id),

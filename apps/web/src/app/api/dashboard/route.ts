@@ -54,6 +54,7 @@ async function getReferralSnapshot(userId: string) {
 
 export async function GET() {
   const supabase = await createClient()
+  const admin = createAdminClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -143,16 +144,16 @@ export async function GET() {
       return d >= sixtyDaysAgo && d < thirtyDaysAgo
     })
 
-    // Sums are in millicents; divide by 1000 to express the existing *Cents
-    // variables as (now fractional) cents so all downstream display is unchanged.
-    const ownEarningsCents = eligibleImpressions.reduce(
-      (sum, i) => sum + i.payout_millicents,
-      0
-    ) / 1000
-    const referralEarningsCents = eligibleReferralImpressions.reduce(
-      (sum, i) => sum + i.referrer_payout_millicents,
-      0
-    ) / 1000
+    // Lifetime earnings come from an uncapped SQL aggregate, not the 60-day row
+    // scan above: the balance must include all-time own earnings and lifelong
+    // referral commission, and must not be truncated by the 1000-row fetch cap.
+    const { data: totalsRows } = await admin.rpc('creator_earnings_totals', {
+      p_user_ids: userIds,
+      p_referrer_id: user.id,
+    })
+    const totals = totalsRows?.[0] ?? { own_millicents: 0, referral_millicents: 0 }
+    const ownEarningsCents = Number(totals.own_millicents) / 1000
+    const referralEarningsCents = Number(totals.referral_millicents) / 1000
     const totalEarningsCents = ownEarningsCents + referralEarningsCents
     const validatedImpressions = eligibleImpressions.length
     const totalImpressions = impressions.length
