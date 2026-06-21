@@ -14,6 +14,41 @@ export const dynamic = 'force-dynamic'
 
 const clicksRateLimiter = new RateLimiter(60, 60 * 1000)
 
+// CPC billing. A CPC impression is charged and earns nothing until it is clicked;
+// on the (idempotent, once-per-token) first click we charge the advertiser's spend
+// ledger and credit the originating impression so 50% flows to the creator. A CTR
+// misprediction never causes a wrong charge — the price was fixed at auction time.
+async function chargeCpcClick(
+  supabase: ReturnType<typeof createAdminClient>,
+  params: { campaignId: string; nonce: string; clickChargeCents: number; clickId: string }
+) {
+  const { campaignId, nonce, clickChargeCents, clickId } = params
+  const costMc = clickChargeCents * 1000
+  const payoutMc = Math.round(costMc / 2)
+
+  await supabase.rpc('increment_campaign_spent_mc', { p_campaign_id: campaignId, p_amount_mc: costMc })
+
+  const { data: imp } = await supabase
+    .from('impressions')
+    .select('id, referrer_user_id')
+    .eq('token_nonce', nonce)
+    .eq('campaign_id', campaignId)
+    .maybeSingle()
+  if (!imp) return
+
+  const referrerMc = imp.referrer_user_id ? Math.max(0, Math.round(payoutMc * 0.1)) : 0
+  await supabase
+    .from('impressions')
+    .update({
+      payout_millicents: payoutMc,
+      payout_cents: Math.round(payoutMc / 1000),
+      referrer_payout_millicents: referrerMc,
+      referrer_payout_cents: Math.round(referrerMc / 1000),
+      click_id: clickId,
+    })
+    .eq('id', imp.id)
+}
+
 export async function GET(req: NextRequest) {
   const supabase = createAdminClient()
 
@@ -123,6 +158,19 @@ export async function GET(req: NextRequest) {
         }
       } catch {
         // ignore
+      }
+      // CPC billing happens on this first click only (the nonce makes it idempotent).
+      if (payload.bidType === 'cpc' && (payload.clickChargeCents ?? 0) > 0 && clickRow?.id) {
+        try {
+          await chargeCpcClick(supabase, {
+            campaignId,
+            nonce,
+            clickChargeCents: Math.round(payload.clickChargeCents ?? 0),
+            clickId: clickRow.id,
+          })
+        } catch (e) {
+          console.error('CPC click billing error:', e)
+        }
       }
     }
 

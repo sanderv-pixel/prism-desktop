@@ -16,6 +16,11 @@ export interface ImpressionTokenPayload {
   sessionId: string
   auctionPriceCpm: number
   creativeId?: string | null
+  // Billing model for this impression. 'cpc' campaigns are charged on the click
+  // (clickChargeCents), not the impression, so the impression carries the price.
+  // Absent on older tokens, which are treated as 'cpm'.
+  bidType?: 'cpm' | 'cpc'
+  clickChargeCents?: number
   nonce: string
   issuedAt: number
 }

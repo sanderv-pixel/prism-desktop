@@ -26,10 +26,11 @@ export default function NewCampaignPage() {
   const [brandName, setBrandName] = useState('')
   const [url, setUrl] = useState('')
   const [iconUrl, setIconUrl] = useState('')
-  const [objective, setObjective] = useState<'awareness' | 'performance'>('awareness')
+  const [objective, setObjective] = useState<'awareness' | 'traffic' | 'performance'>('awareness')
   const [budget, setBudget] = useState('10')
   const [dailyBudget, setDailyBudget] = useState('')
   const [maxBidCpm, setMaxBidCpm] = useState('12')
+  const [maxBidCpc, setMaxBidCpc] = useState('0.50')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [frequencyCap, setFrequencyCap] = useState('')
@@ -98,6 +99,7 @@ export default function NewCampaignPage() {
     setError('')
 
     try {
+      const bidType = objective === 'awareness' ? 'cpm' : 'cpc'
       const body: Record<string, unknown> = {
         title,
         copy,
@@ -105,11 +107,12 @@ export default function NewCampaignPage() {
         url,
         iconUrl: iconUrl || undefined,
         objective,
-        bidType: objective === 'awareness' ? 'cpm' : 'cpc',
+        bidType,
         budgetCents: Math.round(parseFloat(budget) * 100),
-        maxBidCpm: Math.round(parseFloat(maxBidCpm) * 100),
         contexts,
       }
+      if (bidType === 'cpc') body.maxBidCpc = Math.round(parseFloat(maxBidCpc) * 100)
+      else body.maxBidCpm = Math.round(parseFloat(maxBidCpm) * 100)
 
       if (targetSources.length > 0) body.targetSources = targetSources
 
@@ -157,7 +160,7 @@ export default function NewCampaignPage() {
           </h1>
           <p className="text-muted-foreground mb-8">
             One line of copy, one destination URL, and the contexts where it should appear.
-            CPM awareness campaigns go live immediately; performance campaigns require review.
+            Awareness (CPM) and Traffic (CPC) campaigns go live immediately; performance campaigns require review.
           </p>
 
           {success ? (
@@ -172,7 +175,7 @@ export default function NewCampaignPage() {
                 <label className="block text-sm font-medium text-foreground/80 mb-1.5">
                   Campaign objective
                 </label>
-                <div className="grid sm:grid-cols-2 gap-3">
+                <div className="grid sm:grid-cols-3 gap-3">
                   <button
                     type="button"
                     onClick={() => setObjective('awareness')}
@@ -184,7 +187,21 @@ export default function NewCampaignPage() {
                   >
                     <span className="block text-sm font-medium text-foreground">Awareness</span>
                     <span className="block text-xs text-muted-foreground mt-0.5">
-                      Pay per impression. Best for reach and consideration.
+                      Pay per impression (CPM). Best for reach.
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setObjective('traffic')}
+                    className={`rounded-lg border px-4 py-3 text-left transition ${
+                      objective === 'traffic'
+                        ? 'bg-violet-50 border-violet-200 text-primary'
+                        : 'bg-muted border-border text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <span className="block text-sm font-medium text-foreground">Traffic</span>
+                    <span className="block text-xs text-muted-foreground mt-0.5">
+                      Pay per click (CPC). Only pay when someone clicks.
                     </span>
                   </button>
                   <button
@@ -198,7 +215,7 @@ export default function NewCampaignPage() {
                   >
                     <span className="block text-sm font-medium text-foreground">Performance</span>
                     <span className="block text-xs text-muted-foreground mt-0.5">
-                      Pay per click. Requires conversion tracking review.
+                      Pay per click (CPC). Requires conversion review.
                     </span>
                   </button>
                 </div>
@@ -334,21 +351,41 @@ export default function NewCampaignPage() {
               </div>
 
               <div className="grid sm:grid-cols-2 gap-5">
-                <div>
-                  <label className="block text-sm font-medium text-foreground/80 mb-1.5">
-                    Max CPM bid (USD)
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    min="8"
-                    step="0.5"
-                    value={maxBidCpm}
-                    onChange={(e) => setMaxBidCpm(e.target.value)}
-                    className="w-full rounded-lg border border-border bg-input px-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1.5">Floor $8, typical $8–$25</p>
-                </div>
+                {objective === 'awareness' ? (
+                  <div>
+                    <label className="block text-sm font-medium text-foreground/80 mb-1.5">
+                      Max CPM bid (USD per 1,000 impressions)
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min="8"
+                      step="0.5"
+                      value={maxBidCpm}
+                      onChange={(e) => setMaxBidCpm(e.target.value)}
+                      className="w-full rounded-lg border border-border bg-input px-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1.5">Floor $8, typical $8–$25</p>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-sm font-medium text-foreground/80 mb-1.5">
+                      Max CPC bid (USD per click)
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min="0.01"
+                      step="0.05"
+                      value={maxBidCpc}
+                      onChange={(e) => setMaxBidCpc(e.target.value)}
+                      className="w-full rounded-lg border border-border bg-input px-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1.5">
+                      You only pay when someone clicks. We rank by effective CPM (your bid x predicted CTR).
+                    </p>
+                  </div>
+                )}
                 <div>
                   <label className="block text-sm font-medium text-foreground/80 mb-1.5">
                     Frequency cap
@@ -467,7 +504,10 @@ export default function NewCampaignPage() {
                 </p>
               </div>
 
-              <MarketContextPanel contexts={contexts} bidCpm={parseFloat(maxBidCpm) || 0} />
+              <MarketContextPanel
+                contexts={contexts}
+                bidCpm={objective === 'awareness' ? parseFloat(maxBidCpm) || 0 : 0}
+              />
 
               {error && (
                 <div className="rounded-xl bg-red-50 border border-red-200 p-4 flex items-start gap-3 text-red-600">
@@ -478,7 +518,7 @@ export default function NewCampaignPage() {
 
               <div className="flex items-center gap-3 pt-2">
                 <Button type="submit" size="lg" disabled={loading || contexts.length === 0 || !canAfford}>
-                  {loading ? 'Creating…' : !advertiser ? 'Loading…' : !canAfford ? 'Top up required' : objective === 'awareness' ? 'Create campaign' : 'Submit for review'}
+                  {loading ? 'Creating…' : !advertiser ? 'Loading…' : !canAfford ? 'Top up required' : objective === 'performance' ? 'Submit for review' : 'Create campaign'}
                 </Button>
                 <Button
                   type="button"
