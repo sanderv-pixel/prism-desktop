@@ -40,12 +40,12 @@ export default function InstallPage() {
         <div style={{ display: 'flex', gap: 16, marginBottom: 40 }}>
           <div style={stepNum}>1</div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={stepTitle}>Paste this in Terminal</div>
+            <div style={stepTitle}>Paste this in Terminal, or your favorite coding agent</div>
             <p style={stepBody}>It downloads Prism, installs it to your Applications, and launches it. No Apple ID, no admin password.</p>
             <div style={{ marginTop: 14 }}>
               <CopyCommand command="curl -fsSL https://goprism.dev/install.sh | sh" />
             </div>
-            <p style={{ marginTop: 10, fontSize: 12.5, color: '#94a3b8' }}>Open Terminal (⌘+Space → “Terminal”), paste, press Return.</p>
+            <p style={{ marginTop: 10, fontSize: 12.5, color: '#94a3b8' }}>Open Terminal (⌘+Space → “Terminal”), paste, press Return — or just hand it to your coding agent and let it run.</p>
           </div>
         </div>
 
