@@ -246,11 +246,18 @@ export async function GET() {
         ? Math.round(durations.reduce((sum, d) => sum + d, 0) / durations.length)
         : 0
 
+    const { data: trustRows } = await supabase
+      .from('user_trust')
+      .select('payout_hold')
+      .in('user_id', userIds)
+    const payoutHold = (trustRows ?? []).some((t) => t.payout_hold)
+
     return NextResponse.json({
       user: {
         id: user.id,
         email: user.email,
         payoutEnabled,
+        payoutHold,
         connectStatus,
       },
       stats: {
@@ -283,16 +290,37 @@ export async function GET() {
       toolBreakdown: Object.entries(toolBreakdown)
         .map(([tool, data]) => ({ tool, ...data }))
         .sort((a, b) => b.earnings - a.earnings),
-      recentImpressions: recentList.map((imp) => ({
-        id: imp.id,
-        advertiserName: 'Prism',
-        campaignTitle: 'Ad impression',
-        context: imp.context,
-        validated: imp.validated,
-        payoutCents: imp.payout_millicents / 1000,
-        durationMs: imp.duration_ms,
-        createdAt: imp.created_at,
-      })),
+      recentImpressions: recentList.map((imp) => {
+        const flags: string[] = imp.fraud_flags ?? []
+        const paid = imp.validated && !imp.payout_hold
+        const notPaidReason = paid
+          ? null
+          : flags.includes('frequency_cap')
+            ? 'Frequency cap reached'
+            : flags.some((f) => f.startsWith('budget'))
+              ? 'Advertiser out of budget'
+              : flags.includes('daily_spend_cap')
+                ? 'Advertiser daily cap reached'
+                : imp.payout_hold || flags.includes('low_trust_score')
+                  ? 'On payout hold'
+                  : flags.includes('impression_too_fast') ||
+                      flags.includes('device_fingerprint_mismatch') ||
+                      flags.includes('too_many_users_on_ip')
+                    ? 'Flagged by fraud checks'
+                    : 'Not billable'
+        return {
+          id: imp.id,
+          advertiserName: 'Prism',
+          campaignTitle: 'Ad impression',
+          context: imp.context,
+          validated: imp.validated,
+          paid,
+          notPaidReason,
+          payoutCents: imp.payout_millicents / 1000,
+          durationMs: imp.duration_ms,
+          createdAt: imp.created_at,
+        }
+      }),
       payouts: payouts.map((p) => ({
         id: p.id,
         amountCents: p.amount_cents,
