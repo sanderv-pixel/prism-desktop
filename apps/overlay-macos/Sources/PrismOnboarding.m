@@ -74,7 +74,7 @@ static NSString *const kApiKeyKey = @"PrismApiKey";
     [cv addSubview:self.axStatus];
     self.axButton = [self button:@"Enable" frame:NSMakeRect(330, 234, 108, 30) action:@selector(enableAX)];
     [cv addSubview:self.axButton];
-    [cv addSubview:[self label:@"Grants Accessibility — the one permission Prism needs." frame:NSMakeRect(40, 206, 390, 16) size:11 weight:NSFontWeightRegular color:NSColor.tertiaryLabelColor]];
+    [cv addSubview:[self label:@"Click Enable, then switch on “PrismOverlay” in the dialog that appears." frame:NSMakeRect(40, 206, 400, 16) size:11 weight:NSFontWeightRegular color:NSColor.tertiaryLabelColor]];
 
     // 2 — Connect account (CLI-style: opens the browser, links automatically).
     [cv addSubview:[self card:NSMakeRect(24, 72, 432, 108)]];
@@ -126,11 +126,12 @@ static NSString *const kApiKeyKey = @"PrismApiKey";
 #pragma mark - Actions
 
 - (void)enableAX {
-    // Open the Accessibility pane directly. We deliberately do NOT call
-    // AXIsProcessTrustedWithOptions(prompt:YES): that shows a system dialog that
-    // lingers (with a confusing "Deny" button) even after the user flips the
-    // toggle. The app is already in the list because its detector calls the
-    // Accessibility API — the user just toggles it on.
+    // Prompt via the Accessibility API: this both shows the system "Allow" dialog
+    // AND adds Prism to the Accessibility list, so the user only flips the toggle.
+    // (Just opening Settings often left the app *unlisted* — an untrusted detector
+    // does not reliably auto-list itself — which forced a manual drag from Finder.)
+    NSDictionary *opts = @{ (__bridge NSString *)kAXTrustedCheckOptionPrompt: @YES };
+    AXIsProcessTrustedWithOptions((__bridge CFDictionaryRef)opts);
     [[NSWorkspace sharedWorkspace] openURL:
         [NSURL URLWithString:@"x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"]];
 }
