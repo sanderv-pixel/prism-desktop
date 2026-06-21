@@ -29,6 +29,12 @@ const REQUIRED: EnvRequirement[] = [
   { name: 'UPSTASH_REDIS_REST_TOKEN' },
   { name: 'NEXT_PUBLIC_TURNSTILE_SITE_KEY' },
   { name: 'TURNSTILE_WORKER_URL' },
+  // Money path: Stripe is always required to take payment. (Payout-provider keys
+  // are checked separately below as "at least one configured", since Wise and
+  // Payoneer are intentionally optional/either-or.)
+  { name: 'STRIPE_SECRET_KEY' },
+  { name: 'STRIPE_WEBHOOK_SECRET' },
+  { name: 'STRIPE_PRICE_ID' },
 ]
 
 function isTruthy(value: string | undefined): boolean {
@@ -64,6 +70,29 @@ export function validateProductionEnv(): void {
 
   const adminError = validateListVar('PRISM_ADMIN_EMAILS', 1)
   if (adminError) failures.push(adminError)
+
+  // Payouts: at least one provider should be fully configured. Warn rather than
+  // throw, so a deploy that has not wired payouts yet still boots (non-breaking).
+  const wiseReady = isTruthy(process.env.WISE_API_TOKEN) && isTruthy(process.env.WISE_PROFILE_ID)
+  const payoneerReady =
+    isTruthy(process.env.PAYONEER_CLIENT_ID) &&
+    isTruthy(process.env.PAYONEER_CLIENT_SECRET) &&
+    isTruthy(process.env.PAYONEER_PROGRAM_ID)
+  if (!wiseReady && !payoneerReady) {
+    console.warn(
+      '[env] No payout provider fully configured (Wise or Payoneer). Creator payouts will fail until one is set.'
+    )
+  }
+
+  // Test/live key parity. Only enforced when PRISM_ENV is explicitly set, so the
+  // default (unset) keeps today's behavior. Refuses a mismatched Stripe key.
+  const prismEnv = (process.env.PRISM_ENV || '').toLowerCase()
+  const stripeKey = process.env.STRIPE_SECRET_KEY || ''
+  if (prismEnv === 'production' && stripeKey.startsWith('sk_test_')) {
+    failures.push('PRISM_ENV=production but STRIPE_SECRET_KEY is a test key (sk_test_)')
+  } else if (prismEnv === 'test' && stripeKey.startsWith('sk_live_')) {
+    failures.push('PRISM_ENV=test but STRIPE_SECRET_KEY is a live key (sk_live_)')
+  }
 
   if (failures.length > 0) {
     throw new Error(
