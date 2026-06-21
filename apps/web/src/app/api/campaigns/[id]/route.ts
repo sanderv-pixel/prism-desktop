@@ -19,6 +19,7 @@ const CampaignUpdateSchema = z.object({
   url: httpUrl().optional(),
   icon_url: iconUrlSchema().optional().or(z.literal('')),
   max_bid_cpm: z.number().int().min(8).max(10000).optional(),
+  max_bid_cpc: z.number().int().min(1).max(100000).optional(),
   budget_cents: z.number().int().min(1000).max(10000000).optional(),
   daily_budget_cents: z.number().int().min(0).max(10000000).optional(),
   start_date: z.string().datetime().optional().or(z.literal('')),
