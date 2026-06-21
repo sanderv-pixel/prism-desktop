@@ -31,6 +31,7 @@ import {
   FlaskConical,
   Search,
   Download,
+  RefreshCw,
   ChevronLeft,
   ChevronRight,
   ArrowUpDown,
@@ -207,6 +208,7 @@ export default function AdvertiserDashboardPage() {
   const [error, setError] = useState('')
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [topUpAmount, setTopUpAmount] = useState('50')
+  const [showTopUp, setShowTopUp] = useState(false)
   const [topUpLoading, setTopUpLoading] = useState(false)
   const [currencyConfig, setCurrencyConfig] = useState<CurrencyConfig | null>(null)
   const [displayCurrency, setDisplayCurrency] = useState('USD')
@@ -540,38 +542,24 @@ export default function AdvertiserDashboardPage() {
       )}
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-            Advertiser dashboard
-          </p>
-          <h1 className="text-2xl md:text-3xl font-semibold text-foreground mb-2">
-            {advertiser.name}
-          </h1>
-          <div className="flex items-center gap-3">
-            <StatusBadge status={advertiser.status} />
-            <span className="text-sm text-muted-foreground">
-              {isActive
-                ? `Wallet active · lifetime deposits ${formatMoney(advertiser.lifetimeDepositsCents)}`
-                : 'Wallet inactive · top up to activate'}
-            </span>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-violet-600 text-white flex items-center justify-center text-lg font-medium shrink-0">
+            {advertiser.name?.trim().charAt(0).toLowerCase() || 'a'}
+          </div>
+          <div>
+            <h1 className="text-xl font-semibold text-foreground leading-tight">{advertiser.name}</h1>
+            <div className="flex items-center gap-2 mt-0.5">
+              <StatusBadge status={advertiser.status} />
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="md" href="/dashboard">
-            <Wallet size={16} className="mr-2" />
-            Creator dashboard
-          </Button>
-          <Button variant="outline" size="md" href="/advertiser/campaigns">
-            All campaigns
-          </Button>
-          <Button variant="outline" size="md" href="/advertiser/billing">
-            Billing
-          </Button>
-          <Button variant="outline" size="md" href="/advertiser/conversions">
-            Tracking
-          </Button>
-          <Button size="md" href="/advertiser/campaigns/new" disabled={!isActive}>
+        <div className="flex items-center gap-1 text-sm">
+          <a href="/advertiser/campaigns" className="px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition">Campaigns</a>
+          <a href="/advertiser/billing" className="px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition">Billing</a>
+          <a href="/advertiser/conversions" className="px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition">Tracking</a>
+          <a href="/dashboard" className="px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition">Creator</a>
+          <Button size="md" href="/advertiser/campaigns/new" disabled={!isActive} className="ml-1.5">
             <Plus size={16} className="mr-2" />
             New campaign
           </Button>
@@ -617,62 +605,49 @@ export default function AdvertiserDashboardPage() {
         </div>
       )}
 
-      {/* Wallet + top-up */}
-      <div className="grid lg:grid-cols-3 gap-6 mb-6">
-        <div className="lg:col-span-2 min-w-0 rounded-xl border border-border bg-white p-6 md:p-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <p className="text-sm text-muted-foreground">Account balance</p>
-                <select
-                  value={displayCurrency}
-                  onChange={(e) => {
-                    const value = e.target.value
-                    setDisplayCurrency(value)
-                    if (typeof window !== 'undefined') {
-                      window.localStorage.setItem('prism-display-currency', value)
-                    }
-                  }}
-                  className="text-xs rounded-md border border-border bg-input px-2 py-1 text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
-                >
-                  <option value="USD">USD</option>
-                  <option value="EUR">EUR</option>
-                  <option value="AED">AED</option>
-                </select>
-              </div>
-              <p className="text-4xl md:text-5xl font-semibold text-foreground">
-                {formatMoney(advertiser.balanceCents)}
-              </p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Lifetime deposits {formatMoney(advertiser.lifetimeDepositsCents)}
-              </p>
-            </div>
-            <div className="flex gap-6 md:gap-10">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                  Allocated
-                </p>
-                <p className="text-xl font-medium text-foreground">
-                  {formatMoney(stats.totalBudgetCents)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                  Spent
-                </p>
-                <p className="text-xl font-medium text-foreground">
-                  {formatMoney(stats.totalSpendCents)}
-                </p>
-              </div>
-            </div>
+      {/* Wallet strip */}
+      <div className="rounded-xl border border-border bg-white p-5 md:p-6 mb-5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
+          <div>
+            <p className="text-sm text-muted-foreground mb-0.5">Wallet balance</p>
+            <p className="text-3xl md:text-4xl font-semibold text-foreground leading-none">
+              {formatMoney(advertiser.balanceCents)}
+            </p>
+            <p className="text-xs text-muted-foreground mt-2">
+              {formatMoney(advertiser.lifetimeDepositsCents)} deposited · {formatMoney(stats.totalSpendCents)} spent ·{' '}
+              {formatMoney(stats.totalBudgetCents)} allocated
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <a
+              href="/advertiser/billing"
+              className="hidden sm:inline-flex items-center gap-1.5 text-xs rounded-full bg-violet-50 text-primary px-3 py-1.5 hover:bg-violet-100 transition"
+            >
+              <RefreshCw size={13} /> Auto-recharge
+            </a>
+            <select
+              value={displayCurrency}
+              onChange={(e) => {
+                const value = e.target.value
+                setDisplayCurrency(value)
+                if (typeof window !== 'undefined') {
+                  window.localStorage.setItem('prism-display-currency', value)
+                }
+              }}
+              className="text-xs rounded-md border border-border bg-input px-2 py-2 text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
+            >
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="AED">AED</option>
+            </select>
+            <Button type="button" size="md" variant="outline" onClick={() => setShowTopUp((v) => !v)}>
+              <Wallet size={16} className="mr-2" /> Top up
+            </Button>
           </div>
         </div>
 
-        <div
-          className="min-w-0 rounded-xl border border-border bg-white p-6 md:p-8 flex flex-col justify-between"
-        >
-          <div>
-            <p className="text-sm font-medium text-foreground mb-3">Top up wallet</p>
+        {showTopUp && (
+          <div className="mt-5 pt-5 border-t border-border">
             <div className="flex flex-wrap gap-2 mb-3">
               {getTopUpPresets(currencyConfig?.currency ?? 'USD').map((preset) => {
                 const currency = currencyConfig?.currency ?? 'USD'
@@ -693,140 +668,107 @@ export default function AdvertiserDashboardPage() {
                 )
               })}
             </div>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-                {currencyConfig?.currency ?? 'USD'}
-              </span>
-              <input
-                type="number"
-                min={getDefaultTopUpAmount(currencyConfig?.currency ?? 'USD')}
-                step="1"
-                required
-                value={topUpAmount}
-                onChange={(e) => setTopUpAmount(e.target.value.replace(/[^0-9]/g, ''))}
-                className="w-full rounded-lg border border-border bg-input pl-[3.5rem] pr-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
-              />
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                  {currencyConfig?.currency ?? 'USD'}
+                </span>
+                <input
+                  type="number"
+                  min={getDefaultTopUpAmount(currencyConfig?.currency ?? 'USD')}
+                  step="1"
+                  required
+                  value={topUpAmount}
+                  onChange={(e) => setTopUpAmount(e.target.value.replace(/[^0-9]/g, ''))}
+                  className="w-full rounded-lg border border-border bg-input pl-[3.5rem] pr-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
+                />
+              </div>
+              <Button type="button" size="md" disabled={topUpLoading} onClick={handleTopUp}>
+                {topUpLoading
+                  ? 'Loading checkout…'
+                  : `Top up ${formatCurrency(
+                      isZeroDecimalCurrency(currencyConfig?.currency ?? 'USD')
+                        ? Math.round(Number(topUpAmount || 0))
+                        : Math.round(Number(topUpAmount || 0) * 100),
+                      currencyConfig?.currency ?? 'USD'
+                    )}`}
+              </Button>
             </div>
             {currencyConfig && (
               <p className="text-xs text-muted-foreground mt-2">
                 ≈ ${(Number(topUpAmount || 0) / currencyConfig.rate).toFixed(2)} USD
               </p>
             )}
+            {testModeEnabled && (
+              <button
+                type="button"
+                onClick={handleTestDeposit}
+                disabled={testLoading || verifyLoading}
+                className="mt-3 inline-flex items-center justify-center gap-2 rounded-lg border border-dashed border-amber-300 bg-amber-50/50 px-4 py-2 text-sm font-medium text-amber-700 hover:bg-amber-50 transition disabled:opacity-50"
+              >
+                <FlaskConical size={16} />
+                {testLoading ? 'Redirecting…' : 'Test: add $10 with Stripe test card'}
+              </button>
+            )}
           </div>
-          <Button type="button" size="md" className="w-full mt-4" disabled={topUpLoading} onClick={handleTopUp}>
-            {topUpLoading
-              ? 'Loading checkout…'
-              : `Top up ${formatCurrency(
-                  isZeroDecimalCurrency(currencyConfig?.currency ?? 'USD')
-                    ? Math.round(Number(topUpAmount || 0))
-                    : Math.round(Number(topUpAmount || 0) * 100),
-                  currencyConfig?.currency ?? 'USD'
-                )}`}
-          </Button>
+        )}
 
-          {checkoutLoading && !checkoutClientSecret && (
-            <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              <Zap size={16} className="animate-pulse text-primary" />
-              Loading checkout…
-            </div>
-          )}
+        {checkoutLoading && !checkoutClientSecret && (
+          <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+            <Zap size={16} className="animate-pulse text-primary" /> Loading checkout…
+          </div>
+        )}
 
-          {checkoutClientSecret && (
-            <div
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-              onClick={(e) => {
-                if (e.target === e.currentTarget) {
-                  setCheckoutClientSecret(null)
-                }
-              }}
-            >
-              <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-foreground">Complete your top-up</h3>
-                  <button
-                    type="button"
-                    onClick={() => setCheckoutClientSecret(null)}
-                    className="rounded-full p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-                <PaymentElementCheckout
-                  clientSecret={checkoutClientSecret}
-                  returnUrl={`${typeof window !== 'undefined' ? window.location.origin : 'https://goprism.dev'}/advertiser/dashboard?success=1`}
-                />
+        {checkoutClientSecret && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setCheckoutClientSecret(null)
+            }}
+          >
+            <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-foreground">Complete your top-up</h3>
+                <button
+                  type="button"
+                  onClick={() => setCheckoutClientSecret(null)}
+                  className="rounded-full p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition"
+                >
+                  <X size={18} />
+                </button>
               </div>
+              <PaymentElementCheckout
+                clientSecret={checkoutClientSecret}
+                returnUrl={`${typeof window !== 'undefined' ? window.location.origin : 'https://goprism.dev'}/advertiser/dashboard?success=1`}
+              />
             </div>
-          )}
-
-          {testModeEnabled && (
-            <button
-              type="button"
-              onClick={handleTestDeposit}
-              disabled={testLoading || verifyLoading}
-              className="w-full mt-3 flex items-center justify-center gap-2 rounded-lg border border-dashed border-amber-300 bg-amber-50/50 px-4 py-2 text-sm font-medium text-amber-700 hover:bg-amber-50 transition disabled:opacity-50"
-            >
-              <FlaskConical size={16} />
-              {testLoading ? 'Redirecting…' : 'Test: add $10 with Stripe test card'}
-            </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
-      {/* Spend overview */}
-      <div className="rounded-xl border border-border bg-white p-6 md:p-8 mb-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <p className="text-sm text-muted-foreground mb-1">Total spend</p>
-            <p className="text-3xl md:text-4xl font-semibold text-foreground">
-              {formatMoney(stats.totalSpendCents)}
-            </p>
-            <div className="flex items-center gap-2 mt-2">
-              <TrendingUp size={14} className="text-emerald-600" />
-              <span className="text-sm text-emerald-600">
-                {stats.spendChange >= 0 ? '+' : ''}
-                {stats.spendChange}% vs last period
-              </span>
-            </div>
-          </div>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4 md:gap-8">
-            <div className="flex gap-6 md:gap-10">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                  Budget
-                </p>
-                <p className="text-xl font-medium text-foreground">
-                  {formatMoney(stats.totalBudgetCents)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                  Remaining
-                </p>
-                <p className="text-xl font-medium text-foreground">
-                  {formatMoney(stats.remainingBudgetCents)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                  Active campaigns
-                </p>
-                <p className="text-xl font-medium text-foreground">
-                  {stats.activeCampaigns}/{stats.totalCampaigns}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <DateRangePicker value={range} onChange={setRange} />
-              <a
-                href="/api/advertiser/export"
-                download
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-foreground hover:bg-muted whitespace-nowrap"
-              >
-                <Download size={15} /> Export CSV
-              </a>
-            </div>
-          </div>
+      {/* Controls row */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <TrendingUp size={14} className="text-emerald-600" />
+          <span className="text-emerald-600">
+            {stats.spendChange >= 0 ? '+' : ''}
+            {stats.spendChange}%
+          </span>
+          <span>vs last period</span>
+          <span className="text-border">·</span>
+          <span>
+            {stats.activeCampaigns}/{stats.totalCampaigns} active
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <DateRangePicker value={range} onChange={setRange} />
+          <a
+            href="/api/advertiser/export"
+            download
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-foreground hover:bg-muted whitespace-nowrap"
+          >
+            <Download size={15} /> Export CSV
+          </a>
         </div>
       </div>
 
