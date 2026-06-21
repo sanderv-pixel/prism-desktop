@@ -95,6 +95,7 @@ interface Campaign {
   budgetCents: number
   spentCents: number
   maxBidCpm: number
+  maxBidCpc: number | null
   contexts: string[]
   impressions: number
   clicks: number
@@ -179,7 +180,11 @@ function exportCampaignsCsv(rows: Campaign[]) {
         csvCell(c.objective),
         csvCell(formatCents(c.budgetCents)),
         csvCell(formatCents(c.spentCents)),
-        csvCell(`${formatCents(c.maxBidCpm)} CPM`),
+        csvCell(
+          c.bidType === 'cpc'
+            ? `${formatCents(c.maxBidCpc ?? 0)} CPC`
+            : `${formatCents(c.maxBidCpm)} CPM`
+        ),
         csvCell(c.impressions),
         csvCell(c.clicks),
         csvCell(`${c.ctr}%`),
@@ -1015,7 +1020,17 @@ export default function AdvertiserDashboardPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4 text-foreground/80">
-                          {formatMoney(campaign.maxBidCpm)} CPM
+                          {campaign.bidType === 'cpc' ? (
+                            <span>
+                              {formatMoney(campaign.maxBidCpc ?? 0)}{' '}
+                              <span className="text-xs text-muted-foreground">CPC</span>
+                            </span>
+                          ) : (
+                            <span>
+                              {formatMoney(campaign.maxBidCpm)}{' '}
+                              <span className="text-xs text-muted-foreground">CPM</span>
+                            </span>
+                          )}
                         </td>
                         <td className="px-6 py-4 text-foreground/80">
                           {formatNumber(campaign.impressions)}

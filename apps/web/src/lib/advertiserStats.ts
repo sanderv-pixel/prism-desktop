@@ -14,6 +14,7 @@ export interface Campaign {
   objective: string
   bid_type: string
   max_bid_cpm: number
+  max_bid_cpc?: number | null
   budget_cents: number
   spent_cents: number
   status: string
@@ -247,6 +248,7 @@ export function computeAdvertiserStats(
       budgetCents: c.budget_cents,
       spentCents: c.spent_cents,
       maxBidCpm: c.max_bid_cpm,
+      maxBidCpc: c.max_bid_cpc ?? null,
       contexts: c.contexts ?? [],
       impressions: campaignImpressionsCount,
       clicks: campaignClicksCount,
