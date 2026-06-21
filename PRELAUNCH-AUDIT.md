@@ -5,6 +5,25 @@ Read-only audit of the monorepo against the public claim "we never read your pro
 Severity: **P0** blocks launch, **P1** fix before launch, **P2** fast-follow.
 Effort: **S** under ~1h, **M** a few hours, **L** a day or more.
 
+## Implementation status (branch `chore/prelaunch-fixes`, built on `fix/privacy-p0`)
+
+| # | Finding | Status |
+|---|---------|--------|
+| 1 | Wise fake address | **Done** - require real address, both payload builders + validate; test added |
+| 2 | `~/.claude/settings.json` write | **Done** (privacy base commit) |
+| 3 | AX debug dumps in release | **Done** (privacy base commit; release `nm` clean) |
+| 4 | Test/live guard | **Done** - `PRISM_ENV` parity, no-op when unset |
+| 5 | Money keys not validated | **Done** - Stripe required; payout-provider = warn (non-breaking) |
+| 6 | No money-path tests | **Partial** - payout-address validation tested; webhook + fraud tests still TODO (need Supabase mocking) |
+| 7 | Brand affiliation | **Done** - `NEXT_PUBLIC_BRAND_NEUTRAL` flag (off) + always-on disclaimer |
+| 8 | Over-promised earnings | **Done** - estimator copy softened |
+| 9 | Host-UI detection | **Deferred** - large native feature; needs real OS-signal detector + on-device validation. Not stubbed into the binary (a fake/unvalidated detection+placement path is riskier than leaving the working AX default). Recommend a dedicated scoped task. |
+| 10 | GA without consent | **Done** - DNT + opt-out gate |
+| 11 | Manual money gates | **Done** for campaign approval (`PRISM_AUTO_APPROVE_CAMPAIGNS`, off); payout auto-send intentionally left manual |
+| 12 | Terminal AX read scope | **Done** (privacy base; documented anchor-only) |
+
+Verification: web `tsc` clean, 6/6 unit tests pass, macOS overlay release-compiles with no dump symbols. No push/PR.
+
 ## Prioritized findings
 
 | # | Area | Finding | Evidence | Sev | Non-breaking fix | Effort |
