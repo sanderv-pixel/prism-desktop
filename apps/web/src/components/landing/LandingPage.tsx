@@ -260,6 +260,36 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* REFERRALS */}
+      <section id="referral" style={{ background: '#fff', borderTop: '1px solid #e8ebf0' }}>
+        <div style={sectionWrap}>
+          <div data-reveal style={{ textAlign: 'center', maxWidth: 680, margin: '0 auto 48px' }}>
+            <div style={eyebrow('#7c3aed')}>Referral program</div>
+            <h2 style={{ fontFamily: DISPLAY, fontSize: 'clamp(30px,4vw,42px)', fontWeight: 600, letterSpacing: '-.02em', color: '#0f1729' }}>Bring a creator, earn 10% for life.</h2>
+            <p style={{ marginTop: 14, fontSize: 17, color: '#64748b', lineHeight: 1.62 }}>Every creator gets a referral link. When someone joins Prism through yours, you earn 10% of everything they make, for as long as their account stays active. It never comes out of their pocket.</p>
+          </div>
+          <div data-reveal style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: 20, marginBottom: 32 }}>
+            {[
+              { t: '10% for life', b: 'A tenth of every referred creator’s earnings, with no cap and no expiry, for as long as their account is active.' },
+              { t: 'Never at their expense', b: 'Your commission is paid from Prism’s share, so the creators you refer always keep their full 50%.' },
+              { t: 'Paid automatically', b: 'Referral earnings land in your balance next to your own and withdraw together. Nothing to track.' },
+            ].map((c) => (
+              <div key={c.t} style={{ background: '#fafafa', border: '1px solid #e8ebf0', borderRadius: 20, padding: 28 }}>
+                <h3 style={{ fontFamily: DISPLAY, fontSize: 19, fontWeight: 600, color: '#0f1729' }}>{c.t}</h3>
+                <p style={{ marginTop: 8, fontSize: 15, color: '#64748b', lineHeight: 1.6 }}>{c.b}</p>
+              </div>
+            ))}
+          </div>
+          <div data-reveal style={{ display: 'flex', justifyContent: 'center' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, background: 'linear-gradient(160deg,#0f0f17,#1a132e)', borderRadius: 14, padding: '14px 20px', boxShadow: '0 24px 50px -30px rgba(76,29,149,.6)' }}>
+              <span style={{ fontFamily: MONO, fontSize: 14, color: '#a78bfa' }}>goprism.dev/r/you</span>
+              <span style={{ fontFamily: MONO, fontSize: 12, color: '#94a3b8' }}>→</span>
+              <span style={{ fontFamily: DISPLAY, fontSize: 15, fontWeight: 600, color: '#34d399' }}>+10% for life</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* WHY PRISM */}
       <section style={{ background: '#fafafa', borderTop: '1px solid #e8ebf0' }}>
         <div style={sectionWrap}>
