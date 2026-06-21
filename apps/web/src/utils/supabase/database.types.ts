@@ -286,6 +286,7 @@ export type Database = {
           id: string
           spend_date: string
           spent_cents: number
+          spent_millicents: number
           updated_at: string
         }
         Insert: {
@@ -294,6 +295,7 @@ export type Database = {
           id?: string
           spend_date: string
           spent_cents?: number
+          spent_millicents?: number
           updated_at?: string
         }
         Update: {
@@ -302,6 +304,7 @@ export type Database = {
           id?: string
           spend_date?: string
           spent_cents?: number
+          spent_millicents?: number
           updated_at?: string
         }
         Relationships: [
@@ -336,6 +339,7 @@ export type Database = {
           reviewed_at: string | null
           reviewed_by: string | null
           spent_cents: number
+          spent_millicents: number
           start_date: string | null
           status: string
           title: string
@@ -363,6 +367,7 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           spent_cents?: number
+          spent_millicents?: number
           start_date?: string | null
           status?: string
           title: string
@@ -390,6 +395,7 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           spent_cents?: number
+          spent_millicents?: number
           start_date?: string | null
           status?: string
           title?: string
@@ -572,7 +578,9 @@ export type Database = {
           id: string
           payout_cents: number
           payout_hold: boolean
+          payout_millicents: number
           referrer_payout_cents: number
+          referrer_payout_millicents: number
           referrer_user_id: string | null
           session_id: string | null
           source: string | null
@@ -595,7 +603,9 @@ export type Database = {
           id?: string
           payout_cents?: number
           payout_hold?: boolean
+          payout_millicents?: number
           referrer_payout_cents?: number
+          referrer_payout_millicents?: number
           referrer_user_id?: string | null
           session_id?: string | null
           source?: string | null
@@ -618,7 +628,9 @@ export type Database = {
           id?: string
           payout_cents?: number
           payout_hold?: boolean
+          payout_millicents?: number
           referrer_payout_cents?: number
+          referrer_payout_millicents?: number
           referrer_user_id?: string | null
           session_id?: string | null
           source?: string | null
@@ -904,8 +916,21 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_campaign_daily_spend_mc: {
+        Args: {
+          p_amount_mc: number
+          p_campaign_id: string
+          p_cap_mc: number
+          p_spend_date: string
+        }
+        Returns: boolean
+      }
       increment_campaign_spent: {
         Args: { p_amount: number; p_campaign_id: string }
+        Returns: number
+      }
+      increment_campaign_spent_mc: {
+        Args: { p_amount_mc: number; p_campaign_id: string }
         Returns: number
       }
       increment_fingerprint_mismatch: {

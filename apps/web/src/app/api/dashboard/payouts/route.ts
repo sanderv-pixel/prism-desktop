@@ -54,19 +54,20 @@ async function getTotalEarningsCents(
   userIds: string[]
 ) {
   const [{ data: impressions }, { data: referralImpressions }] = await Promise.all([
-    supabase.from('impressions').select('payout_cents, validated, payout_hold').in('user_id', userIds),
-    supabase.from('impressions').select('referrer_payout_cents, validated, payout_hold').eq('referrer_user_id', userId),
+    supabase.from('impressions').select('payout_millicents, validated, payout_hold').in('user_id', userIds),
+    supabase.from('impressions').select('referrer_payout_millicents, validated, payout_hold').eq('referrer_user_id', userId),
   ])
 
-  const ownEarnings = (impressions ?? [])
+  // Sums are in millicents (1 cent = 1000); convert the total back to cents.
+  const ownEarningsMc = (impressions ?? [])
     .filter((i) => i.validated && !i.payout_hold)
-    .reduce((sum, i) => sum + i.payout_cents, 0)
+    .reduce((sum, i) => sum + i.payout_millicents, 0)
 
-  const referralEarnings = (referralImpressions ?? [])
+  const referralEarningsMc = (referralImpressions ?? [])
     .filter((i) => i.validated && !i.payout_hold)
-    .reduce((sum, i) => sum + i.referrer_payout_cents, 0)
+    .reduce((sum, i) => sum + i.referrer_payout_millicents, 0)
 
-  return ownEarnings + referralEarnings
+  return Math.floor((ownEarningsMc + referralEarningsMc) / 1000)
 }
 
 export async function GET() {

@@ -35,6 +35,7 @@ export async function OPTIONS() {
 
 const impressionsRateLimiter = new RateLimiter(30, 60 * 1000)
 const MAX_DAILY_SPEND_CENTS = 50000 // $500/day cap per campaign
+const MAX_DAILY_SPEND_MILLICENTS = MAX_DAILY_SPEND_CENTS * 1000
 const MIN_TRUST_SCORE_FOR_PAYOUT = 20
 const MIN_ATTENTION_MS = 800
 
@@ -244,7 +245,11 @@ export async function POST(req: NextRequest) {
 
     const budgetRemaining = campaign.spent_cents < campaign.budget_cents
     let validated = campaign.status === 'active' && budgetRemaining && !payoutHold
-    let payoutCents = 0
+    // Earnings are tracked in millicents (1 cent = 1000) so the creator can earn an
+    // exact 50% of the clearing price even when that is a fraction of a cent.
+    let payoutMillicents = 0
+    let referrerPayoutMillicents = 0
+    let costMillicents = 0
     const fraudFlags = [...combinedFraud.reasons]
 
     // Frequency-cap enforcement at impression time (defense in depth).
@@ -258,40 +263,40 @@ export async function POST(req: NextRequest) {
     )
     if (frequencyCount >= frequencyCap) {
       validated = false
-      payoutCents = 0
       fraudFlags.push('frequency_cap')
     }
 
     let referrerUserId: string | null = null
-    let referrerPayoutCents = 0
 
     if (validated) {
-      const clearingPricePerImp = Math.max(1, Math.round(auctionPriceCpm / 1000))
-      // Creator earns 50% of the auction clearing price.
-      payoutCents = Math.max(1, Math.round(clearingPricePerImp * 0.5))
-      // Referrer earns 10% of the creator's payout (additive, from Prism's share).
+      // The advertiser pays the full auction clearing price per impression
+      // (auction_price_cpm is cents per 1000 impressions, so per impression it is
+      // auction_price_cpm millicents). The creator earns exactly 50% of that, with
+      // no minimum floor. Referrer earns 10% of the creator payout, from Prism's cut.
+      costMillicents = auctionPriceCpm
+      payoutMillicents = Math.round(auctionPriceCpm / 2)
       referrerUserId = await getReferrerUserId(supabase, userId)
       if (referrerUserId) {
-        referrerPayoutCents = Math.max(0, Math.round(payoutCents * 0.1))
+        referrerPayoutMillicents = Math.max(0, Math.round(payoutMillicents * 0.1))
       }
 
-      const totalCostCents = payoutCents + referrerPayoutCents
       const today = new Date().toISOString().split('T')[0]
       const { data: dailyOk, error: dailyError } = await supabase.rpc(
-        'increment_campaign_daily_spend',
+        'increment_campaign_daily_spend_mc',
         {
           p_campaign_id: campaignId,
           p_spend_date: today,
-          p_amount: totalCostCents,
-          p_cap: MAX_DAILY_SPEND_CENTS,
+          p_amount_mc: costMillicents,
+          p_cap_mc: MAX_DAILY_SPEND_MILLICENTS,
         }
       )
       if (dailyError) throw dailyError
 
       if (!dailyOk) {
         validated = false
-        payoutCents = 0
-        referrerPayoutCents = 0
+        payoutMillicents = 0
+        referrerPayoutMillicents = 0
+        costMillicents = 0
         referrerUserId = null
         fraudFlags.push('daily_spend_cap')
       }
@@ -315,9 +320,11 @@ export async function POST(req: NextRequest) {
         currency: 'usd',
         source: impressionSource,
         validated,
-        payout_cents: payoutCents,
+        payout_cents: Math.round(payoutMillicents / 1000),
+        payout_millicents: payoutMillicents,
         referrer_user_id: referrerUserId,
-        referrer_payout_cents: referrerPayoutCents,
+        referrer_payout_cents: Math.round(referrerPayoutMillicents / 1000),
+        referrer_payout_millicents: referrerPayoutMillicents,
         fraud_flags: fraudFlags,
         fraud_score: combinedFraud.score,
         payout_hold: payoutHold || !validated,
@@ -327,11 +334,10 @@ export async function POST(req: NextRequest) {
 
     if (impressionError) throw impressionError
 
-    if (validated && payoutCents > 0) {
-      const totalCostCents = payoutCents + referrerPayoutCents
+    if (validated && payoutMillicents > 0) {
       const { data: newSpent, error: updateError } = await supabase.rpc(
-        'increment_campaign_spent',
-        { p_campaign_id: campaignId, p_amount: totalCostCents }
+        'increment_campaign_spent_mc',
+        { p_campaign_id: campaignId, p_amount_mc: costMillicents }
       )
       if (updateError) throw updateError
 
@@ -341,7 +347,9 @@ export async function POST(req: NextRequest) {
           .update({
             validated: false,
             payout_cents: 0,
+            payout_millicents: 0,
             referrer_payout_cents: 0,
+            referrer_payout_millicents: 0,
             fraud_flags: [...fraudFlags, 'budget_exceeded'],
           })
           .eq('id', insertedImpression.id)
@@ -369,7 +377,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(
-      { ok: true, validated, payoutCents, trustScore },
+      { ok: true, validated, payoutCents: Math.round(payoutMillicents / 1000), trustScore },
       { headers: corsHeaders() }
     )
   } catch (err) {

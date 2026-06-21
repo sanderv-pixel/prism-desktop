@@ -23,13 +23,13 @@ export async function GET() {
       adminClient.from('referrals').select('*', { count: 'exact', head: true }).eq('referred_by', user.id),
       adminClient
         .from('impressions')
-        .select('referrer_payout_cents, validated, payout_hold')
+        .select('referrer_payout_millicents, validated, payout_hold')
         .eq('referrer_user_id', user.id),
     ])
 
     const referralEarningsCents = (referralImpressions ?? [])
       .filter((i) => i.validated && !i.payout_hold)
-      .reduce((sum, i) => sum + i.referrer_payout_cents, 0)
+      .reduce((sum, i) => sum + i.referrer_payout_millicents, 0) / 1000
 
     const referralCode = ownReferral?.referral_code ?? null
     const referralLink = referralCode ? `${siteUrl}/auth/sign-up?ref=${referralCode}` : null

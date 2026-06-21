@@ -88,13 +88,13 @@ export async function GET() {
       // Single bounded scan for all dashboard aggregations.
       supabase
         .from('impressions')
-        .select('context, payout_cents, duration_ms, validated, payout_hold, created_at')
+        .select('context, payout_millicents, duration_ms, validated, payout_hold, created_at')
         .in('user_id', userIds)
         .gte('created_at', sixtyDaysAgoIso),
       // Referrer earnings from referred creators.
       supabase
         .from('impressions')
-        .select('referrer_payout_cents, validated, payout_hold, created_at')
+        .select('referrer_payout_millicents, validated, payout_hold, created_at')
         .eq('referrer_user_id', user.id)
         .gte('created_at', sixtyDaysAgoIso),
       // Last 20 impressions for the activity feed.
@@ -143,14 +143,16 @@ export async function GET() {
       return d >= sixtyDaysAgo && d < thirtyDaysAgo
     })
 
+    // Sums are in millicents; divide by 1000 to express the existing *Cents
+    // variables as (now fractional) cents so all downstream display is unchanged.
     const ownEarningsCents = eligibleImpressions.reduce(
-      (sum, i) => sum + i.payout_cents,
+      (sum, i) => sum + i.payout_millicents,
       0
-    )
+    ) / 1000
     const referralEarningsCents = eligibleReferralImpressions.reduce(
-      (sum, i) => sum + i.referrer_payout_cents,
+      (sum, i) => sum + i.referrer_payout_millicents,
       0
-    )
+    ) / 1000
     const totalEarningsCents = ownEarningsCents + referralEarningsCents
     const validatedImpressions = eligibleImpressions.length
     const totalImpressions = impressions.length
@@ -159,16 +161,16 @@ export async function GET() {
     ).length
     const ctr = validatedImpressions > 0 ? (clicks / validatedImpressions) * 100 : 0
 
-    const recentEarnings = eligibleRecent.reduce((sum, i) => sum + i.payout_cents, 0)
-    const previousEarnings = eligiblePrevious.reduce((sum, i) => sum + i.payout_cents, 0)
+    const recentEarnings = eligibleRecent.reduce((sum, i) => sum + i.payout_millicents, 0) / 1000
+    const previousEarnings = eligiblePrevious.reduce((sum, i) => sum + i.payout_millicents, 0) / 1000
     const referralRecentEarnings = eligibleReferralRecent.reduce(
-      (sum, i) => sum + i.referrer_payout_cents,
+      (sum, i) => sum + i.referrer_payout_millicents,
       0
-    )
+    ) / 1000
     const referralPreviousEarnings = eligibleReferralPrevious.reduce(
-      (sum, i) => sum + i.referrer_payout_cents,
+      (sum, i) => sum + i.referrer_payout_millicents,
       0
-    )
+    ) / 1000
     const totalRecentEarnings = recentEarnings + referralRecentEarnings
     const totalPreviousEarnings = previousEarnings + referralPreviousEarnings
     const earningsChange =
@@ -206,7 +208,7 @@ export async function GET() {
     for (const imp of eligibleRecent) {
       const key = imp.created_at.split('T')[0]
       if (dailyEarnings[key] !== undefined) {
-        dailyEarnings[key] += imp.payout_cents / 100
+        dailyEarnings[key] += imp.payout_millicents / 100000
         dailyImpressions[key] += 1
       }
     }
@@ -214,7 +216,7 @@ export async function GET() {
     for (const imp of eligibleReferralRecent) {
       const key = imp.created_at.split('T')[0]
       if (dailyEarnings[key] !== undefined) {
-        dailyEarnings[key] += imp.referrer_payout_cents / 100
+        dailyEarnings[key] += imp.referrer_payout_millicents / 100000
       }
     }
 
@@ -233,7 +235,7 @@ export async function GET() {
         toolBreakdown[tool] = { count: 0, earnings: 0 }
       }
       toolBreakdown[tool].count += 1
-      toolBreakdown[tool].earnings += imp.payout_cents / 100
+      toolBreakdown[tool].earnings += imp.payout_millicents / 100000
     }
 
     const durations = eligibleImpressions
@@ -284,7 +286,7 @@ export async function GET() {
         campaignTitle: 'Ad impression',
         context: imp.context,
         validated: imp.validated,
-        payoutCents: imp.payout_cents,
+        payoutCents: imp.payout_millicents / 1000,
         durationMs: imp.duration_ms,
         createdAt: imp.created_at,
       })),
