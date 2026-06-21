@@ -17,9 +17,9 @@ const stepTitle: CSSProperties = { fontFamily: DISPLAY, fontSize: 19, fontWeight
 const stepBody: CSSProperties = { marginTop: 6, fontSize: 15, color: '#475569', lineHeight: 1.6 }
 
 const STEPS = [
-  ['Enable Prism', 'In the window that opens, click Enable and switch on “PrismOverlay”. That’s the one permission it needs — it only reads the macOS Accessibility tree to place the line, and never touches your AI.'],
-  ['Connect your account', 'Click Connect account. Your browser opens to sign in or create a free account — nothing to copy or paste. The app links itself automatically.'],
-  ['Start earning', 'A small sponsored line appears next to your AI’s activity while it thinks — only then, never otherwise. Every viewed second pays you, straight to your dashboard.'],
+  ['Enable Prism', 'In the window that opens, click Enable and switch on “PrismOverlay”. That’s the one permission it needs. It only reads the macOS Accessibility tree to place the line, and never touches your AI.'],
+  ['Connect your account', 'Click Connect account. Your browser opens to sign in or create a free account, nothing to copy or paste. The app links itself automatically.'],
+  ['Start earning', 'A small sponsored line appears next to your AI’s activity while it thinks, only then, never otherwise. Every viewed second pays you, straight to your dashboard.'],
 ]
 
 export default function InstallPage() {
@@ -31,7 +31,7 @@ export default function InstallPage() {
         <div style={{ maxWidth: 820, margin: '0 auto', padding: '64px 24px 8px' }}>
           <div style={eyebrow}>Install · macOS</div>
           <h1 style={{ fontFamily: DISPLAY, fontSize: 'clamp(34px,5vw,52px)', fontWeight: 600, letterSpacing: '-.03em', lineHeight: 1.05, color: '#0f1729' }}>Up and running in a minute.</h1>
-          <p style={{ marginTop: 18, maxWidth: 560, fontSize: 18, color: '#475569', lineHeight: 1.62 }}>Paste one line, grant one permission, sign in. Then earn while your AI thinks — across Claude, Cursor, Codex, and your terminal.</p>
+          <p style={{ marginTop: 18, maxWidth: 560, fontSize: 18, color: '#475569', lineHeight: 1.62 }}>Paste one line, grant one permission, sign in. Then earn while your AI thinks, across Claude, Cursor, Codex, and your terminal.</p>
         </div>
       </header>
 
@@ -41,11 +41,11 @@ export default function InstallPage() {
           <div style={stepNum}>1</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={stepTitle}>Paste this in Terminal, or your favorite coding agent</div>
-            <p style={stepBody}>It downloads Prism, installs it to your Applications, and launches it. No Apple ID, no admin password.</p>
+            <p style={stepBody}>It downloads Prism, installs it to your Applications, and launches it.</p>
             <div style={{ marginTop: 14 }}>
               <CopyCommand command="curl -fsSL https://goprism.dev/install.sh | sh" />
             </div>
-            <p style={{ marginTop: 10, fontSize: 12.5, color: '#94a3b8' }}>Open Terminal (⌘+Space → “Terminal”), paste, press Return — or just hand it to your coding agent and let it run.</p>
+            <p style={{ marginTop: 10, fontSize: 12.5, color: '#94a3b8' }}>Open Terminal (⌘+Space → “Terminal”), paste, press Return. Or just hand it to your coding agent and let it run.</p>
           </div>
         </div>
 
