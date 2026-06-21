@@ -15,6 +15,7 @@ export interface ImpressionTokenPayload {
   userId: string
   sessionId: string
   auctionPriceCpm: number
+  creativeId?: string | null
   nonce: string
   issuedAt: number
 }

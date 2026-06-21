@@ -98,7 +98,7 @@ export async function GET(
           .gte('spend_date', startIso.slice(0, 10))
           .order('spend_date', { ascending: true }),
         // Breakdowns + reach are aggregated in the DB (uncapped, lifetime, billable).
-        supabase.rpc('campaign_analytics_breakdowns', { p_campaign_ids: [params.id], p_since: null }),
+        supabase.rpc('campaign_analytics_breakdowns', { p_campaign_ids: [params.id], p_since: undefined }),
       ])
 
     const impressions = (impressionsResult.data ?? []) as any[]
