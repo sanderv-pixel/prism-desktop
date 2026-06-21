@@ -25,6 +25,8 @@ interface Campaign {
   budgetCents: number
   spentCents: number
   maxBidCpm: number
+  maxBidCpc?: number | null
+  bidType?: string
   contexts: string[]
   impressions: number
   clicks: number
@@ -230,7 +232,9 @@ export default function CampaignsPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-foreground/80">
-                        {formatCents(campaign.maxBidCpm)} CPM
+                        {campaign.bidType === 'cpc'
+                          ? `${formatCents(campaign.maxBidCpc ?? 0)} CPC`
+                          : `${formatCents(campaign.maxBidCpm)} CPM`}
                       </td>
                       <td className="px-6 py-4 text-foreground/80">
                         {formatNumber(campaign.impressions)}
