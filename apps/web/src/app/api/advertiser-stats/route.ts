@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
     const startIso = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
 
     // Parallel query impressions, clicks, and conversions.
-    const [impressionsResult, clicksResult, conversionsResult] =
+    const [impressionsResult, clicksResult, conversionsResult, dailySpendResult] =
       campaignIds.length > 0
         ? await Promise.all([
             supabase
@@ -73,8 +73,14 @@ export async function GET(req: NextRequest) {
               .select('campaign_id, value_cents, created_at')
               .in('campaign_id', campaignIds)
               .gte('created_at', startIso),
+            supabase
+              .from('campaign_daily_spend')
+              .select('campaign_id, spend_date, spent_cents, impressions')
+              .in('campaign_id', campaignIds)
+              .gte('spend_date', startIso.slice(0, 10)),
           ])
         : [
+            { data: [], error: null },
             { data: [], error: null },
             { data: [], error: null },
             { data: [], error: null },
@@ -86,7 +92,9 @@ export async function GET(req: NextRequest) {
       impressionsResult.data ?? [],
       clicksResult.data ?? [],
       conversionsResult.data ?? [],
-      range
+      range,
+      undefined,
+      dailySpendResult.data ?? []
     )
 
     return NextResponse.json(result)
