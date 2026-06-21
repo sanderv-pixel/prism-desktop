@@ -249,7 +249,7 @@ static NSImage *PrismImageFromDataURL(NSString *s) {
         _ads = [PrismAdClient new];
         __weak PrismController *weakSelf = self;
         _pill.onClick = ^{ [weakSelf handleClick]; };
-        [_ads refresh];
+        [_ads refresh:nil];
     }
     return self;
 }
@@ -305,7 +305,7 @@ static NSImage *PrismImageFromDataURL(NSString *s) {
     // the per-key rate limit, which would kill the pill on every surface.
     if (due || self.lastFetchTick == 0) {
         self.lastFetchTick = self.tick;
-        [self.ads refresh];
+        [self.ads refresh:self.currentSource];
     }
     if (!self.currentAd) { [self hide]; return; }   // connected but no inventory yet
     [self.pill renderAd:self.currentAd];

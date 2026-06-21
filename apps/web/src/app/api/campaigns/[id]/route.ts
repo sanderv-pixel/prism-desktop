@@ -26,6 +26,7 @@ const CampaignUpdateSchema = z.object({
   frequency_cap: z.number().int().min(1).max(100).optional(),
   frequency_window_hours: z.number().int().min(1).max(168).optional(),
   contexts: z.array(z.string().min(1).max(50)).max(50).optional(),
+  target_sources: z.array(z.enum(['claude', 'cursor', 'codex', 'terminal'])).max(4).nullable().optional(),
   // Advertisers may only pause or request re-review. Approval/rejection is admin-only.
   status: z.enum(['paused', 'pending_review']).optional(),
 })

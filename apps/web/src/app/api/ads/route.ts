@@ -47,6 +47,9 @@ const RequestSchema = z.object({
   userId: z.string().min(1).max(128).optional(),
   sessionId: z.string().min(1).max(128).optional(),
   hiddenAdvertisers: z.array(z.string()).optional(),
+  // The surface the ad would be shown on (claude/cursor/codex/terminal), for
+  // surface targeting. Optional; older clients omit it.
+  source: z.enum(['claude', 'cursor', 'codex', 'terminal', 'unknown']).optional(),
 })
 
 function getIconUrl(url: string, iconUrl: string | null | undefined): string {
@@ -178,7 +181,8 @@ export async function POST(req: NextRequest) {
       throw new ApiError(400, message, 'INVALID_BODY', details)
     }
 
-    const { context = {}, userId = '', sessionId, hiddenAdvertisers = [] } = parseResult.data
+    const { context = {}, userId = '', sessionId, hiddenAdvertisers = [], source } = parseResult.data
+    const reqSource = source ?? 'unknown'
     const signals = getSignals(context)
 
     // Active awareness/CPM campaigns.
@@ -221,6 +225,10 @@ export async function POST(req: NextRequest) {
       // resumes automatically once they top up.
       if (advertiser.balanceCents <= 0) return false
       if (advertiser.name && hiddenAdvertisers.includes(advertiser.name)) return false
+      // Surface targeting: if the campaign restricts surfaces, the request's surface
+      // must be one of them. Untargeted (null/empty) campaigns serve everywhere.
+      const targetSources: string[] = c.target_sources ?? []
+      if (targetSources.length > 0 && !targetSources.includes(reqSource)) return false
       const contexts = c.contexts ?? []
       if (contexts.length === 0) return true
       if (contexts.includes('general') || contexts.includes('general-ai')) return true

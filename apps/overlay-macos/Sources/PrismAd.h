@@ -25,8 +25,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, copy, readonly) NSString *sessionId;
 
 /// Refresh the ad queue from the API (async, best-effort). Built-ins remain
-/// available immediately and as a fallback.
-- (void)refresh;
+/// available immediately and as a fallback. `source` is the current surface
+/// (claude/cursor/codex/terminal) for surface targeting; nil if unknown.
+- (void)refresh:(nullable NSString *)source;
 
 /// Whether an account is connected (an API key is present). Prism shows nothing
 /// without one.

@@ -370,6 +370,7 @@ export type Database = {
           spent_millicents: number
           start_date: string | null
           status: string
+          target_sources: string[] | null
           title: string
           updated_at: string
           url: string
@@ -398,6 +399,7 @@ export type Database = {
           spent_millicents?: number
           start_date?: string | null
           status?: string
+          target_sources?: string[] | null
           title: string
           updated_at?: string
           url: string
@@ -426,6 +428,7 @@ export type Database = {
           spent_millicents?: number
           start_date?: string | null
           status?: string
+          target_sources?: string[] | null
           title?: string
           updated_at?: string
           url?: string

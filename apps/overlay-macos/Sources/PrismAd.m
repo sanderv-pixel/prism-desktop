@@ -96,9 +96,11 @@ static NSColor *ColorHex(uint32_t rgb) {
     return req;
 }
 
-- (void)refresh {
-    NSDictionary *body = @{ @"context": AdContext(), @"userId": self.sessionId,
-                            @"sessionId": self.sessionId, @"hiddenAdvertisers": @[] };
+- (void)refresh:(nullable NSString *)source {
+    NSMutableDictionary *body = [@{ @"context": AdContext(), @"userId": self.sessionId,
+                                    @"sessionId": self.sessionId, @"hiddenAdvertisers": @[] } mutableCopy];
+    // The surface this ad would show on, so the auction can apply surface targeting.
+    if (source.length) body[@"source"] = source;
     NSMutableURLRequest *req = [self postTo:@"ads" body:body];
     [[[NSURLSession sharedSession] dataTaskWithRequest:req
         completionHandler:^(NSData *data, NSURLResponse *resp, NSError *err) {
