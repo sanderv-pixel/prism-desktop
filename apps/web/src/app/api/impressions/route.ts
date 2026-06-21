@@ -93,7 +93,20 @@ async function getReferrerUserId(
     .eq('user_id', targetUserId)
     .maybeSingle()
 
-  return referral?.referred_by ?? null
+  const referrerId = referral?.referred_by ?? null
+  if (!referrerId) return null
+
+  // Commission is lifelong only while the referrer's account is active. A deleted
+  // account is already cleared via the referred_by FK (ON DELETE SET NULL); a
+  // suspended one (payout_hold) stops earning referral commission here.
+  const { data: trust } = await supabase
+    .from('user_trust')
+    .select('payout_hold')
+    .eq('user_id', referrerId)
+    .maybeSingle()
+  if (trust?.payout_hold) return null
+
+  return referrerId
 }
 
 export async function POST(req: NextRequest) {

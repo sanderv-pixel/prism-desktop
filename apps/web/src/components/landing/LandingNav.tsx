@@ -7,6 +7,7 @@ const DISPLAY = 'var(--font-display), sans-serif'
 
 const NAV_LINKS = [
   { href: '#how', label: 'How it works' },
+  { href: '#referral', label: 'Referrals' },
   { href: '#privacy', label: 'Privacy' },
   { href: '#advertisers', label: 'Advertisers' },
   { href: '#faq', label: 'FAQ' },
