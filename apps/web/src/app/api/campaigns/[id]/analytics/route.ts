@@ -12,8 +12,11 @@ function parseRange(searchParams: URLSearchParams): number | 'all' {
   return 30
 }
 
+// Advertiser cost for one impression = the full auction clearing price
+// (auction_price_cpm is cents per 1000 impressions), as fractional cents. No 1c
+// floor, matching the millicent ledger that maintains spent_cents.
 function impressionSpendCents(auctionPriceCpm: number | null) {
-  return Math.max(1, Math.round((auctionPriceCpm ?? 0) / 1000))
+  return (auctionPriceCpm ?? 0) / 1000
 }
 
 function parseContextKey(contextString: string | null | undefined): string {
