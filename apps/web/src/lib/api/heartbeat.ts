@@ -94,10 +94,13 @@ const stateKey = (impressionId: string) => `hb:${impressionId}`
 const nonceKey = (impressionId: string, beatNonce: string) => `hbn:${impressionId}:${beatNonce}`
 
 export async function loadHbState(impressionId: string): Promise<HbState | null> {
-  const raw = await kvGet(stateKey(impressionId))
-  if (!raw) return null
+  const raw: unknown = await kvGet(stateKey(impressionId))
+  if (raw == null) return null
+  // Upstash auto-deserializes JSON values, so a stored JSON string can come back as
+  // an object; the in-memory dev store returns the raw string. Handle both.
+  if (typeof raw === 'object') return raw as HbState
   try {
-    return JSON.parse(raw) as HbState
+    return JSON.parse(String(raw)) as HbState
   } catch {
     return null
   }
