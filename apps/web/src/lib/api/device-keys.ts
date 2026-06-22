@@ -94,11 +94,15 @@ export async function validateDeviceApiKey(
 
   const hash = await hashApiKey(apiKey)
   const cacheKey = `prism:device_key:${hash}`
-  const cached = await kvGet(cacheKey)
+  const cached: unknown = await kvGet(cacheKey)
 
   if (cached) {
+    // Upstash auto-deserializes JSON, so a cached JSON string can come back as an
+    // object; the in-memory dev store returns the raw string. Handle both, else the
+    // cache never hits and every request does a DB key lookup.
+    if (typeof cached === 'object') return cached as DeviceCredentialValidation
     try {
-      return JSON.parse(cached) as DeviceCredentialValidation
+      return JSON.parse(String(cached)) as DeviceCredentialValidation
     } catch {
       // Ignore corrupt cache entry and fall through to DB.
     }

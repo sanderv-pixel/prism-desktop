@@ -36,6 +36,7 @@ internal sealed class PrismAppContext : ApplicationContext
     private long _visibleSince;
     private long _accumulatedMs;
     private bool _impressionReported;
+    private long _lastBeatMs;   // anti-bot heartbeat cadence
 
     public PrismAppContext()
     {
@@ -123,6 +124,7 @@ internal sealed class PrismAppContext : ApplicationContext
         _visibleSince = 0;
         _accumulatedMs = 0;
         _impressionReported = false;
+        _lastBeatMs = 0;   // next ad's first beat fires immediately
     }
 
     private void AccrueDwell()
@@ -135,6 +137,20 @@ internal sealed class PrismAppContext : ApplicationContext
             _impressionReported = true;
             _ads.ReportImpression(_currentAd, _accumulatedMs);
         }
+        MaybeBeat(now);
+    }
+
+    // Anti-bot: while the pill is visible, send a signed heartbeat ~every
+    // hbIntervalMs so the server can measure real dwell. First beat fires
+    // immediately; the rolling challenge advances on each ad.HbChallenge update.
+    private void MaybeBeat(long now)
+    {
+        var ad = _currentAd;
+        if (ad is null || string.IsNullOrEmpty(ad.ImpressionToken) || string.IsNullOrEmpty(ad.HbChallenge)) return;
+        var interval = ad.HbIntervalMs > 0 ? ad.HbIntervalMs : 1000;
+        if (_lastBeatMs > 0 && now - _lastBeatMs < interval) return;
+        _lastBeatMs = now;
+        _ads.SendHeartbeat(ad);
     }
 
     private void FlushImpression()

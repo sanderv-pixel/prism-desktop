@@ -86,12 +86,23 @@ earners are **keyless/anonymous** and read as unverified. They keep working whil
 the PoH flag is off; when it is on they become payout-hold candidates until the
 terminal path mints a verified key. The current terminal flow is unchanged.
 
+## Client heartbeat sending
+`/api/ads` returns `hbChallenge` + `hbIntervalMs` alongside the token so a client can
+beat without decoding it. While the pill is visible the overlay sends a beat ~every
+`hbIntervalMs` (first beat immediately), echoing the rolling challenge and advancing
+it from each `nextChallenge`. Best-effort and additive.
+- **macOS** (`PrismAd`/`PrismOverlay`): implemented and live-verified end to end.
+- **Windows** (`AdClient`/`Program`): implemented (parity port; needs a Windows build).
+- **Terminal** (`prism-claude-status-line.sh`): the status line is a stateless one-shot
+  per render, so it cannot hold a sequential beat session. It stays keyless/unverified.
+- Overlays must be **reinstalled** for beats to start (binary distribution).
+
 ## Rollout plan
 1. **Deploy with all flags off** (shadow on). New endpoint + token fields ship; no
-   behavior change.
-2. **Update clients** (overlay + terminal) to send heartbeats and, for minting, a
-   Turnstile token or session. No current client sends heartbeats yet, so enforcing
-   before clients are updated would hold all payouts.
+   behavior change. (Done.)
+2. **Ship clients that beat** (macOS done, Windows ported) and have users reinstall.
+   Until an overlay beats, its impressions have no heartbeat coverage, so enforcing
+   first would hold those payouts.
 3. **Measure** `[hb-shadow]` coverage until the vast majority of real impressions
    have sufficient heartbeats.
 4. **Flip `PRISM_HEARTBEAT_ENFORCED`**, then `PRISM_DEVICE_POH_ENFORCED`, watching
