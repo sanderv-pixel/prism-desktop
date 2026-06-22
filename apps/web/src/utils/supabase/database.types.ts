@@ -607,6 +607,7 @@ export type Database = {
           last_seen_ip: string | null
           last_used_at: string | null
           revoked: boolean
+          verified: boolean
         }
         Insert: {
           anonymous_user_id: string
@@ -618,6 +619,7 @@ export type Database = {
           last_seen_ip?: string | null
           last_used_at?: string | null
           revoked?: boolean
+          verified?: boolean
         }
         Update: {
           anonymous_user_id?: string
@@ -629,6 +631,7 @@ export type Database = {
           last_seen_ip?: string | null
           last_used_at?: string | null
           revoked?: boolean
+          verified?: boolean
         }
         Relationships: []
       }

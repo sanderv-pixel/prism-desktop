@@ -41,6 +41,7 @@ export interface DeviceCredentialValidation {
   revoked: boolean
   anonymousUserId?: string
   fingerprintHash?: string | null
+  verified?: boolean
 }
 
 interface DeviceCredentialRow {
@@ -49,6 +50,7 @@ interface DeviceCredentialRow {
   api_key_hash: string
   fingerprint_hash: string | null
   revoked: boolean
+  verified?: boolean
 }
 
 export async function registerDeviceCredential(input: {
@@ -56,6 +58,7 @@ export async function registerDeviceCredential(input: {
   apiKey: string
   fingerprint?: unknown
   ip?: string
+  verified?: boolean
 }): Promise<void> {
   const supabase = createAdminClient()
   const [apiKeyHash, fingerprintHash] = await Promise.all([
@@ -74,6 +77,7 @@ export async function registerDeviceCredential(input: {
       fingerprint_hash: fingerprintHash,
       last_seen_ip: input.ip ?? null,
       revoked: false,
+      verified: input.verified ?? false,
     },
     { onConflict: 'anonymous_user_id' }
   )
@@ -122,6 +126,7 @@ export async function validateDeviceApiKey(
     revoked: row.revoked,
     anonymousUserId: row.anonymous_user_id,
     fingerprintHash: row.fingerprint_hash,
+    verified: row.verified ?? false,
   }
 
   await kvSet(cacheKey, JSON.stringify(result), { ex: CACHE_TTL_SECONDS })
@@ -151,6 +156,23 @@ export async function getDeviceCredentialByUserId(
 
   if (error) throw error
   return (data as DeviceCredentialRow | null) ?? null
+}
+
+// Count earning-device credentials linked to a verified account (the auth user id
+// plus any anonymous ids linked via builder_identities). Used to cap Sybil minting.
+export async function countAccountDeviceCredentials(authUserId: string): Promise<number> {
+  const supabase = createAdminClient()
+  const { data: identities } = await supabase
+    .from('builder_identities')
+    .select('anonymous_user_id')
+    .eq('auth_user_id', authUserId)
+  const ids = [authUserId, ...(identities ?? []).map((i) => i.anonymous_user_id)]
+  const { count } = await supabase
+    .from('device_credentials')
+    .select('id', { count: 'exact', head: true })
+    .in('anonymous_user_id', ids)
+    .eq('revoked', false)
+  return count ?? 0
 }
 
 // Trust on first use: record the device fingerprint the first time one arrives,

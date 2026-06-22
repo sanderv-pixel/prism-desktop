@@ -21,6 +21,12 @@ export interface ImpressionTokenPayload {
   // Absent on older tokens, which are treated as 'cpm'.
   bidType?: 'cpm' | 'cpc'
   clickChargeCents?: number
+  // Heartbeat seed (anti-bot). Additive + optional: callers/tokens that omit these
+  // behave exactly as before. hbChallenge is the first rolling-challenge value the
+  // client must echo; it is protected by the token's HMAC signature.
+  hbIntervalMs?: number
+  hbMinBeats?: number
+  hbChallenge?: string
   nonce: string
   issuedAt: number
 }
