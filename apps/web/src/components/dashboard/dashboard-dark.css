@@ -1,0 +1,150 @@
+/* =========================================================================
+   Dark theme for the dashboard surface. Applied via `.dash-dark` on the
+   shared DashboardShell, so every page using it inherits the dark look.
+   It works by overriding the app's semantic theme tokens within this scope
+   (so token-based utilities like bg-card / text-foreground / border-border
+   flip automatically) plus remapping the handful of hardcoded light color
+   literals (alert/chip colors, bg-white) and theming recharts. Scoped — does
+   not affect the marketing site or any other page.
+   ========================================================================= */
+
+.dash-dark {
+  /* Semantic token overrides (HSL channels, consumed via hsl(var(--token))). */
+  --background: 240 33% 4%;
+  --foreground: 0 0% 98%;
+  --card: 240 22% 7%;
+  --card-foreground: 0 0% 98%;
+  --muted: 240 14% 13%;
+  --muted-foreground: 218 14% 70%;
+  --border: 240 10% 17%;
+  --input: 240 14% 12%;
+  --secondary: 240 14% 13%;
+  --secondary-foreground: 0 0% 98%;
+  --accent: 240 14% 16%;
+  --accent-foreground: 0 0% 98%;
+  --ring: 262 83% 58%;
+
+  color: #fff;
+  background-color: #06060b;
+  background-image:
+    radial-gradient(circle at 18% -10%, rgba(124, 58, 237, 0.18), transparent 45%),
+    radial-gradient(circle at 92% 0%, rgba(34, 211, 238, 0.06), transparent 40%),
+    radial-gradient(circle at center, hsl(262 83% 58% / 0.04) 1px, transparent 1.6px);
+  background-size: auto, auto, 26px 26px;
+  background-attachment: fixed, fixed, fixed;
+}
+
+/* ---- Hardcoded light-literal remaps (base) ---------------------------- */
+.dash-dark .bg-white {
+  background-color: hsl(var(--card)) !important;
+}
+.dash-dark .bg-red-50,
+.dash-dark .bg-red-100 {
+  background-color: rgba(239, 68, 68, 0.1) !important;
+}
+.dash-dark .border-red-200,
+.dash-dark .border-red-300 {
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+.dash-dark .text-red-500,
+.dash-dark .text-red-600,
+.dash-dark .text-red-700 {
+  color: #fca5a5 !important;
+}
+.dash-dark .bg-emerald-50 {
+  background-color: rgba(52, 211, 153, 0.1) !important;
+}
+.dash-dark .border-emerald-100,
+.dash-dark .border-emerald-200 {
+  border-color: rgba(52, 211, 153, 0.3) !important;
+}
+.dash-dark .text-emerald-600,
+.dash-dark .text-emerald-700,
+.dash-dark .text-emerald-800 {
+  color: #6ee7b7 !important;
+}
+.dash-dark .bg-amber-50,
+.dash-dark .bg-amber-100 {
+  background-color: rgba(251, 191, 36, 0.1) !important;
+}
+.dash-dark .border-amber-200 {
+  border-color: rgba(251, 191, 36, 0.3) !important;
+}
+.dash-dark .text-amber-600,
+.dash-dark .text-amber-700,
+.dash-dark .text-amber-800 {
+  color: #fcd34d !important;
+}
+.dash-dark .bg-violet-50 {
+  background-color: rgba(139, 92, 246, 0.14) !important;
+}
+.dash-dark .border-violet-100,
+.dash-dark .border-violet-200 {
+  border-color: rgba(139, 92, 246, 0.3) !important;
+}
+.dash-dark .text-violet-600,
+.dash-dark .text-violet-700 {
+  color: #c4b5fd !important;
+}
+.dash-dark .bg-blue-50,
+.dash-dark .bg-blue-100 {
+  background-color: rgba(59, 130, 246, 0.12) !important;
+}
+.dash-dark .border-blue-200 {
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+.dash-dark .text-blue-600,
+.dash-dark .text-blue-700 {
+  color: #93c5fd !important;
+}
+.dash-dark .bg-slate-100,
+.dash-dark .bg-gray-100 {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+.dash-dark .text-slate-700,
+.dash-dark .text-gray-700,
+.dash-dark .text-gray-800,
+.dash-dark .text-gray-900 {
+  color: hsl(var(--foreground)) !important;
+}
+
+/* ---- Hover variants --------------------------------------------------- */
+.dash-dark .hover\:bg-red-50:hover {
+  background-color: rgba(239, 68, 68, 0.14) !important;
+}
+.dash-dark .hover\:bg-emerald-50:hover {
+  background-color: rgba(52, 211, 153, 0.14) !important;
+}
+.dash-dark .hover\:text-violet-700:hover {
+  color: #ddd6fe !important;
+}
+.dash-dark .hover\:text-red-500:hover,
+.dash-dark .hover\:text-red-600:hover {
+  color: #fca5a5 !important;
+}
+.dash-dark .hover\:text-emerald-600:hover {
+  color: #6ee7b7 !important;
+}
+.dash-dark .hover\:border-slate-300:hover {
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+/* ---- recharts (used by campaign analytics) ---------------------------- */
+.dash-dark .recharts-text {
+  fill: hsl(var(--muted-foreground)) !important;
+}
+.dash-dark .recharts-cartesian-grid line {
+  stroke: rgba(255, 255, 255, 0.06) !important;
+}
+.dash-dark .recharts-cartesian-axis-line,
+.dash-dark .recharts-cartesian-axis-tick-line {
+  stroke: rgba(255, 255, 255, 0.1) !important;
+}
+.dash-dark .recharts-default-tooltip {
+  background: #0c0c14 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #fff !important;
+}
+.dash-dark .recharts-tooltip-item {
+  color: #cbd5e1 !important;
+}

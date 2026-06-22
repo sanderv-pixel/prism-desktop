@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/Button'
+import '@/components/dashboard/dashboard-dark.css'
 
 export default function AdvertiserOnboardingPage() {
   const { user, loading: authLoading } = useAuth()
@@ -53,14 +54,14 @@ export default function AdvertiserOnboardingPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30">
+      <div className="dash-dark min-h-screen flex items-center justify-center">
         <p className="text-muted-foreground">Loading…</p>
       </div>
     )
   }
 
   return (
-    <section className="section-padding bg-muted/30">
+    <section className="dash-dark section-padding min-h-screen">
       <div className="container-tight max-w-xl">
         <div className="card rounded-2xl p-8 md:p-10 hover:shadow-md transition">
           <span className="eyebrow mb-4">Advertiser onboarding</span>
