@@ -45,7 +45,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// Scan all supported source apps (Claude Desktop + terminals), frontmost first,
 /// and return the first active "working" indicator found. Frame is in AX
 /// coordinates (top-left origin). Handles waking + per-app detection internally.
+/// Uses the AX tree by default; if PRISM_DETECT_MODE=os-signal (or the
+/// "PrismDetectMode" default is "os-signal") it routes to detectOSSignal instead.
 + (PrismDetection *)detect;
+
+/// OS-signal detection (privacy-clean, off by default). Infers "user is waiting on
+/// an AI" from frontmost-app + input idle, and anchors to the focused window's
+/// geometry from the window server. Never reads the AX tree or any on-screen text.
++ (PrismDetection *)detectOSSignal;
 
 // Debug-only AX tree/text dumps. Excluded from release builds (the project builds
 // without -DDEBUG) so the shipped binary carries no symbol that can read arbitrary

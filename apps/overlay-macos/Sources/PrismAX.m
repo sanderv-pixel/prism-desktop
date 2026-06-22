@@ -257,6 +257,53 @@ static PrismSourceKind SourceKindForBundle(NSString *bundleId) {
     return (bundleId && [terminals containsObject:bundleId]) ? PrismSourceTerminal : PrismSourceNone;
 }
 
+// --- OS-signal detection (privacy-clean alternative; off by default) -----------
+// Infers "the user is waiting on an AI" from OS signals only: the frontmost app is a
+// known AI tool AND there has been no keyboard/mouse input for a short window. The
+// pill anchors to the focused window's geometry from the window server. It never
+// reads the app's accessibility tree or any on-screen text. Less precise than the AX
+// detectors (it can't tell "thinking" from "reading"), so AX stays the default.
+
+static const double kOSSignalIdleSeconds = 1.5;
+
+static BOOL OSSignalModeEnabled(void) {
+    NSString *env = [NSProcessInfo processInfo].environment[@"PRISM_DETECT_MODE"];
+    if (env.length) return [env isEqualToString:@"os-signal"];
+    return [[[NSUserDefaults standardUserDefaults] stringForKey:@"PrismDetectMode"] isEqualToString:@"os-signal"];
+}
+
+static NSString *SourceLabelForKind(PrismSourceKind kind) {
+    switch (kind) {
+        case PrismSourceClaude:   return @"claude";
+        case PrismSourceCursor:   return @"cursor";
+        case PrismSourceTerminal: return @"terminal";
+        case PrismSourceCodex:    return @"codex";
+        default:                  return nil;
+    }
+}
+
+// Largest on-screen normal window for a pid, from the window server (geometry only,
+// no window contents). Top-left origin, matching AX frames. CGRectNull if none.
+static CGRect FrontWindowBoundsForPid(pid_t pid) {
+    CGRect best = CGRectNull;
+    CFArrayRef list = CGWindowListCopyWindowInfo(
+        kCGWindowListOptionOnScreenOnly | kCGWindowListExcludeDesktopElements, kCGNullWindowID);
+    if (!list) return best;
+    CGFloat bestArea = 0;
+    for (CFIndex i = 0; i < CFArrayGetCount(list); i++) {
+        NSDictionary *info = (__bridge NSDictionary *)CFArrayGetValueAtIndex(list, i);
+        if ([info[(__bridge id)kCGWindowOwnerPID] intValue] != pid) continue;
+        if ([info[(__bridge id)kCGWindowLayer] intValue] != 0) continue;  // normal windows only
+        CGRect b = CGRectZero;
+        if (!CGRectMakeWithDictionaryRepresentation(
+                (__bridge CFDictionaryRef)info[(__bridge id)kCGWindowBounds], &b)) continue;
+        CGFloat area = b.size.width * b.size.height;
+        if (area > bestArea) { bestArea = area; best = b; }
+    }
+    CFRelease(list);
+    return best;
+}
+
 // --- Debug tree dump (discovery of new surfaces) ---------------------------
 // Debug-only: reads broad UI text/scrollback, so it is compiled out of release
 // builds (no -DDEBUG). Production detection below never uses these.
@@ -329,6 +376,9 @@ static void DumpRecurse(AXUIElementRef el, int depth, NSMutableString *out) {
 }
 
 + (PrismDetection *)detect {
+    // Privacy-clean mode (opt-in): infer from OS signals only, no AX tree read.
+    if (OSSignalModeEnabled()) return [self detectOSSignal];
+
     // Only look at the FRONTMOST app. The ad anchors to the indicator the user is
     // actually looking at; a background app's indicator (e.g. Claude Desktop working
     // while you're in Cursor) must never float a pill over the foreground window.
@@ -350,6 +400,26 @@ static void DumpRecurse(AXUIElementRef el, int depth, NSMutableString *out) {
     CFRelease(app);
     if (!d) d = [PrismDetection new];
     d.source = source;
+    return d;
+}
+
++ (PrismDetection *)detectOSSignal {
+    PrismDetection *d = [PrismDetection new];
+    NSRunningApplication *front = [NSWorkspace sharedWorkspace].frontmostApplication;
+    PrismSourceKind kind = SourceKindForBundle(front.bundleIdentifier);
+    if (kind == PrismSourceNone) return d;
+    // No keyboard/mouse input for a short window => the user is waiting, not typing.
+    double idle = CGEventSourceSecondsSinceLastEventType(
+        kCGEventSourceStateHIDSystemState, kCGAnyInputEventType);
+    if (idle < kOSSignalIdleSeconds) return d;
+    CGRect win = FrontWindowBoundsForPid(front.processIdentifier);
+    if (CGRectIsNull(win) || win.size.width <= 0 || win.size.height <= 0) return d;
+    // Anchor near the bottom-right of the focused window (top-left origin, like AX).
+    const CGFloat w = 180, h = 28, pad = 16;
+    d.found = YES;
+    d.frame = CGRectMake(win.origin.x + win.size.width - w - pad,
+                         win.origin.y + win.size.height - h - pad, w, h);
+    d.source = SourceLabelForKind(kind);
     return d;
 }
 
