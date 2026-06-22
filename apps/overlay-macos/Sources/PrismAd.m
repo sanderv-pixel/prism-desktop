@@ -128,6 +128,9 @@ static NSColor *ColorHex(uint32_t rgb) {
     // Identifiers the impression token is signed against — report them back verbatim.
     ad.userId = d[@"userId"];
     ad.sessionId = d[@"sessionId"];
+    // Anti-bot heartbeat seed (additive; absent on older servers -> no beats sent).
+    ad.hbChallenge = [d[@"hbChallenge"] isKindOfClass:[NSString class]] ? d[@"hbChallenge"] : nil;
+    ad.hbIntervalMs = [d[@"hbIntervalMs"] isKindOfClass:[NSNumber class]] ? [d[@"hbIntervalMs"] integerValue] : 0;
     ad.color = ColorHex(0x8B5CF6);  // brand violet per ad-unit guidelines
     return ad;
 }
@@ -144,6 +147,25 @@ static NSColor *ColorHex(uint32_t rgb) {
                             @"source": source.length ? source : @"unknown" };
     [[[NSURLSession sharedSession] dataTaskWithRequest:[self postTo:@"impressions" body:body]
         completionHandler:^(NSData *d, NSURLResponse *r, NSError *e) { /* fire and forget */ }] resume];
+}
+
+- (void)sendHeartbeat:(PrismAd *)ad {
+    if (!ad.impressionToken.length || !ad.hbChallenge.length) return;  // nothing to beat for
+    NSString *beatNonce = [[NSUUID UUID].UUIDString stringByReplacingOccurrencesOfString:@"-" withString:@""];
+    NSDictionary *body = @{ @"impressionToken": ad.impressionToken,
+                            @"beatNonce": beatNonce,
+                            @"prevChallengeResponse": ad.hbChallenge };
+    [[[NSURLSession sharedSession] dataTaskWithRequest:[self postTo:@"impressions/heartbeat" body:body]
+        completionHandler:^(NSData *data, NSURLResponse *resp, NSError *err) {
+            if (err || !data) return;
+            id json = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
+            if (![json isKindOfClass:[NSDictionary class]]) return;
+            NSString *next = ((NSDictionary *)json)[@"nextChallenge"];
+            if ([next isKindOfClass:[NSString class]] && next.length) {
+                // Advance the rolling challenge so the next beat stays sequential.
+                dispatch_async(dispatch_get_main_queue(), ^{ ad.hbChallenge = next; });
+            }
+        }] resume];
 }
 
 - (void)registerClick:(PrismAd *)ad {

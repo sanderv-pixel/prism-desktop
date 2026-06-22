@@ -239,6 +239,7 @@ static NSImage *PrismImageFromDataURL(NSString *s) {
 @property(nonatomic, assign) NSTimeInterval visibleSince;
 @property(nonatomic, assign) NSInteger accumulatedMs;
 @property(nonatomic, assign) BOOL impressionReported;
+@property(nonatomic, assign) NSTimeInterval lastBeatTime;   // anti-bot heartbeat cadence
 @end
 
 @implementation PrismController
@@ -349,6 +350,7 @@ static NSImage *PrismImageFromDataURL(NSString *s) {
     self.visibleSince = 0;
     self.accumulatedMs = 0;
     self.impressionReported = NO;
+    self.lastBeatTime = 0;   // next ad's first beat fires immediately
 }
 
 - (void)accrueDwell {
@@ -359,6 +361,19 @@ static NSImage *PrismImageFromDataURL(NSString *s) {
         self.impressionReported = YES;
         [self.ads reportImpression:self.currentAd durationMs:self.accumulatedMs source:self.currentSource];
     }
+    [self maybeBeat:now];
+}
+
+// Anti-bot: while the pill is visible, send a signed heartbeat ~every hbIntervalMs
+// so the server can measure real dwell. First beat fires immediately (establishes
+// the session); the rolling challenge advances on each ad.hbChallenge update.
+- (void)maybeBeat:(NSTimeInterval)now {
+    PrismAd *ad = self.currentAd;
+    if (!ad.impressionToken.length || !ad.hbChallenge.length) return;
+    NSInteger interval = ad.hbIntervalMs > 0 ? ad.hbIntervalMs : 1000;
+    if (self.lastBeatTime > 0 && (now - self.lastBeatTime) * 1000.0 < (double)interval) return;
+    self.lastBeatTime = now;
+    [self.ads sendHeartbeat:ad];
 }
 
 - (void)flushImpression {
