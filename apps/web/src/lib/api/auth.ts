@@ -106,3 +106,25 @@ export async function getRequestDeviceUserId(
   }
   return null
 }
+
+/**
+ * Proof-of-humanity status of the request's device key.
+ * - `true`  : a verified earning identity (minted with a human proof)
+ * - `false` : an unverified device credential
+ * - `null`  : no device key (global/legacy key or keyless/anon terminal earner)
+ */
+export async function getRequestDeviceVerified(
+  req: NextRequest
+): Promise<boolean | null> {
+  const key = req.headers.get('x-prism-api-key')
+  if (!key || API_KEYS.has(key)) return null
+  try {
+    const device = await validateDeviceApiKey(key)
+    if (device.valid && !device.revoked) {
+      return device.verified === true
+    }
+  } catch {
+    /* fall through */
+  }
+  return null
+}

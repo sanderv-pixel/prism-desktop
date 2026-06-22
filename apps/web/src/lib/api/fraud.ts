@@ -424,3 +424,30 @@ export async function evaluateConversionFraud(
   const blocked = score >= SCORE_BLOCK_THRESHOLD
   return { blocked, reasons, score }
 }
+
+// --- Anti-bot signals (Feature 1/2 wiring) -------------------------------------
+// Low, additive weights so scores barely move until tuned. These are computed in
+// the impressions route (after heartbeat state + device-verified are known) and
+// added to the recorded fraud_score; the weights live here so all scoring is in
+// one place.
+export const ANTIBOT_SIGNAL_WEIGHTS = {
+  clientServerDwellMismatch: 5,
+  unverifiedIdentity: 5,
+} as const
+
+export function scoreAntibotSignals(signals: {
+  clientServerDwellMismatch?: boolean
+  unverifiedIdentity?: boolean
+}): { score: number; reasons: string[] } {
+  let score = 0
+  const reasons: string[] = []
+  if (signals.clientServerDwellMismatch) {
+    score += ANTIBOT_SIGNAL_WEIGHTS.clientServerDwellMismatch
+    reasons.push('client_server_dwell_mismatch')
+  }
+  if (signals.unverifiedIdentity) {
+    score += ANTIBOT_SIGNAL_WEIGHTS.unverifiedIdentity
+    reasons.push('unverified_identity')
+  }
+  return { score, reasons }
+}

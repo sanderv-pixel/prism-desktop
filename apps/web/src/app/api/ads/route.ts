@@ -10,6 +10,7 @@ import { handleApiError, ApiError, formatZodError } from '@/lib/api/errors'
 import { requireApiKey, getRequestDeviceUserId } from '@/lib/api/auth'
 import { isTrustedUserId } from '@/lib/api/trusted'
 import { createImpressionToken, createConversionToken } from '@/lib/api/tokens'
+import { HB_INTERVAL_MS, HB_MIN_BEATS, generateInitialChallenge } from '@/lib/api/heartbeat'
 import { kvGet, kvSet } from '@/lib/redis'
 
 export const dynamic = 'force-dynamic'
@@ -360,6 +361,10 @@ export async function POST(req: NextRequest) {
       creativeId: creative?.id ?? null,
       bidType: winnerBidType,
       clickChargeCents,
+      // Anti-bot heartbeat seed (additive; clients that ignore it are unaffected).
+      hbIntervalMs: HB_INTERVAL_MS,
+      hbMinBeats: HB_MIN_BEATS,
+      hbChallenge: generateInitialChallenge(),
     })
 
     const conversionToken = await createConversionToken({

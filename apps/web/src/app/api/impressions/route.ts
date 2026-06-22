@@ -3,16 +3,28 @@ import { z } from 'zod'
 import { createAdminClient } from '@/utils/supabase/admin'
 import { RateLimiter, getClientIp, rateLimitResponse } from '@/lib/api/rate-limit'
 import { handleApiError, ApiError } from '@/lib/api/errors'
-import { requireApiKey, getRequestDeviceUserId } from '@/lib/api/auth'
+import { requireApiKey, getRequestDeviceUserId, getRequestDeviceVerified } from '@/lib/api/auth'
 import { isTrustedUserId } from '@/lib/api/trusted'
 import {
   evaluateFraud,
   contextHash,
   evaluateDeviceFingerprint,
   getUserCampaignFrequencyCount,
+  scoreAntibotSignals,
 } from '@/lib/api/fraud'
 import { verifyImpressionToken, isNonceUsed } from '@/lib/api/tokens'
-import { detectImpressionAnomalies, detectBudgetDrainAnomaly } from '@/lib/anomaly'
+import {
+  detectImpressionAnomalies,
+  detectBudgetDrainAnomaly,
+  recordHeartbeatCoverageAnomaly,
+} from '@/lib/anomaly'
+import {
+  loadHbState,
+  serverDwellMs,
+  dwellSatisfied,
+  HB_MIN_BEATS,
+} from '@/lib/api/heartbeat'
+import { isHeartbeatEnforced, isHeartbeatShadow, isDevicePohEnforced } from '@/lib/env'
 import { maybeAutoRecharge } from '@/lib/autoRecharge'
 import {
   sendCampaignBudgetExhaustedEmail,
@@ -305,6 +317,48 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // --- Anti-bot Feature 1: server-measured heartbeat dwell --------------------
+    // durationMs is advisory; the server trusts heartbeat arrival times instead.
+    const hbState = await loadHbState(tokenNonce)
+    const hbMinBeats = tokenPayload.hbMinBeats ?? HB_MIN_BEATS
+    const measuredDwellMs = serverDwellMs(hbState)
+    const hbOk = dwellSatisfied(hbState, hbMinBeats)
+    const dwellMismatch = hbState ? Math.abs(durationMs - measuredDwellMs) > 3000 : false
+
+    if (isHeartbeatEnforced()) {
+      if (validated && !hbOk) {
+        validated = false
+        fraudFlags.push('heartbeat_insufficient')
+        // Aggregate per identity; raise an anomaly once a bot pattern is clear.
+        recordHeartbeatCoverageAnomaly(userId).catch(() => {})
+      }
+    } else if (isHeartbeatShadow() && !hbOk) {
+      console.warn(
+        `[hb-shadow] would-reject nonce=${tokenNonce} user=${userId} ` +
+          `beats=${hbState?.beatCount ?? 0} serverDwellMs=${measuredDwellMs} clientDurationMs=${durationMs}`
+      )
+    }
+
+    // --- Anti-bot Feature 2: hold payouts for unverified identities -------------
+    // Only when PoH enforcement is on. null = keyless/anon (e.g. terminal earner).
+    let unverifiedIdentity = false
+    if (isDevicePohEnforced() && validated) {
+      const deviceVerified = await getRequestDeviceVerified(req)
+      if (deviceVerified !== true) {
+        unverifiedIdentity = true
+        validated = false
+        fraudFlags.push('unverified_identity')
+      }
+    }
+
+    // Light, additive fraud score for the new signals (weights live in fraud.ts).
+    const antibot = scoreAntibotSignals({
+      clientServerDwellMismatch: dwellMismatch,
+      unverifiedIdentity,
+    })
+    for (const r of antibot.reasons) if (!fraudFlags.includes(r)) fraudFlags.push(r)
+    const totalFraudScore = combinedFraud.score + antibot.score
+
     let referrerUserId: string | null = null
 
     if (validated && bidType === 'cpc') {
@@ -372,7 +426,7 @@ export async function POST(req: NextRequest) {
         referrer_payout_cents: Math.round(referrerPayoutMillicents / 1000),
         referrer_payout_millicents: referrerPayoutMillicents,
         fraud_flags: fraudFlags,
-        fraud_score: combinedFraud.score,
+        fraud_score: totalFraudScore,
         payout_hold: payoutHold || !validated,
       })
       .select('id')

@@ -11,6 +11,7 @@ export type AnomalyType =
   | 'user_impression_spike'
   | 'repeated_context_fingerprint'
   | 'rapid_budget_drain'
+  | 'heartbeat_coverage_low'
 
 export type AnomalySeverity = 'low' | 'medium' | 'high' | 'critical'
 
@@ -32,6 +33,22 @@ const THRESHOLDS: Record<AnomalyType, number> = {
   user_impression_spike: 50, // 50 impressions for one user in 5 min.
   repeated_context_fingerprint: 20, // 20 identical context hashes in 1 hour.
   rapid_budget_drain: 1, // Fired once when >50% of budget spent in 1 hour.
+  heartbeat_coverage_low: 10, // 10 missing/short-heartbeat impressions / hour / identity.
+}
+
+// Anti-bot: when heartbeat enforcement is on, an identity racking up impressions
+// with missing or too-short heartbeat coverage is likely a bot fetching tokens
+// without keeping a live session. Counts per identity per hour; raises once over
+// threshold. Fire-and-forget from the impressions path.
+export async function recordHeartbeatCoverageAnomaly(userId: string): Promise<void> {
+  const count = await kvIncr(`anomaly:hbcov:${userId}`, 60 * 60)
+  if (count === THRESHOLDS.heartbeat_coverage_low) {
+    await recordAnomaly({
+      type: 'heartbeat_coverage_low',
+      severity: 'medium',
+      details: { userId, count, windowSeconds: 3600 },
+    })
+  }
 }
 
 /**

@@ -71,3 +71,37 @@ export function validateProductionEnv(): void {
     )
   }
 }
+
+// --- Anti-bot feature flags (read at call time so they can be flipped via env) ---
+// All default to today's behavior. Heartbeat enforcement and PoH enforcement are
+// OFF; heartbeat shadow logging is ON only while enforcement is off.
+
+const flag = (name: string): boolean => (process.env[name] ?? '').toLowerCase() === 'true'
+
+/** Gate payout on server-measured heartbeat dwell. Default false. */
+export function isHeartbeatEnforced(): boolean {
+  return flag('PRISM_HEARTBEAT_ENFORCED')
+}
+
+/**
+ * Log what heartbeat enforcement *would* reject without affecting payouts.
+ * Defaults to true while enforcement is off, false once enforcement is on
+ * (no point shadowing what you already enforce). Can be forced with the env var.
+ */
+export function isHeartbeatShadow(): boolean {
+  const raw = (process.env.PRISM_HEARTBEAT_SHADOW ?? '').toLowerCase()
+  if (raw === 'true') return true
+  if (raw === 'false') return false
+  return !isHeartbeatEnforced()
+}
+
+/** Require a human proof (Turnstile or signed-in session) to mint a device key. Default false. */
+export function isDevicePohEnforced(): boolean {
+  return flag('PRISM_DEVICE_POH_ENFORCED')
+}
+
+/** Max earning-device keys per verified account. Default 5. */
+export function maxDevicesPerAccount(): number {
+  const n = Number.parseInt(process.env.MAX_DEVICES_PER_ACCOUNT ?? '', 10)
+  return Number.isFinite(n) && n > 0 ? n : 5
+}
