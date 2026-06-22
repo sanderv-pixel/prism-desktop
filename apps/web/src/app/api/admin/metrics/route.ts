@@ -157,9 +157,10 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-      const cached = await kvGet(METRICS_CACHE_KEY)
-      if (cached) {
-        return NextResponse.json(JSON.parse(cached))
+      const cached: unknown = await kvGet(METRICS_CACHE_KEY)
+      if (cached != null) {
+        // Upstash returns an object (auto-deserialized); dev store returns a string.
+        return NextResponse.json(typeof cached === 'object' ? cached : JSON.parse(cached as string))
       }
     } catch {
       // ignore cache read errors and fetch fresh

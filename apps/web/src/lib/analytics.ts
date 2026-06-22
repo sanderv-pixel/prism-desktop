@@ -23,10 +23,13 @@ export function isGoogleAnalyticsConfigured(): boolean {
 
 async function withGaCache<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
   try {
-    const cached = await kvGet(key)
-    if (cached) {
+    const cached: unknown = await kvGet(key)
+    if (cached != null) {
+      // Upstash auto-deserializes JSON (object); the in-memory dev store returns a
+      // string. Handle both, else the cache never hits and GA is refetched each time.
+      if (typeof cached === 'object') return cached as T
       try {
-        return JSON.parse(cached) as T
+        return JSON.parse(cached as string) as T
       } catch {
         // ignore parse errors and fetch fresh
       }
