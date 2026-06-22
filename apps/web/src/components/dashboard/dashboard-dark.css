@@ -101,11 +101,37 @@
 .dash-dark .bg-gray-100 {
   background-color: rgba(255, 255, 255, 0.06) !important;
 }
+.dash-dark .border-slate-200,
+.dash-dark .border-gray-200 {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
 .dash-dark .text-slate-700,
 .dash-dark .text-gray-700,
 .dash-dark .text-gray-800,
 .dash-dark .text-gray-900 {
   color: hsl(var(--foreground)) !important;
+}
+/* orange / rose used in some admin status styling */
+.dash-dark .bg-orange-50,
+.dash-dark .bg-orange-100 {
+  background-color: rgba(251, 146, 60, 0.12) !important;
+}
+.dash-dark .text-orange-500,
+.dash-dark .text-orange-600,
+.dash-dark .text-orange-700 {
+  color: #fdba74 !important;
+}
+.dash-dark .bg-rose-50,
+.dash-dark .bg-rose-100 {
+  background-color: rgba(244, 63, 94, 0.12) !important;
+}
+.dash-dark .text-rose-500,
+.dash-dark .text-rose-600,
+.dash-dark .text-rose-700 {
+  color: #fda4af !important;
+}
+.dash-dark .text-amber-500 {
+  color: #fcd34d !important;
 }
 
 /* ---- Hover variants --------------------------------------------------- */

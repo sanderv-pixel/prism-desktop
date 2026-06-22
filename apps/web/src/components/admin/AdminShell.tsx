@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { useAdminSecret } from './AdminSecretProvider'
+import '@/components/dashboard/dashboard-dark.css'
 
 const nav = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -38,7 +39,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const { adminSecret, setAdminSecret } = useAdminSecret()
 
   return (
-    <div className="min-h-screen bg-muted/30 flex">
+    <div className="dash-dark min-h-screen flex">
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex flex-col w-64 bg-card border-r border-border sticky top-0 h-screen">
         <div className="p-6 border-b border-border">
