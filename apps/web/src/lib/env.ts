@@ -29,12 +29,12 @@ const REQUIRED: EnvRequirement[] = [
   { name: 'UPSTASH_REDIS_REST_TOKEN' },
   { name: 'NEXT_PUBLIC_TURNSTILE_SITE_KEY' },
   { name: 'TURNSTILE_WORKER_URL' },
-  // Money path: Stripe is always required to take payment. (Payout-provider keys
-  // are checked separately below as "at least one configured", since Wise and
-  // Payoneer are intentionally optional/either-or.)
+  // Money path: Stripe secret + webhook secret are required to take payment.
+  // STRIPE_PRICE_ID is intentionally NOT required here — checkout handles its
+  // absence (`if (!STRIPE_PRICE_ID)`), and it is not set in every environment.
+  // Payout-provider keys are checked separately below ("at least one configured").
   { name: 'STRIPE_SECRET_KEY' },
   { name: 'STRIPE_WEBHOOK_SECRET' },
-  { name: 'STRIPE_PRICE_ID' },
 ]
 
 function isTruthy(value: string | undefined): boolean {
