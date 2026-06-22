@@ -15,6 +15,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, copy, nullable) NSString *userId;          // bound to the impression token
 @property(nonatomic, copy, nullable) NSString *sessionId;       // bound to the impression token
 @property(nonatomic, strong) NSColor *color;                    // badge color
+// Anti-bot heartbeat session. hbChallenge is the rolling challenge: it starts as
+// the value the server returned with the ad and is replaced by each beat's
+// nextChallenge. hbIntervalMs is how often to beat (0 = server omitted it).
+@property(nonatomic, copy, nullable) NSString *hbChallenge;
+@property(nonatomic, assign) NSInteger hbIntervalMs;
 @end
 
 @interface PrismAdClient : NSObject
@@ -39,6 +44,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// Report a validated viewable impression for an ad (best-effort, fire-and-forget).
 /// `source` is the surface it was shown on (claude/cursor/terminal/codex).
 - (void)reportImpression:(PrismAd *)ad durationMs:(NSInteger)durationMs source:(nullable NSString *)source;
+
+/// Send one anti-bot heartbeat for an in-flight ad view (best-effort). Echoes the
+/// ad's current rolling challenge and, on success, advances ad.hbChallenge to the
+/// server's nextChallenge so beats stay sequential.
+- (void)sendHeartbeat:(PrismAd *)ad;
 
 /// Register a click: opens the ad's click URL, which records the click
 /// server-side and redirects the user to the advertiser.

@@ -353,6 +353,10 @@ export async function POST(req: NextRequest) {
     // Empty means show no name — the internal account name is never exposed.
     const displayName = typeof adBrand === 'string' && adBrand.trim() ? adBrand.trim() : ''
 
+    // Anti-bot heartbeat seed (additive; clients that ignore it are unaffected).
+    // Exposed both in the signed token and the response so the client can begin
+    // beating without decoding the token.
+    const hbChallenge = generateInitialChallenge()
     const impressionToken = await createImpressionToken({
       campaignId: winner.id,
       userId: resolvedUserId,
@@ -361,10 +365,9 @@ export async function POST(req: NextRequest) {
       creativeId: creative?.id ?? null,
       bidType: winnerBidType,
       clickChargeCents,
-      // Anti-bot heartbeat seed (additive; clients that ignore it are unaffected).
       hbIntervalMs: HB_INTERVAL_MS,
       hbMinBeats: HB_MIN_BEATS,
-      hbChallenge: generateInitialChallenge(),
+      hbChallenge,
     })
 
     const conversionToken = await createConversionToken({
@@ -386,6 +389,8 @@ export async function POST(req: NextRequest) {
         conversionToken,
         userId: resolvedUserId,
         sessionId: session,
+        hbChallenge,
+        hbIntervalMs: HB_INTERVAL_MS,
       },
       { headers: corsHeaders() }
     )
