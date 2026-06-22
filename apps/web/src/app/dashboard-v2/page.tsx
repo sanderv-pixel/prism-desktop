@@ -72,15 +72,15 @@ const NAV = (active: string) => [
     title: 'Earner',
     items: [
       { label: 'Overview', href: '/dashboard', icon: <LayoutDashboard size={16} />, active: active === 'overview' },
-      { label: 'Earnings', href: '/dashboard', icon: <TrendingUp size={16} /> },
-      { label: 'Payouts', href: '/dashboard', icon: <Wallet size={16} /> },
-      { label: 'Referrals', href: '/dashboard', icon: <Users size={16} /> },
+      { label: 'Earnings', href: '/dashboard#earnings', icon: <TrendingUp size={16} /> },
+      { label: 'Payouts', href: '/dashboard#payouts', icon: <Wallet size={16} /> },
+      { label: 'Referrals', href: '/dashboard#referrals', icon: <Users size={16} /> },
     ],
   },
   {
     title: 'Account',
     items: [
-      { label: 'Devices', href: '/dashboard/connect', icon: <Monitor size={16} /> },
+      { label: 'Devices', href: '/dashboard#devices', icon: <Monitor size={16} /> },
       { label: 'Settings', href: '/dashboard/settings', icon: <Settings size={16} /> },
     ],
   },
@@ -255,7 +255,7 @@ export default function EarnerDashboardV2() {
       </div>
 
       <div className="dv-row2">
-        <div className="dv-card">
+        <div className="dv-card" id="earnings" style={{ scrollMarginTop: 24 }}>
           <h3>Earnings <span className="meta">last {chartData.length || 14} days</span></h3>
           <div className="dv-chartwrap">
             <AreaChartV2 data={earningsSeries} color1="#8b5cf6" color2="#22d3ee" emptyLabel="No earnings yet" />
@@ -265,10 +265,12 @@ export default function EarnerDashboardV2() {
             <span><i style={{ background: '#22d3ee' }} /> 7-day avg</span>
           </div>
         </div>
-        <div className="dv-card">
+        <div className="dv-card" id="payouts" style={{ scrollMarginTop: 24 }}>
           <h3>Payout progress</h3>
           <PayoutProgress balanceCents={stats.balanceCents} autoEnabled={configured} payoutsConfigured={configured} />
-          <ReferralCard earningsCents={referral.referralEarningsCents} referredCount={referral.referredCount} referralCode={referral.referralCode} onCopy={copyReferral} copied={copied} />
+          <div id="referrals" style={{ scrollMarginTop: 24 }}>
+            <ReferralCard earningsCents={referral.referralEarningsCents} referredCount={referral.referredCount} referralCode={referral.referralCode} onCopy={copyReferral} copied={copied} />
+          </div>
         </div>
       </div>
 
@@ -283,7 +285,7 @@ export default function EarnerDashboardV2() {
         </div>
       </div>
 
-      <div style={{ marginTop: 16 }}>
+      <div id="devices" style={{ marginTop: 16, scrollMarginTop: 24 }}>
         <DevicesCard devices={devices} onRevoke={revokeDevice} />
       </div>
 
