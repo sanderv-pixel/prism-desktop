@@ -14,6 +14,10 @@ public sealed class Ad
     public string? UserId;
     public string? SessionId;
     public Color Color = Color.FromArgb(124, 80, 252);
+    // Anti-bot heartbeat session. HbChallenge is the rolling challenge: it starts as
+    // the value served with the ad and is replaced by each beat's nextChallenge.
+    public string? HbChallenge;
+    public long HbIntervalMs;
 }
 
 /// Fetches ads from the Prism API and reports views + clicks. Falls back to
@@ -93,6 +97,9 @@ public sealed class AdClient
                 ImpressionToken = Str("impressionToken") is { Length: > 0 } t ? t : null,
                 UserId = Str("userId") is { Length: > 0 } u ? u : null,
                 SessionId = Str("sessionId") is { Length: > 0 } s ? s : null,
+                // Anti-bot heartbeat seed (additive; absent on older servers -> no beats).
+                HbChallenge = Str("hbChallenge") is { Length: > 0 } h ? h : null,
+                HbIntervalMs = r.TryGetProperty("hbIntervalMs", out var hv) && hv.TryGetInt64(out var hi) ? hi : 0,
             };
             lock (_lock) { _queue = new List<Ad> { ad }; _cursor = 0; }
         }
@@ -114,6 +121,33 @@ public sealed class AdClient
                 context = Context(),
             };
             using var _ = await Http.SendAsync(Post("impressions", body));
+        }
+        catch { }
+    }
+
+    // Send one anti-bot heartbeat for an in-flight view (best-effort). Echoes the
+    // ad's current rolling challenge and advances it to the server's nextChallenge.
+    public async void SendHeartbeat(Ad ad)
+    {
+        if (string.IsNullOrEmpty(ad.ImpressionToken) || string.IsNullOrEmpty(ad.HbChallenge)) return;
+        try
+        {
+            var body = new
+            {
+                impressionToken = ad.ImpressionToken,
+                beatNonce = Guid.NewGuid().ToString("N"),
+                prevChallengeResponse = ad.HbChallenge,
+            };
+            using var resp = await Http.SendAsync(Post("impressions/heartbeat", body));
+            if (!resp.IsSuccessStatusCode) return;
+            var json = await resp.Content.ReadAsStringAsync();
+            if (string.IsNullOrWhiteSpace(json)) return;
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("nextChallenge", out var nc) &&
+                nc.GetString() is { Length: > 0 } next)
+            {
+                ad.HbChallenge = next; // advance the rolling challenge
+            }
         }
         catch { }
     }
