@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
 import { TurnstileWidget } from '@/components/TurnstileWidget'
-import { Button } from '@/components/Button'
 import { AlertCircle, CheckCircle2, Mail, Lock } from 'lucide-react'
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
@@ -83,60 +82,54 @@ export function SignUpForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-24 bg-muted/30">
-      <div className="w-full max-w-md rounded-2xl card p-8">
-        <p className="eyebrow mb-3">Get started</p>
-        <h1 className="text-2xl font-semibold text-foreground mb-2">Create your Prism account</h1>
-        <p className="text-muted-foreground mb-8">
+    <div className="v2authwrap">
+      <div className="v2card">
+        <p className="v2kicker">Get started</p>
+        <h1 className="v2title">Create your Prism account</h1>
+        <p className="v2sub">
           One account for both creator earnings and advertiser campaigns.
         </p>
 
         {success ? (
-          <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-6 text-center">
-            <CheckCircle2 size={32} className="mx-auto text-emerald-600 mb-3" />
-            <p className="text-lg font-medium text-emerald-800">Check your email</p>
-            <p className="text-sm text-emerald-700 mt-1">
-              We sent a confirmation link to {email}.
+          <div className="v2alert ok">
+            <CheckCircle2 size={32} />
+            <p style={{ fontSize: 16, fontWeight: 600, color: '#a7f3d0' }}>
+              Check your email
             </p>
+            <p>We sent a confirmation link to {email}.</p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-5 relative">
-            <div>
-              <label className="block text-sm font-medium text-foreground/80 mb-1.5">
-                Email
-              </label>
-              <div className="relative">
-                <Mail
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                />
+          <form onSubmit={handleSubmit} style={{ position: 'relative' }}>
+            <div className="v2field">
+              <label>Email</label>
+              <div className="v2inputwrap">
+                <span className="ic">
+                  <Mail size={16} />
+                </span>
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-input pl-10 pr-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
+                  className="v2input"
                   placeholder="you@example.com"
                 />
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-foreground/80 mb-1.5">
-                Password
-              </label>
-              <div className="relative">
-                <Lock
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                />
+            <div className="v2field">
+              <label>Password</label>
+              <div className="v2inputwrap">
+                <span className="ic">
+                  <Lock size={16} />
+                </span>
                 <input
                   type="password"
                   required
                   minLength={8}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-input pl-10 pr-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
+                  className="v2input"
                   placeholder="••••••••"
                 />
               </div>
@@ -156,8 +149,8 @@ export function SignUpForm() {
             </div>
 
             {TURNSTILE_SITE_KEY && (
-              <div className="space-y-2">
-                <div className="flex justify-center min-h-[65px]">
+              <div className="v2field">
+                <div className="v2turnstile">
                   {captchaState !== 'error' ? (
                     <TurnstileWidget
                       ref={turnstileRef}
@@ -178,87 +171,70 @@ export function SignUpForm() {
                       }}
                     />
                   ) : (
-                    <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-600 text-center w-full">
+                    <div className="v2alert err" style={{ width: '100%', marginBottom: 0 }}>
                       CAPTCHA could not load. Please disable any ad blockers or
                       privacy extensions and refresh the page.
                     </div>
                   )}
                 </div>
                 {captchaState === 'loading' && !captchaToken && (
-                  <p className="text-center text-xs text-muted-foreground">
-                    Loading verification…
-                  </p>
+                  <p className="v2hint">Loading verification…</p>
                 )}
               </div>
             )}
 
-            <div className="space-y-3">
-              <label className="flex items-start gap-3 text-sm text-muted-foreground cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={acceptedTerms}
-                  onChange={(e) => setAcceptedTerms(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-border bg-input text-primary focus:ring-primary/40"
-                  required
-                />
-                <span>
-                  I agree to the{' '}
-                  <Link
-                    href="/terms"
-                    target="_blank"
-                    className="text-primary hover:text-violet-700"
-                  >
-                    Terms of Service
-                  </Link>
-                  .
-                </span>
-              </label>
-              <label className="flex items-start gap-3 text-sm text-muted-foreground cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={acceptedPrivacy}
-                  onChange={(e) => setAcceptedPrivacy(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-border bg-input text-primary focus:ring-primary/40"
-                  required
-                />
-                <span>
-                  I agree to the{' '}
-                  <Link
-                    href="/privacy"
-                    target="_blank"
-                    className="text-primary hover:text-violet-700"
-                  >
-                    Privacy Policy
-                  </Link>
-                  .
-                </span>
-              </label>
-            </div>
+            <label className="v2check">
+              <input
+                type="checkbox"
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                required
+              />
+              <span>
+                I agree to the{' '}
+                <Link href="/terms" target="_blank">
+                  Terms of Service
+                </Link>
+                .
+              </span>
+            </label>
+            <label className="v2check">
+              <input
+                type="checkbox"
+                checked={acceptedPrivacy}
+                onChange={(e) => setAcceptedPrivacy(e.target.checked)}
+                required
+              />
+              <span>
+                I agree to the{' '}
+                <Link href="/privacy" target="_blank">
+                  Privacy Policy
+                </Link>
+                .
+              </span>
+            </label>
 
             {error && (
-              <div className="rounded-xl bg-red-50 border border-red-200 p-4 flex items-start gap-3 text-red-600">
+              <div className="v2alert err" style={{ marginTop: 18 }}>
                 <AlertCircle size={18} />
-                <p className="text-sm">{error}</p>
+                <p>{error}</p>
               </div>
             )}
 
-            <Button
+            <button
               type="submit"
-              size="lg"
-              className="w-full"
+              className="btn btn-p btn-full"
+              style={{ marginTop: 8 }}
               disabled={loading || !acceptedTerms || !acceptedPrivacy}
             >
               {loading ? 'Creating account…' : 'Create account'}
-            </Button>
+            </button>
           </form>
         )}
 
-        <p className="mt-6 text-center text-sm text-muted-foreground">
+        <p className="v2formlink">
           Already have an account?{' '}
-          <Link
-            href={`/auth/sign-in?redirect=${encodeURIComponent(redirect)}`}
-            className="text-primary hover:text-violet-700"
-          >
+          <Link href={`/auth/sign-in?redirect=${encodeURIComponent(redirect)}`}>
             Sign in
           </Link>
         </p>

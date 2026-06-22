@@ -1,4 +1,5 @@
-import { LandingPage } from '@/components/landing/LandingPage'
+import './v2/v2.css'
+import { LandingV2 } from '@/components/v2/LandingV2'
 
 export const metadata = {
   title: 'Prism — Get paid while AI thinks',
@@ -7,5 +8,5 @@ export const metadata = {
 }
 
 export default function Home() {
-  return <LandingPage />
+  return <LandingV2 />
 }

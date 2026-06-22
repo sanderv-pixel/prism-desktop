@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
 import { TurnstileWidget } from '@/components/TurnstileWidget'
-import { Button } from '@/components/Button'
 import { createClient } from '@/utils/supabase/client'
 import { AlertCircle, Mail, Lock } from 'lucide-react'
 
@@ -112,76 +111,66 @@ export function SignInForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-24 bg-muted/30">
-      <div className="w-full max-w-md rounded-2xl card p-8">
-        <p className="eyebrow mb-3">Welcome back</p>
-        <h1 className="text-2xl font-semibold text-foreground mb-2">
+    <div className="v2authwrap">
+      <div className="v2card">
+        <p className="v2kicker">Welcome back</p>
+        <h1 className="v2title">
           {adminRequired ? 'Admin sign-in required' : 'Sign in to Prism'}
         </h1>
-        <p className="text-muted-foreground mb-8">
+        <p className="v2sub">
           {adminRequired
             ? 'This area is restricted to accounts in the admin allow-list.'
             : 'Access your creator and advertiser dashboards.'}
         </p>
 
         {adminRequired && (
-          <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 flex items-start gap-3 text-amber-700 mb-6">
+          <div className="v2alert warn">
             <AlertCircle size={18} />
-            <div className="text-sm space-y-1">
-              <p className="font-medium">Admin access only</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <p style={{ fontWeight: 600 }}>Admin access only</p>
               <p>
                 Make sure the signed-in email is listed in{' '}
-                <code className="bg-amber-100 px-1 rounded">PRISM_ADMIN_EMAILS</code> and
-                that <code className="bg-amber-100 px-1 rounded">PRISM_ADMIN_SECRET</code> is
-                set in the deployed environment.
+                <code>PRISM_ADMIN_EMAILS</code> and that{' '}
+                <code>PRISM_ADMIN_SECRET</code> is set in the deployed
+                environment.
               </p>
-              <button
-                type="button"
-                onClick={handleSignOut}
-                className="text-primary hover:underline font-medium"
-              >
+              <button type="button" onClick={handleSignOut} className="v2linkbtn">
                 Sign out and try another account
               </button>
             </div>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5 relative">
-          <div>
-            <label className="block text-sm font-medium text-foreground/80 mb-1.5">
-              Email
-            </label>
-            <div className="relative">
-              <Mail
-                size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-              />
+        <form onSubmit={handleSubmit} style={{ position: 'relative' }}>
+          <div className="v2field">
+            <label>Email</label>
+            <div className="v2inputwrap">
+              <span className="ic">
+                <Mail size={16} />
+              </span>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg border border-border bg-input pl-10 pr-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
+                className="v2input"
                 placeholder="you@example.com"
               />
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-foreground/80 mb-1.5">
-              Password
-            </label>
-            <div className="relative">
-              <Lock
-                size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-              />
+          <div className="v2field">
+            <label>Password</label>
+            <div className="v2inputwrap">
+              <span className="ic">
+                <Lock size={16} />
+              </span>
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border border-border bg-input pl-10 pr-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
+                className="v2input"
                 placeholder="••••••••"
               />
             </div>
@@ -201,7 +190,7 @@ export function SignInForm() {
           </div>
 
           {TURNSTILE_SITE_KEY && (
-            <div className="flex justify-center min-h-[65px]">
+            <div className="v2turnstile">
               {captchaState !== 'error' ? (
                 <TurnstileWidget
                   ref={turnstileRef}
@@ -222,49 +211,45 @@ export function SignInForm() {
                   }}
                 />
               ) : (
-                <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-600 text-center w-full">
-                  CAPTCHA could not load. Please disable any ad blockers or privacy extensions and refresh the page.
+                <div className="v2alert err" style={{ width: '100%', marginBottom: 0 }}>
+                  CAPTCHA could not load. Please disable any ad blockers or
+                  privacy extensions and refresh the page.
                 </div>
               )}
             </div>
           )}
 
           {error && (
-            <div className="rounded-xl bg-red-50 border border-red-200 p-4 flex items-start gap-3 text-red-600">
+            <div className="v2alert err">
               <AlertCircle size={18} />
-              <p className="text-sm">{error}</p>
+              <p>{error}</p>
             </div>
           )}
 
-          <Button type="submit" size="lg" className="w-full" disabled={loading}>
+          <button type="submit" className="btn btn-p btn-full" disabled={loading}>
             {loading ? 'Signing in…' : 'Sign in'}
-          </Button>
+          </button>
         </form>
 
         {process.env.NODE_ENV !== 'production' && (
-          <div className="mt-4 pt-4 border-t border-border">
-            <Button
+          <div className="v2divider">
+            <button
               type="button"
-              variant="outline"
-              size="lg"
-              className="w-full"
+              className="btn btn-g btn-full"
               disabled={loading}
               onClick={handleDemoLogin}
             >
               {loading ? 'Signing in…' : 'Try demo account'}
-            </Button>
-            <p className="mt-2 text-center text-xs text-muted-foreground">
+            </button>
+            <p className="v2hint">
               Creates a local demo user so you can preview the dashboards.
             </p>
           </div>
         )}
 
-        <p className="mt-6 text-center text-sm text-muted-foreground">
+        <p className="v2formlink">
           Don&apos;t have an account?{' '}
-          <Link
-            href={`/auth/sign-up?redirect=${encodeURIComponent(redirect)}`}
-            className="text-primary hover:text-violet-700"
-          >
+          <Link href={`/auth/sign-up?redirect=${encodeURIComponent(redirect)}`}>
             Sign up
           </Link>
         </p>

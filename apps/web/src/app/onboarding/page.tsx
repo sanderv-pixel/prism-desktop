@@ -2,9 +2,9 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import '../v2/v2.css'
 import { useAuth } from '@/hooks/useAuth'
-import { Button } from '@/components/Button'
+import { V2Shell } from '@/components/v2/V2Shell'
 import {
   ArrowRight,
   Monitor,
@@ -105,17 +105,13 @@ function InstallCommand({ command }: { command: string }) {
   }
 
   return (
-    <div className="relative group">
-      <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/50 px-4 py-4 pr-14 text-left font-mono text-sm text-foreground shadow-sm">
-        <span className="text-muted-foreground select-none">$</span>
-        <span className="truncate">{command}</span>
+    <div className="v2code">
+      <div className="cmd">
+        <span className="p">$</span>
+        <span className="t">{command}</span>
       </div>
-      <button
-        onClick={copy}
-        className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition"
-        aria-label="Copy install command"
-      >
-        {copied ? <Check size={18} className="text-emerald-600" /> : <Copy size={18} />}
+      <button onClick={copy} className="cp" aria-label="Copy install command">
+        {copied ? <Check size={16} /> : <Copy size={16} />}
       </button>
     </div>
   )
@@ -123,173 +119,151 @@ function InstallCommand({ command }: { command: string }) {
 
 export default function OnboardingPage() {
   const { user, loading: authLoading } = useAuth()
-  const router = useRouter()
   const [selectedTool, setSelectedTool] = useState<Tool | null>(null)
 
   const selected = INSTALL_OPTIONS.find((t) => t.id === selectedTool)
 
   return (
-    <section className="min-h-screen bg-muted/30 py-24 md:py-32">
-      <div className="container-tight max-w-4xl px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 rounded-full bg-violet-50 border border-violet-100 px-4 py-1.5 mb-6">
-            <Sparkles size={14} className="text-primary" />
-            <span className="text-xs font-semibold text-primary">
-              Start earning in minutes
+    <V2Shell>
+      <div className="v2ob">
+        <div className="wrap">
+          <div className="obhead">
+            <span className="v2kicker">
+              <Sparkles size={13} /> Start earning in minutes
             </span>
-          </div>
-          <h1 className="text-3xl md:text-5xl font-semibold text-foreground mb-4">
-            Install Prism
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Pick the AI tool you use most. One install, then you start earning
-            from every AI wait state.
-          </p>
-        </div>
-
-        {authLoading ? (
-          <div className="card rounded-2xl p-12 text-center">
-            <p className="text-muted-foreground">Loading…</p>
-          </div>
-        ) : !user ? (
-          <div className="card rounded-2xl p-8 md:p-10 text-center mb-10">
-            <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-violet-50 text-primary mb-5">
-              <Shield size={28} strokeWidth={1.5} />
-            </div>
-            <h2 className="text-xl font-semibold text-foreground mb-3">
-              Create your free Prism account first
-            </h2>
-            <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-              We need an account so we can pay you and let you manage your
-              devices. It takes 30 seconds.
+            <h1 className="obtitle">Install Prism</h1>
+            <p className="obsub">
+              Pick the AI tool you use most. One install, then you start earning
+              from every AI wait state.
             </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <Button href="/auth/sign-up?redirect=/onboarding" size="lg">
-                Create account
-                <ArrowRight size={18} className="ml-2" />
-              </Button>
-              <Button
-                href="/auth/sign-in?redirect=/onboarding"
-                size="lg"
-                variant="outline"
-              >
-                Sign in
-              </Button>
-            </div>
           </div>
-        ) : null}
 
-        {!selected ? (
-          <>
-            <div className="grid sm:grid-cols-2 gap-4 mb-10">
-              {INSTALL_OPTIONS.map((tool) => (
-                <button
-                  key={tool.id}
-                  onClick={() => setSelectedTool(tool.id)}
-                  className="text-left card rounded-2xl p-6 hover:shadow-md transition group"
-                >
-                  <div className="w-12 h-12 rounded-xl bg-violet-50 flex items-center justify-center text-primary mb-5 group-hover:scale-105 transition">
-                    {tool.icon}
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">
-                    {tool.label}
-                  </h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {tool.description}
-                  </p>
-                </button>
-              ))}
+          {authLoading ? (
+            <div className="obpanel" style={{ maxWidth: 520, textAlign: 'center' }}>
+              <p style={{ color: 'var(--txt)' }}>Loading…</p>
             </div>
-
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground">
-                Use ChatGPT, Perplexity, Gemini, or another tool?{' '}
-                <Link href="/contact" className="text-primary hover:underline">
-                  Request support
-                </Link>
-              </p>
-            </div>
-          </>
-        ) : (
-          <div className="card rounded-2xl p-8 md:p-10">
-            <button
-              onClick={() => setSelectedTool(null)}
-              className="text-sm text-muted-foreground hover:text-foreground mb-6"
+          ) : !user ? (
+            <div
+              className="obpanel"
+              style={{ maxWidth: 520, textAlign: 'center', marginBottom: 36 }}
             >
-              ← Back to options
-            </button>
-
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-12 h-12 rounded-xl bg-violet-50 flex items-center justify-center text-primary">
-                {selected.icon}
+              <div
+                className="tcicon"
+                style={{ width: 56, height: 56, margin: '0 auto 18px' }}
+              >
+                <Shield size={26} strokeWidth={1.5} />
               </div>
-              <div>
-                <h2 className="text-2xl font-semibold text-foreground">
-                  Install Prism for {selected.label}
-                </h2>
-                <p className="text-muted-foreground">{selected.description}</p>
+              <h2 className="v2title" style={{ fontSize: 20 }}>
+                Create your free Prism account first
+              </h2>
+              <p className="v2sub" style={{ maxWidth: 380, margin: '8px auto 24px' }}>
+                We need an account so we can pay you and let you manage your
+                devices. It takes 30 seconds.
+              </p>
+              <div
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  justifyContent: 'center',
+                  gap: 12,
+                }}
+              >
+                <Link className="btn btn-p" href="/auth/sign-up?redirect=/onboarding">
+                  Create account
+                  <ArrowRight size={18} />
+                </Link>
+                <Link className="btn btn-g" href="/auth/sign-in?redirect=/onboarding">
+                  Sign in
+                </Link>
               </div>
             </div>
+          ) : null}
 
-            <div className="space-y-8">
+          {!selected ? (
+            <>
+              <div className="toolgrid">
+                {INSTALL_OPTIONS.map((tool) => (
+                  <button
+                    key={tool.id}
+                    onClick={() => setSelectedTool(tool.id)}
+                    className="toolcard"
+                  >
+                    <div className="tcicon">{tool.icon}</div>
+                    <h3>{tool.label}</h3>
+                    <p>{tool.description}</p>
+                  </button>
+                ))}
+              </div>
+
+              <p className="obcardnote">
+                Use ChatGPT, Perplexity, Gemini, or another tool?{' '}
+                <Link href="/contact">Request support</Link>
+              </p>
+            </>
+          ) : (
+            <div className="obpanel">
+              <button onClick={() => setSelectedTool(null)} className="obback">
+                ← Back to options
+              </button>
+
+              <div className="obselhead">
+                <div className="tcicon" style={{ marginBottom: 0 }}>
+                  {selected.icon}
+                </div>
+                <div>
+                  <h2>Install Prism for {selected.label}</h2>
+                  <p>{selected.description}</p>
+                </div>
+              </div>
+
               <div>
-                <label className="block text-sm font-medium text-foreground/80 mb-3">
-                  Run this command in your terminal
-                </label>
+                <label className="oblabel">Run this command in your terminal</label>
                 <InstallCommand command={selected.command} />
 
                 {selected.windowsCommand && (
                   <>
-                    <label className="block text-sm font-medium text-foreground/80 mt-4 mb-3">
-                      Windows PowerShell
-                    </label>
+                    <label className="oblabel">Windows PowerShell</label>
                     <InstallCommand command={selected.windowsCommand} />
                   </>
                 )}
               </div>
 
-              <div className="bg-muted/50 rounded-xl p-6">
-                <h3 className="text-sm font-semibold text-foreground mb-4">
-                  What happens next
-                </h3>
-                <ol className="space-y-3">
+              <div className="stepbox">
+                <h3>What happens next</h3>
+                <ol>
                   {selected.steps.map((step, idx) => (
-                    <li key={idx} className="flex items-start gap-3 text-muted-foreground">
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-50 text-primary text-xs font-semibold">
-                        {idx + 1}
-                      </span>
+                    <li key={idx}>
+                      <span className="sn">{idx + 1}</span>
                       <span>{step}</span>
                     </li>
                   ))}
                 </ol>
               </div>
 
-              <div className="flex flex-col sm:flex-row items-center gap-4 pt-4 border-t border-border">
-                <Button
+              <div className="obactions">
+                <a
+                  className="btn btn-g"
                   href={selected.manualHref}
-                  size="lg"
-                  variant="outline"
-                  external
+                  target="_blank"
+                  rel="noreferrer"
                 >
-                  <Download size={18} className="mr-2" />
+                  <Download size={18} />
                   Download .vsix manually
-                </Button>
-                <Button href="/dashboard" size="lg">
-                  <CheckCircle2 size={18} className="mr-2" />
+                </a>
+                <Link className="btn btn-p" href="/dashboard">
+                  <CheckCircle2 size={18} />
                   I installed it — go to dashboard
-                </Button>
+                </Link>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <p className="text-center text-sm text-muted-foreground mt-10">
-          Not ready yet?{' '}
-          <Link href="/developers" className="text-primary hover:text-violet-700">
-            Learn more about how Prism works
-          </Link>
-        </p>
+          <p className="obfoot">
+            Not ready yet?{' '}
+            <Link href="/developers">Learn more about how Prism works</Link>
+          </p>
+        </div>
       </div>
-    </section>
+    </V2Shell>
   )
 }
