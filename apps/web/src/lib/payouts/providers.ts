@@ -92,13 +92,17 @@ function buildWiseRecipientPayload(
     recipientDetails.accountNumber = String(details.accountNumber)
     recipientDetails.abartn = String(details.routingNumber)
     recipientDetails.accountType = String(details.accountType || 'CHECKING')
-    recipientDetails.address = {
-      city: String(details.city || 'New York'),
-      country: 'US',
-      postCode: String(details.postCode || '10001'),
-      state: String(details.state || 'NY'),
-      firstLine: String(details.addressLine || '1 Main St'),
+    const city = String(details.city || '').trim()
+    const postCode = String(details.postCode || '').trim()
+    const state = String(details.state || '').trim()
+    const firstLine = String(details.addressLine || '').trim()
+    if (!city || !postCode || !state || !firstLine) {
+      // Never send to a fabricated address. Require a complete recipient address.
+      throw new Error(
+        'A complete US recipient address (street, city, state, postal code) is required for USD ACH payouts.'
+      )
     }
+    recipientDetails.address = { city, country: 'US', postCode, state, firstLine }
   } else if (details.accountNumber && details.swiftBic) {
     type = 'swift_code'
     recipientDetails.accountNumber = String(details.accountNumber)
@@ -155,6 +159,14 @@ export const wiseProvider: PayoutProvider = {
       errors.push(
         'Provide IBAN, sort code + account number, account number + routing number (USD), or account number + SWIFT/BIC'
       )
+    }
+    // USD ACH (account + routing) requires a complete recipient address; without
+    // it Wise rejects the transfer. Surface it here so the form guides the user.
+    if (currency === 'USD' && hasAccountNumber && hasRouting && !hasIban && !hasSortCode) {
+      if (requiredString(details.addressLine)) errors.push('Street address is required for USD ACH payouts')
+      if (requiredString(details.city)) errors.push('City is required for USD ACH payouts')
+      if (requiredString(details.state)) errors.push('State is required for USD ACH payouts')
+      if (requiredString(details.postCode)) errors.push('Postal code is required for USD ACH payouts')
     }
     return errors
   },
@@ -396,10 +408,20 @@ export const bankTransferProvider: PayoutProvider = {
       wiseDetails.accountNumber = String(details.accountNumber)
       wiseDetails.routingNumber = String(details.routingNumber)
       wiseDetails.accountType = String(details.accountType || 'CHECKING')
-      wiseDetails.city = String(details.city || 'New York')
-      wiseDetails.postCode = String(details.postCode || '10001')
-      wiseDetails.state = String(details.state || 'NY')
-      wiseDetails.addressLine = String(details.addressLine || '1 Main St')
+      const usCity = String(details.city || '').trim()
+      const usPostCode = String(details.postCode || '').trim()
+      const usState = String(details.state || '').trim()
+      const usAddressLine = String(details.addressLine || '').trim()
+      if (!usCity || !usPostCode || !usState || !usAddressLine) {
+        // Never send to a fabricated address.
+        throw new Error(
+          'A complete US recipient address (street, city, state, postal code) is required for USD ACH payouts.'
+        )
+      }
+      wiseDetails.city = usCity
+      wiseDetails.postCode = usPostCode
+      wiseDetails.state = usState
+      wiseDetails.addressLine = usAddressLine
     } else if (details.accountNumber && details.swiftBic) {
       wiseDetails.accountNumber = String(details.accountNumber)
       wiseDetails.swiftBic = String(details.swiftBic)

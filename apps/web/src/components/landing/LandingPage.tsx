@@ -173,14 +173,25 @@ export function LandingPage() {
         <div style={{ maxWidth: 1160, margin: '0 auto', padding: '34px 24px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 26, justifyContent: 'center' }}>
           <span style={{ fontFamily: MONO, fontSize: 11, textTransform: 'uppercase', letterSpacing: '.14em', color: '#94a3b8' }}>Works inside</span>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'center' }}>
-            {TOOLS.map((t) => (
-              <div key={t.name} style={{ display: 'inline-flex', alignItems: 'center', gap: 9, padding: '8px 15px', border: '1px solid #e8ebf0', borderRadius: 11, background: '#fafafa' }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`https://www.google.com/s2/favicons?domain=${t.domain}&sz=128`} alt={t.name} width={20} height={20} style={{ borderRadius: 5, display: 'block', flex: 'none' }} />
-                <span style={{ fontSize: 14, fontWeight: 600, color: '#334155' }}>{t.name}</span>
-              </div>
-            ))}
+            {/* Brand-neutral mode (NEXT_PUBLIC_BRAND_NEUTRAL=true) drops third-party
+                names/logos. Default (unset) keeps the branded tool cloud. */}
+            {process.env.NEXT_PUBLIC_BRAND_NEUTRAL === 'true' ? (
+              <span style={{ fontSize: 14, fontWeight: 600, color: '#334155' }}>your AI coding tools</span>
+            ) : (
+              TOOLS.map((t) => (
+                <div key={t.name} style={{ display: 'inline-flex', alignItems: 'center', gap: 9, padding: '8px 15px', border: '1px solid #e8ebf0', borderRadius: 11, background: '#fafafa' }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={`https://www.google.com/s2/favicons?domain=${t.domain}&sz=128`} alt={t.name} width={20} height={20} style={{ borderRadius: 5, display: 'block', flex: 'none' }} />
+                  <span style={{ fontSize: 14, fontWeight: 600, color: '#334155' }}>{t.name}</span>
+                </div>
+              ))
+            )}
           </div>
+        </div>
+        <div style={{ maxWidth: 1160, margin: '0 auto', padding: '0 24px 22px', textAlign: 'center' }}>
+          <p style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.6 }}>
+            Product names and logos are trademarks of their respective owners. Prism is independent and is not affiliated with, sponsored by, or endorsed by them.
+          </p>
         </div>
       </section>
 
@@ -252,7 +263,7 @@ export function LandingPage() {
                       <div style={{ marginTop: 5, fontFamily: DISPLAY, fontSize: 22, fontWeight: 600, color: '#34d399' }}>{estYear}</div>
                     </div>
                   </div>
-                  <p style={{ marginTop: 18, fontSize: 11, color: '#64748b', fontFamily: MONO, lineHeight: 1.6 }}>Est. ~18 AI waits/hr × your 50% share, 21 days/mo. Actual earnings vary by tool and advertiser demand.</p>
+                  <p style={{ marginTop: 18, fontSize: 11, color: '#64748b', fontFamily: MONO, lineHeight: 1.6 }}>Est. ~18 AI waits/hr × your 50% share, 21 days/mo. A projection, not a guarantee: actual earnings depend on live advertiser demand, which is still ramping. Withdraw once you reach the $20 minimum.</p>
                 </div>
               </div>
             </div>
