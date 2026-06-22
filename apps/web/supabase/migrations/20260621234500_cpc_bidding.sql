@@ -5,3 +5,8 @@
 -- correct (CPC impressions earn nothing until the click is recorded).
 alter table public.campaigns add column if not exists max_bid_cpc integer;
 alter table public.impressions add column if not exists bid_type text not null default 'cpm';
+
+-- 'traffic' is the live CPC objective (alongside awareness CPM and performance).
+alter table public.campaigns drop constraint if exists campaigns_objective_check;
+alter table public.campaigns add constraint campaigns_objective_check
+  check (objective = any (array['awareness'::text, 'traffic'::text, 'performance'::text]));
