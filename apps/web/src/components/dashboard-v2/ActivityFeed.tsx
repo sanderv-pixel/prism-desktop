@@ -1,6 +1,6 @@
 'use client'
 
-import { formatCents, timeAgo, describeContext } from './format'
+import { formatPayout, timeAgo, describeContext } from './format'
 
 export interface FeedItem {
   id: string
@@ -27,7 +27,7 @@ export function ActivityFeed({ items }: { items: FeedItem[] }) {
               <span className="pnm">{name}</span>
             </span>
             <span className="ctx">{describeContext(item.context, item.campaignTitle)}</span>
-            <span className="amt">+{formatCents(item.payoutCents)}</span>
+            <span className="amt">+{formatPayout(item.payoutCents)}</span>
             <span className="tm">{timeAgo(item.createdAt)}</span>
           </div>
         )

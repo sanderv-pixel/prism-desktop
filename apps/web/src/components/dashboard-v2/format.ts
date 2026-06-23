@@ -2,6 +2,14 @@
 
 export const formatCents = (cents: number): string => `$${(cents / 100).toFixed(2)}`
 
+/** Like formatCents but keeps precision for sub-cent per-view payouts, so tiny
+ *  amounts don't all collapse to $0.00. Aggregates still read as $X.XX. */
+export const formatPayout = (cents: number): string => {
+  const d = cents / 100
+  const max = Math.abs(d) > 0 && Math.abs(d) < 0.01 ? 4 : 2
+  return `$${d.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: max })}`
+}
+
 export const formatNumber = (n: number): string =>
   new Intl.NumberFormat('en-US').format(Math.round(n))
 

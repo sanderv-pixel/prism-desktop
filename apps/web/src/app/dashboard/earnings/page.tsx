@@ -16,7 +16,7 @@ import { KpiCard } from '@/components/dashboard-v2/KpiCard'
 import { AreaChartV2 } from '@/components/dashboard-v2/AreaChartV2'
 import { DonutChart } from '@/components/dashboard-v2/DonutChart'
 import { CreatorInsights } from '@/components/dashboard-v2/CreatorInsights'
-import { formatCents, formatNumber, timeAgo, describeContext } from '@/components/dashboard-v2/format'
+import { formatCents, formatPayout, formatNumber, timeAgo, describeContext } from '@/components/dashboard-v2/format'
 
 export default function EarningsPage() {
   const { user, loading: authLoading } = useAuth()
@@ -55,7 +55,7 @@ export default function EarningsPage() {
   const filtersActive = statusFilter !== 'all' || Boolean(fromDate) || Boolean(toDate)
   const monthSpark = chartData.map((d) => d.earnings).slice(-8)
   const change = stats.earningsChange
-  const toolRows = toolBreakdown.slice(0, 6).map((t) => ({ name: t.tool, value: t.earnings, display: `$${t.earnings.toFixed(2)}` }))
+  const toolRows = toolBreakdown.slice(0, 6).map((t) => ({ name: t.tool, value: t.earnings, display: formatPayout(t.earnings * 100) }))
 
   return shell(
     <>
@@ -136,7 +136,7 @@ export default function EarningsPage() {
                       </div>
                       <div style={{ flex: 'none', maxWidth: 170, textAlign: 'right' }}>
                         {imp.paid ? (
-                          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--emerald)' }}>+{formatCents(imp.payoutCents)}</div>
+                          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--emerald)' }}>+{formatPayout(imp.payoutCents)}</div>
                         ) : (
                           <span
                             style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, color: '#fcd34d', background: 'rgba(251,191,36,.12)', padding: '4px 10px', borderRadius: 9, lineHeight: 1.35 }}

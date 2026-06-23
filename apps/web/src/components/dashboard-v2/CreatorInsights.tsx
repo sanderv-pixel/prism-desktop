@@ -2,7 +2,7 @@
 
 import type { CSSProperties } from 'react'
 import type { DashboardData } from './types'
-import { formatCents } from './format'
+import { formatCents, formatPayout } from './format'
 
 const MIN_PAYOUT_CENTS = 2000
 const SUB_CENTS = 2000 // a typical $20/mo AI subscription
@@ -121,10 +121,11 @@ export function CreatorInsights({ data }: { data: DashboardData }) {
         <StatTile label="Earning streak" value={`${streak} day${streak === 1 ? '' : 's'}`} hint="in a row" color="var(--amber)" />
         <StatTile
           label="Ad rate (7d)"
-          value={cpmNow > 0 ? formatCents(Math.round(cpmNow)) : formatCents(0)}
+          value={cpmNow > 0 ? formatPayout(cpmNow) : formatPayout(0)}
           hint={cpmPrev > 0 ? `${cpmTrend >= 0 ? '▲' : '▼'} ${Math.abs(cpmTrend)}% vs prior week` : 'effective CPM'}
           color="var(--emerald)"
         />
+        <StatTile label="Best single view" value={`+${formatPayout(insights.maxPayoutCents)}`} hint="your top-paid view" color="var(--pink)" />
       </div>
 
       <div className="dv-row2">
@@ -138,7 +139,7 @@ export function CreatorInsights({ data }: { data: DashboardData }) {
                 {local.map((v, h) => (
                   <div
                     key={h}
-                    title={`${fmtHour(h)}: ${formatCents(Math.round(v / 1000))}`}
+                    title={`${fmtHour(h)}: ${formatPayout(v / 1000)}`}
                     style={{
                       flex: 1,
                       height: `${Math.max(3, (v / maxHour) * 100)}%`,
