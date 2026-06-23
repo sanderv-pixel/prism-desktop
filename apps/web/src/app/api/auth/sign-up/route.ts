@@ -9,11 +9,16 @@ import { verifyTurnstile } from '@/lib/api/turnstile'
 export const dynamic = 'force-dynamic'
 
 const signUpRateLimiter = new RateLimiter(5, 60 * 60 * 1000)
+// Captcha is best-effort: a widget that fails to load (ad blockers, privacy
+// extensions, flaky networks) must not dead-end a real signup. Token-less signups
+// are allowed but held to a much stricter per-IP limit; mandatory email confirmation
+// remains the real backstop, so this bounds abuse without locking anyone out.
+const noCaptchaSignUpRateLimiter = new RateLimiter(3, 24 * 60 * 60 * 1000)
 
 const SignUpSchema = z.object({
   email: z.string().email().max(254),
   password: z.string().min(8).max(128),
-  captchaToken: z.string().min(1),
+  captchaToken: z.string().min(1).optional(),
   redirect: z.string().max(512).optional(),
   acceptedTerms: z.boolean(),
   acceptedPrivacy: z.boolean(),
@@ -47,8 +52,17 @@ export async function POST(req: NextRequest) {
       throw new ApiError(400, 'You must agree to the Terms of Service and Privacy Policy.', 'CONSENT_REQUIRED')
     }
 
-    if (!(await verifyTurnstile(captchaToken))) {
-      throw new ApiError(400, 'CAPTCHA verification failed', 'CAPTCHA_FAILED')
+    if (captchaToken) {
+      if (!(await verifyTurnstile(captchaToken))) {
+        throw new ApiError(400, 'CAPTCHA verification failed', 'CAPTCHA_FAILED')
+      }
+    } else {
+      // Widget could not load for this client. Allow the signup, but under a much
+      // stricter per-IP limit; email confirmation is still required downstream.
+      const noCaptcha = await noCaptchaSignUpRateLimiter.check(`signup:nocaptcha:${clientIp}`)
+      if (!noCaptcha.success) {
+        return rateLimitResponse(noCaptcha.limit, noCaptcha.resetAt)
+      }
     }
 
     const supabase = await createClient()
