@@ -171,7 +171,7 @@ export function computeAdvertiserStats(
     previousSpend === 0 ? 0 : Math.round(((recentSpend - previousSpend) / previousSpend) * 100)
 
   // Headline counts come from the maintained per-campaign counters (impression_count,
-  // click_count, spent_cents), not from fetched rows — rows are capped at 1000 by the
+  // click_count, spent_cents), not from fetched rows; rows are capped at 1000 by the
   // API, which made high-volume campaigns appear "stuck at 1000". These counters are
   // the billable totals and reconcile with spend.
   const totalImpressions = campaigns.reduce((sum, c) => sum + (c.impression_count ?? 0), 0)
@@ -250,6 +250,7 @@ export function computeAdvertiserStats(
       maxBidCpm: c.max_bid_cpm,
       maxBidCpc: c.max_bid_cpc ?? null,
       contexts: c.contexts ?? [],
+      targetCountries: (c as { target_countries?: string[] | null }).target_countries ?? [],
       impressions: campaignImpressionsCount,
       clicks: campaignClicksCount,
       conversions: campaignConversions.length,

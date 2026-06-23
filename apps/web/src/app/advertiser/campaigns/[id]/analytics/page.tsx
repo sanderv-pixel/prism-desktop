@@ -11,6 +11,7 @@ import { BarChart } from '@/components/dashboard/BarChart'
 import { DateRangePicker } from '@/components/dashboard/DateRangePicker'
 import { Button } from '@/components/Button'
 import { StatusBadge } from '@/components/dashboard/StatusBadge'
+import { targetingSummary } from '@/lib/countries'
 import {
   ArrowLeft,
   Wallet,
@@ -36,6 +37,7 @@ interface AnalyticsData {
     spentCents: number
     maxBidCpm: number
     contexts: string[]
+    targetCountries: string[]
     createdAt: string
   }
   totals: {
@@ -156,6 +158,10 @@ export default function CampaignAnalyticsPage() {
           </div>
           <p className="text-sm text-muted-foreground mt-1 capitalize">
             {campaign.objective} · {campaign.bidType} · Max bid {formatCents(campaign.maxBidCpm)} CPM
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Targeting: {targetingSummary(campaign.targetCountries)}
+            {campaign.contexts.length > 0 ? ` · ${campaign.contexts.slice(0, 4).join(', ')}` : ''}
           </p>
         </div>
         <div className="flex items-center gap-3">

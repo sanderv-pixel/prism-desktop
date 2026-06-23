@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { formatCents, formatNumber } from './format'
+import { targetingSummary } from '@/lib/countries'
 
 export interface CampaignRow {
   id: string
@@ -15,6 +16,7 @@ export interface CampaignRow {
   cpm: number
   cpc: number
   spentCents: number
+  targetCountries?: string[]
 }
 
 interface CampaignsTableProps {
@@ -79,7 +81,7 @@ export function CampaignsTable({
                       <div className="cn">{c.title}</div>
                       <div className="cs">
                         {c.bidType ? `${c.bidType.toUpperCase()} · ` : ''}
-                        {c.objective}
+                        {c.objective} · {targetingSummary(c.targetCountries)}
                       </div>
                     </div>
                   </div>
@@ -87,9 +89,9 @@ export function CampaignsTable({
                 <td>
                   <span className={`dv-stat ${chip.cls}`}>{chip.label}</span>
                 </td>
-                <td className="r">{noDelivery ? '—' : formatNumber(c.impressions)}</td>
-                <td className="r">{noDelivery ? '—' : `${c.ctr}%`}</td>
-                <td className="r">{noDelivery ? '—' : formatCents(c.cpc)}</td>
+                <td className="r">{noDelivery ? '-' : formatNumber(c.impressions)}</td>
+                <td className="r">{noDelivery ? '-' : `${c.ctr}%`}</td>
+                <td className="r">{noDelivery ? '-' : formatCents(c.cpc)}</td>
                 <td className="r">{formatCents(c.spentCents)}</td>
                 <td className="r">
                   <div style={{ display: 'inline-flex', gap: 4, justifyContent: 'flex-end' }}>

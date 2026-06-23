@@ -75,3 +75,10 @@ const NAME_BY_CODE: Record<string, string> = Object.fromEntries(
 export function countryName(code: string): string {
   return NAME_BY_CODE[code.toUpperCase()] ?? code.toUpperCase()
 }
+
+/** Short "at a glance" label for a campaign's country targeting. */
+export function targetingSummary(codes?: string[] | null): string {
+  if (!codes || codes.length === 0) return 'Worldwide'
+  if (codes.length <= 3) return codes.map((c) => c.toUpperCase()).join(', ')
+  return `${codes.slice(0, 2).map((c) => c.toUpperCase()).join(', ')} +${codes.length - 2}`
+}

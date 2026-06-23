@@ -17,7 +17,9 @@ import {
   AlertCircle,
   Target,
   Zap,
+  Globe,
 } from 'lucide-react'
+import { targetingSummary } from '@/lib/countries'
 
 interface Campaign {
   id: string
@@ -29,6 +31,7 @@ interface Campaign {
   maxBidCpc?: number | null
   bidType?: string
   contexts: string[]
+  targetCountries?: string[]
   impressions: number
   clicks: number
   ctr: number
@@ -212,6 +215,9 @@ export default function CampaignsPage() {
                           <p className="text-xs text-muted-foreground">
                             {campaign.contexts.slice(0, 3).join(', ')}
                             {campaign.contexts.length > 3 && '…'}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5 inline-flex items-center gap-1">
+                            <Globe size={11} /> {targetingSummary(campaign.targetCountries)}
                           </p>
                         </div>
                       </td>

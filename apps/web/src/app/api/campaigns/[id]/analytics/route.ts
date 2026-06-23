@@ -219,6 +219,8 @@ export async function GET(
         spentCents: campaign.spent_cents ?? 0,
         maxBidCpm: campaign.max_bid_cpm ?? 0,
         contexts: campaign.contexts ?? [],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        targetCountries: (campaign as any).target_countries ?? [],
         createdAt: campaign.created_at,
       },
       totals: {
