@@ -8,9 +8,10 @@ validateProductionEnv()
 const protectedRoutes = [
   '/dashboard',
   '/onboarding',
-  '/advertiser/dashboard',
-  '/advertiser/onboarding',
-  '/advertiser/campaigns',
+  // Trailing slash so this covers every advertiser sub-page (dashboard, campaigns,
+  // billing, settings, conversions, onboarding) without matching the public
+  // `/advertisers` marketing page.
+  '/advertiser/',
   '/admin',
 ]
 
