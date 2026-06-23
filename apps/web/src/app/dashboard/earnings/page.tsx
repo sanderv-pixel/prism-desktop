@@ -14,7 +14,7 @@ import { earnerNav } from '@/components/dashboard-v2/earnerNav'
 import { DashboardShellV2 } from '@/components/dashboard-v2/DashboardShellV2'
 import { KpiCard } from '@/components/dashboard-v2/KpiCard'
 import { AreaChartV2 } from '@/components/dashboard-v2/AreaChartV2'
-import { BarBreakdown } from '@/components/dashboard-v2/BarBreakdown'
+import { DonutChart } from '@/components/dashboard-v2/DonutChart'
 import { formatCents, formatNumber, timeAgo, describeContext } from '@/components/dashboard-v2/format'
 
 export default function EarningsPage() {
@@ -159,8 +159,8 @@ export default function EarningsPage() {
           )}
         </div>
         <div className="dv-card">
-          <h3>By tool <span className="meta">this month</span></h3>
-          <BarBreakdown rows={toolRows} emptyLabel="No tool activity yet" />
+          <h3>By tool <span className="meta">earnings share</span></h3>
+          <DonutChart data={toolRows} emptyLabel="No tool activity yet" centerLabel="this month" />
         </div>
       </div>
 
