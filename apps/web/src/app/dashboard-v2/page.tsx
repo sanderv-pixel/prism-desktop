@@ -2,19 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import {
-  LayoutDashboard,
-  TrendingUp,
-  Wallet,
-  Users,
-  Monitor,
-  Settings,
-  Zap,
-  AlertCircle,
-  X,
-} from 'lucide-react'
+import { Zap, AlertCircle, X } from 'lucide-react'
 import './dashboard-v2.css'
 import { useAuth } from '@/hooks/useAuth'
+import { earnerNav } from '@/components/dashboard-v2/earnerNav'
 import { DashboardShellV2 } from '@/components/dashboard-v2/DashboardShellV2'
 import { KpiCard } from '@/components/dashboard-v2/KpiCard'
 import { AreaChartV2 } from '@/components/dashboard-v2/AreaChartV2'
@@ -67,25 +58,6 @@ interface DashboardData {
   }[]
   payouts: { id: string; amountCents: number; status: string; createdAt: string; paidAt: string | null }[]
 }
-
-const NAV = (active: string) => [
-  {
-    title: 'Earner',
-    items: [
-      { label: 'Overview', href: '/dashboard', icon: <LayoutDashboard size={16} />, active: active === 'overview' },
-      { label: 'Earnings', href: '/dashboard#earnings', icon: <TrendingUp size={16} /> },
-      { label: 'Payouts', href: '/dashboard#payouts', icon: <Wallet size={16} /> },
-      { label: 'Referrals', href: '/dashboard#referrals', icon: <Users size={16} /> },
-    ],
-  },
-  {
-    title: 'Account',
-    items: [
-      { label: 'Devices', href: '/dashboard#devices', icon: <Monitor size={16} /> },
-      { label: 'Settings', href: '/dashboard/settings', icon: <Settings size={16} /> },
-    ],
-  },
-]
 
 export default function EarnerDashboardV2() {
   const { user, loading: authLoading } = useAuth()
@@ -181,7 +153,7 @@ export default function EarnerDashboardV2() {
 
   if (authLoading || loading) {
     return (
-      <DashboardShellV2 view="earn" title="Loading…" subtitle="" nav={NAV('overview')} userName={userName} userEmail={userEmail}>
+      <DashboardShellV2 view="earn" title="Loading…" subtitle="" nav={earnerNav('overview')} userName={userName} userEmail={userEmail}>
         <div className="dv-loadwrap">
           <Zap size={18} className="animate-pulse" /> Loading dashboard…
         </div>
@@ -191,7 +163,7 @@ export default function EarnerDashboardV2() {
 
   if (error || !data) {
     return (
-      <DashboardShellV2 view="earn" title="Dashboard" subtitle="" nav={NAV('overview')} userName={userName} userEmail={userEmail}>
+      <DashboardShellV2 view="earn" title="Dashboard" subtitle="" nav={earnerNav('overview')} userName={userName} userEmail={userEmail}>
         <div className="dv-alert">
           <AlertCircle size={20} />
           <div>
@@ -245,7 +217,7 @@ export default function EarnerDashboardV2() {
       title={`Good to see you, ${userName}`}
       subtitle="Here's what your AI wait time earned."
       primary={primary}
-      nav={NAV('overview')}
+      nav={earnerNav('overview')}
       userName={userName}
       userEmail={userEmail}
     >
