@@ -1,3 +1,4 @@
+import { SiteShell } from '@/components/v2/SiteShell'
 import { SectionHeader } from '@/components/SectionHeader'
 import { FeatureCard } from '@/components/FeatureCard'
 import {
@@ -62,8 +63,8 @@ const securityFeatures = [
 
 export default function SecurityPage() {
   return (
-    <>
-      <section className="relative overflow-hidden bg-white pt-32 pb-20 md:pt-44 md:pb-32">
+    <SiteShell>
+      <section className="relative overflow-hidden pt-12 pb-20 md:pt-16 md:pb-32">
         <div className="absolute inset-0 bg-hero-glow" />
         <div className="container-tight px-4 sm:px-6 lg:px-8 relative">
           <SectionHeader
@@ -133,6 +134,6 @@ export default function SecurityPage() {
           </a>
         </div>
       </section>
-    </>
+    </SiteShell>
   )
 }

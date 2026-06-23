@@ -6,14 +6,24 @@ import { Footer } from './Footer'
 export function FooterWrapper() {
   const pathname = usePathname()
 
-  // Hide the marketing footer inside dashboard, advertiser, and admin routes —
-  // and on the landing pages (`/`, `/v2`), which ship their own footer.
+  // Hide the marketing footer on routes that ship their own dark chrome
+  // (landing, app/auth/dashboard/admin, and the content pages on SiteShell).
+  const ownChrome = [
+    '/',
+    '/v2',
+    '/contact',
+    '/install',
+    '/onboarding',
+    '/privacy',
+    '/terms',
+    '/payout-policy',
+    '/advertiser-policy',
+    '/security',
+    '/transparency',
+    '/roadmap',
+  ]
   if (
-    pathname === '/' ||
-    pathname === '/v2' ||
-    pathname === '/contact' ||
-    pathname === '/install' ||
-    pathname === '/onboarding' ||
+    (pathname && ownChrome.includes(pathname)) ||
     pathname?.startsWith('/auth/') ||
     pathname?.startsWith('/dashboard') ||
     pathname?.startsWith('/advertiser/') ||

@@ -25,7 +25,7 @@ export function Nav() {
         Prism
       </Link>
       <div className="navlinks">
-        <a href="#how">How it works</a>
+        <a href="/#how">How it works</a>
         <Link href="/privacy">Privacy</Link>
         <Link href="/advertisers">Advertisers</Link>
         <Link href="/developers">Referrals</Link>
