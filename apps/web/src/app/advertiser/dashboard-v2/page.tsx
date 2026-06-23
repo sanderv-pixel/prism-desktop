@@ -63,6 +63,19 @@ const NAV = [
   { title: 'Account', items: [{ label: 'Settings', href: '/advertiser/settings', icon: <Settings size={16} /> }] },
 ]
 
+function Tile({ label, value, hint, color }: { label: string; value: string; hint: string; color: string }) {
+  return (
+    <div className="dv-card" style={{ padding: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+        <span style={{ width: 7, height: 7, borderRadius: '50%', background: color, flex: 'none' }} />
+        <span style={{ fontSize: 12, color: 'var(--mut)' }}>{label}</span>
+      </div>
+      <div style={{ fontSize: 22, fontWeight: 700, color: '#fff', marginTop: 8, fontFamily: 'var(--font-display), sans-serif' }}>{value}</div>
+      <div style={{ fontSize: 11.5, color: 'var(--mut)', marginTop: 2 }}>{hint}</div>
+    </div>
+  )
+}
+
 export default function AdvertiserDashboardV2() {
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
@@ -144,7 +157,7 @@ export default function AdvertiserDashboardV2() {
     )
   }
 
-  const { stats, chartData, contextBreakdown, campaigns } = data
+  const { stats, chartData, contextBreakdown, sourceBreakdown, campaigns } = data
 
   const imprSeries = chartData.map((d) => d.impressions)
   const clkSeries = chartData.map((d) => d.clicks)
@@ -154,6 +167,12 @@ export default function AdvertiserDashboardV2() {
   const imprSpark = imprSeries.slice(-8)
 
   const reachRows = contextBreakdown.slice(0, 5).map((c) => ({ name: c.name, value: c.impressions, display: compact(c.impressions) }))
+
+  const recentSpendDays = chartData.slice(-7)
+  const activeSpendDays = recentSpendDays.filter((d) => d.spend > 0).length
+  const dailyRate = activeSpendDays > 0 ? recentSpendDays.reduce((a, d) => a + d.spend, 0) / activeSpendDays : 0
+  const budgetRunway = dailyRate > 0 && stats.remainingBudgetCents > 0 ? Math.round(stats.remainingBudgetCents / 100 / dailyRate) : null
+  const topSurface = sourceBreakdown[0]
 
   const spendDelta = (
     <><b className={stats.spendChange < 0 ? 'down' : ''}>{stats.spendChange < 0 ? '▼' : '▲'} {Math.abs(stats.spendChange)}%</b> · {formatCents(stats.remainingBudgetCents)} left</>
@@ -184,6 +203,13 @@ export default function AdvertiserDashboardV2() {
         <KpiCard label="Conversions" dotColor="var(--amber)" value={stats.totalConversions} format={(n) => formatNumber(n)} delta={stats.totalConversions > 0 ? `CPA ${formatCents(stats.cpa)}` : 'no conversions yet'} />
       </div>
 
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(165px, 1fr))', gap: 12, marginTop: 16 }}>
+        <Tile label="Developers reached" value={formatNumber(stats.reach)} hint="distinct in range" color="var(--cyan)" />
+        <Tile label="Avg frequency" value={`${stats.frequency.toFixed(1)}×`} hint="views per developer" color="var(--v400)" />
+        <Tile label="Effective CPM" value={formatCents(stats.cpm)} hint="what you pay per 1k" color="var(--emerald)" />
+        <Tile label="Budget runway" value={budgetRunway != null ? `~${budgetRunway} day${budgetRunway === 1 ? '' : 's'}` : dailyRate > 0 ? 'Budget spent' : 'No spend yet'} hint="at current pace" color="var(--amber)" />
+      </div>
+
       <div className="dv-row2">
         <div className="dv-card">
           <h3>Delivery <span className="meta">impressions · last {chartData.length} days</span></h3>
@@ -196,7 +222,7 @@ export default function AdvertiserDashboardV2() {
           </div>
         </div>
         <div className="dv-card">
-          <h3>Audience reach <span className="meta">by tool</span></h3>
+          <h3>Where you win <span className="meta">{topSurface ? `top: ${topSurface.name}` : 'by tool'}</span></h3>
           <BarBreakdown rows={reachRows} variant="cyan" emptyLabel="No reach data yet" />
         </div>
       </div>
