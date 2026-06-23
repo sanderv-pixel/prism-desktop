@@ -15,6 +15,7 @@ import { DashboardShellV2 } from '@/components/dashboard-v2/DashboardShellV2'
 import { KpiCard } from '@/components/dashboard-v2/KpiCard'
 import { AreaChartV2 } from '@/components/dashboard-v2/AreaChartV2'
 import { DonutChart } from '@/components/dashboard-v2/DonutChart'
+import { CreatorInsights } from '@/components/dashboard-v2/CreatorInsights'
 import { formatCents, formatNumber, timeAgo, describeContext } from '@/components/dashboard-v2/format'
 
 export default function EarningsPage() {
@@ -64,6 +65,8 @@ export default function EarningsPage() {
         <KpiCard label="From your usage" dotColor="var(--emerald)" value={stats.ownEarningsCents} format={(n) => formatCents(n)} emphasis delta="own ad views" />
         <KpiCard label="Validated views" dotColor="var(--amber)" value={stats.validatedImpressions} format={(n) => formatNumber(n)} delta={`${passRate.toFixed(1)}% pass rate`} />
       </div>
+
+      <CreatorInsights data={data} />
 
       <div className="dv-card" style={{ marginTop: 16 }}>
         <h3>Earnings <span className="meta">last {chartData.length || 14} days</span></h3>

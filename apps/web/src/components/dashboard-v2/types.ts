@@ -39,6 +39,13 @@ export interface DashboardData {
   }
   chartData: { date: string; earnings: number; impressions: number }[]
   toolBreakdown: { tool: string; count: number; earnings: number }[]
+  insights: {
+    hourly: { h: number; mc: number }[]
+    dow: { d: number; mc: number }[]
+    totalDurationMs: number
+    totalViews: number
+    maxPayoutCents: number
+  }
   recentImpressions: {
     id: string
     advertiserName: string

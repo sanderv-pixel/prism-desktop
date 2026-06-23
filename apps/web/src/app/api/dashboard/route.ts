@@ -174,6 +174,17 @@ export async function GET() {
       ref_mc_prev?: number
     }
 
+    // Insights aggregate (all-time): earnings by hour/day-of-week, lifetime
+    // monetized wait time, eligible view count, and the highest-paying view.
+    const { data: insightsData } = await rpc('creator_insights', { p_user_ids: userIds })
+    const insights = (insightsData ?? {}) as {
+      hourly?: { h: number; mc: number }[]
+      dow?: { d: number; mc: number }[]
+      total_duration_ms?: number
+      total_views?: number
+      max_payout_mc?: number
+    }
+
     // Lifetime earnings come from an uncapped SQL aggregate, not the 60-day row
     // scan above: the balance must include all-time own earnings and lifelong
     // referral commission, and must not be truncated by the 1000-row fetch cap.
@@ -279,6 +290,13 @@ export async function GET() {
       },
       chartData,
       toolBreakdown,
+      insights: {
+        hourly: insights.hourly ?? [],
+        dow: insights.dow ?? [],
+        totalDurationMs: Number(insights.total_duration_ms ?? 0),
+        totalViews: Number(insights.total_views ?? 0),
+        maxPayoutCents: Number(insights.max_payout_mc ?? 0) / 1000,
+      },
       recentImpressions: recentList.map((imp) => {
         const flags: string[] = imp.fraud_flags ?? []
         // A CPC impression earns only when its ad is clicked; until then it is a
