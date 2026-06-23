@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { createAdminClient } from '@/utils/supabase/admin'
+import { RateLimiter, rateLimitResponse } from '@/lib/api/rate-limit'
 
 export const dynamic = 'force-dynamic'
+
+// Per-user limit: the dashboard is a heavy read; cap polling/abuse.
+const dashboardRateLimiter = new RateLimiter(60, 60 * 1000)
 
 function getStartOfDay(daysAgo: number) {
   const d = new Date()
@@ -71,6 +75,11 @@ export async function GET(req: Request) {
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const rl = await dashboardRateLimiter.check(`dashboard:${user.id}`)
+  if (!rl.success) {
+    return rateLimitResponse(rl.limit, rl.resetAt)
   }
 
   // Viewer timezone (IANA), so "best earning times" buckets in their local time.

@@ -17,6 +17,7 @@ import {
   detectImpressionAnomalies,
   detectBudgetDrainAnomaly,
   recordHeartbeatCoverageAnomaly,
+  recordSybilIpAnomaly,
 } from '@/lib/anomaly'
 import {
   loadHbState,
@@ -191,7 +192,7 @@ export async function POST(req: NextRequest) {
     ])
 
     // Temporal dwell sanity: a scripted caller that fetches a token and instantly
-    // reports a long dwell is physically impossible — the token hasn't existed
+    // reports a long dwell is physically impossible; the token hasn't existed
     // that long. This forces faking a human dwell to cost real wall-clock time.
     const tokenAgeMs = Date.now() - tokenPayload.issuedAt
     const dwellImplausible = durationMs > tokenAgeMs + DWELL_GRACE_MS
@@ -240,6 +241,11 @@ export async function POST(req: NextRequest) {
       clientIp,
       contextHash: ctxHash,
     }).catch(() => {})
+
+    // Sybil watch: surface IPs producing impressions tied to many distinct accounts.
+    if (clientIp && combinedFraud.reasons.includes('multiple_users_on_ip')) {
+      recordSybilIpAnomaly(clientIp).catch(() => {})
+    }
 
     if (combinedFraud.blocked && !isTrusted) {
       await supabase.from('impressions').insert({

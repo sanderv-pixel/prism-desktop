@@ -12,6 +12,7 @@ export type AnomalyType =
   | 'repeated_context_fingerprint'
   | 'rapid_budget_drain'
   | 'heartbeat_coverage_low'
+  | 'ip_multi_account'
 
 export type AnomalySeverity = 'low' | 'medium' | 'high' | 'critical'
 
@@ -34,6 +35,24 @@ const THRESHOLDS: Record<AnomalyType, number> = {
   repeated_context_fingerprint: 20, // 20 identical context hashes in 1 hour.
   rapid_budget_drain: 1, // Fired once when >50% of budget spent in 1 hour.
   heartbeat_coverage_low: 10, // 10 missing/short-heartbeat impressions / hour / identity.
+  ip_multi_account: 20, // 20 multi-account-flagged impressions from one IP in 1 hour.
+}
+
+// Sybil watch: an IP that keeps producing impressions flagged as belonging to
+// multiple distinct accounts is a likely multi-account farm. Counts such flagged
+// impressions per IP per hour and raises once over threshold for admin review
+// (medium = surfaced, not emailed, to avoid noise from shared/office IPs).
+// Fire-and-forget from the impressions path.
+export async function recordSybilIpAnomaly(clientIp: string): Promise<void> {
+  if (!clientIp) return
+  const count = await kvIncr(`anomaly:sybilip:${clientIp}`, 60 * 60)
+  if (count === THRESHOLDS.ip_multi_account) {
+    await recordAnomaly({
+      type: 'ip_multi_account',
+      severity: 'medium',
+      details: { clientIp, flaggedImpressions: count, windowSeconds: 3600 },
+    })
+  }
 }
 
 // Anti-bot: when heartbeat enforcement is on, an identity racking up impressions
