@@ -13,6 +13,7 @@ import { isTrustedUserId } from '@/lib/api/trusted'
 import { createImpressionToken, createConversionToken } from '@/lib/api/tokens'
 import { HB_INTERVAL_MS, HB_MIN_BEATS, generateInitialChallenge } from '@/lib/api/heartbeat'
 import { kvGet, kvSet } from '@/lib/redis'
+import { matchesContexts } from '@/lib/campaign-contexts'
 
 export const dynamic = 'force-dynamic'
 
@@ -261,10 +262,9 @@ export async function POST(req: NextRequest) {
       // country must be one of them. Untargeted (null/empty) serves everywhere.
       const targetCountries: string[] = c.target_countries ?? []
       if (targetCountries.length > 0 && (!viewerCountry || !targetCountries.includes(viewerCountry))) return false
-      const contexts = c.contexts ?? []
-      if (contexts.length === 0) return true
-      if (contexts.includes('general') || contexts.includes('general-ai')) return true
-      return signals.some((s) => contexts.includes(s))
+      // OR within an axis, AND across the axes the advertiser targeted; empty = broad
+      // reach. Replaces the old flat any-overlap match and the magic "general" override.
+      return matchesContexts(signals, c.contexts ?? [])
     })
 
     if (eligible.length === 0) {

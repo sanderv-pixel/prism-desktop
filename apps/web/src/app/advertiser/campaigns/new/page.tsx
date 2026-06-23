@@ -8,12 +8,12 @@ import { DashboardShellV2 } from '@/components/dashboard-v2/DashboardShellV2'
 import { advertiserNav } from '@/components/dashboard-v2/advertiserNav'
 import { Button } from '@/components/Button'
 import { ArrowLeft, ArrowRight, AlertCircle, CheckCircle2, Wallet, Check } from 'lucide-react'
-import { CONTEXT_OPTIONS, PRESETS } from '@/lib/campaign-contexts'
 import { MarketContextPanel } from '@/components/MarketContextPanel'
 import { IconUpload } from '@/components/IconUpload'
 import { AdPreview } from '@/components/AdPreview'
 import { AddFundsModal } from '@/components/advertiser/AddFundsModal'
 import { CountryTargeting } from '@/components/advertiser/CountryTargeting'
+import { ContextTargeting } from '@/components/advertiser/ContextTargeting'
 import { targetingSummary } from '@/lib/countries'
 
 interface Advertiser {
@@ -102,7 +102,8 @@ export default function NewCampaignPage() {
   const [endDate, setEndDate] = useState('')
   const [frequencyCap, setFrequencyCap] = useState('')
   const [frequencyWindow, setFrequencyWindow] = useState('24')
-  const [contexts, setContexts] = useState<string[]>(['chatgpt', 'general', 'productivity'])
+  const [contexts, setContexts] = useState<string[]>(['chatgpt', 'claude', 'cursor', 'copilot'])
+  const [broadReach, setBroadReach] = useState(false)
   const [targetSources, setTargetSources] = useState<string[]>([])
   const [targetCountries, setTargetCountries] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
@@ -153,15 +154,11 @@ export default function NewCampaignPage() {
   const stepValid = [
     true,
     title.trim().length > 0 && copy.trim().length > 0 && urlValid && !iconError,
-    contexts.length > 0,
+    broadReach || contexts.length > 0,
     budgetValid && bidValid,
     true,
   ]
   const canNext = stepValid[step]
-
-  function toggleContext(ctx: string) {
-    setContexts((prev) => (prev.includes(ctx) ? prev.filter((c) => c !== ctx) : [...prev, ctx]))
-  }
 
   async function handleSubmit() {
     setLoading(true)
@@ -290,28 +287,12 @@ export default function NewCampaignPage() {
               {/* STEP 3 - TARGETING */}
               {step === 2 && (
                 <div className="space-y-6">
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <label className="block text-sm font-medium text-foreground/80">Contextual placements</label>
-                      <div className="flex flex-wrap justify-end gap-2">
-                        {Object.keys(PRESETS).map((name) => (
-                          <button key={name} type="button" onClick={() => setContexts(PRESETS[name as keyof typeof PRESETS])}
-                            className="text-xs px-2.5 py-1 rounded-md bg-muted text-muted-foreground hover:text-foreground border border-border transition">
-                            {name}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {CONTEXT_OPTIONS.map((ctx) => (
-                        <button key={ctx} type="button" onClick={() => toggleContext(ctx)}
-                          className={`text-xs px-3 py-1.5 rounded-full border transition ${contexts.includes(ctx) ? 'bg-violet-50 border-violet-200 text-primary' : 'bg-muted border-border text-muted-foreground hover:text-foreground'}`}>
-                          {ctx}
-                        </button>
-                      ))}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">Editors, languages, AI tools, and intents where your ad is eligible. Pick at least one.</p>
-                  </div>
+                  <ContextTargeting
+                    value={contexts}
+                    onChange={setContexts}
+                    broadReach={broadReach}
+                    onBroadReachChange={setBroadReach}
+                  />
 
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">Surfaces</label>
@@ -420,7 +401,7 @@ export default function NewCampaignPage() {
                     <div className="rounded-xl border border-border p-4">
                       <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Targeting</p>
                       <SummaryRow label="Objective"><span className="capitalize">{objective}</span> · {bidType.toUpperCase()}</SummaryRow>
-                      <SummaryRow label="Contexts">{contexts.length ? `${contexts.slice(0, 3).join(', ')}${contexts.length > 3 ? ` +${contexts.length - 3}` : ''}` : '-'}</SummaryRow>
+                      <SummaryRow label="Placements">{broadReach || contexts.length === 0 ? 'Broad reach (everywhere)' : `${contexts.slice(0, 4).join(', ')}${contexts.length > 4 ? ` +${contexts.length - 4}` : ''}`}</SummaryRow>
                       <SummaryRow label="Surfaces">{targetSources.length ? targetSources.join(', ') : 'All'}</SummaryRow>
                       <SummaryRow label="Countries">{targetingSummary(targetCountries)}</SummaryRow>
                     </div>
@@ -468,7 +449,7 @@ export default function NewCampaignPage() {
                     <Wallet size={16} className="mr-1.5" /> Add funds to continue
                   </Button>
                 ) : (
-                  <Button type="button" size="lg" disabled={loading || !canAfford || contexts.length === 0} onClick={handleSubmit}>
+                  <Button type="button" size="lg" disabled={loading || !canAfford || (!broadReach && contexts.length === 0)} onClick={handleSubmit}>
                     {loading ? 'Creating…' : !advertiser ? 'Loading…' : objective === 'performance' ? 'Submit for review' : 'Launch campaign'}
                   </Button>
                 )}

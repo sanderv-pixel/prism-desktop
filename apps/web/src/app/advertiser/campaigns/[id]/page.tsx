@@ -16,11 +16,11 @@ import {
   Play,
   Trash2,
 } from 'lucide-react'
-import { CONTEXT_OPTIONS } from '@/lib/campaign-contexts'
 import { IconUpload } from '@/components/IconUpload'
 import { AdPreview } from '@/components/AdPreview'
 import { CampaignCreatives } from '@/components/advertiser/CampaignCreatives'
 import { CountryTargeting } from '@/components/advertiser/CountryTargeting'
+import { ContextTargeting } from '@/components/advertiser/ContextTargeting'
 
 interface Campaign {
   id: string
@@ -58,6 +58,7 @@ export default function EditCampaignPage() {
   const [url, setUrl] = useState('')
   const [iconUrl, setIconUrl] = useState('')
   const [contexts, setContexts] = useState<string[]>([])
+  const [broadReach, setBroadReach] = useState(false)
   const [targetSources, setTargetSources] = useState<string[]>([])
   const [targetCountries, setTargetCountries] = useState<string[]>([])
   const [maxBidCpm, setMaxBidCpm] = useState('12')
@@ -84,6 +85,7 @@ export default function EditCampaignPage() {
       setUrl(data.url)
       setIconUrl(data.icon_url ?? '')
       setContexts(data.contexts ?? [])
+      setBroadReach((data.contexts ?? []).length === 0)
       setTargetSources(data.target_sources ?? [])
       setTargetCountries(data.target_countries ?? [])
       setMaxBidCpm(((data.max_bid_cpm ?? 1200) / 100).toString())
@@ -101,12 +103,6 @@ export default function EditCampaignPage() {
   useEffect(() => {
     fetchCampaign()
   }, [id])
-
-  function toggleContext(ctx: string) {
-    setContexts((prev) =>
-      prev.includes(ctx) ? prev.filter((c) => c !== ctx) : [...prev, ctx]
-    )
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -364,28 +360,15 @@ export default function EditCampaignPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-foreground/80 mb-1.5">
+              <label className="block text-sm font-medium text-foreground/80 mb-3">
                 Contextual targeting
               </label>
-              <p className="text-xs text-muted-foreground mb-3">
-                Select broad categories like "AI general" or "AI learners" to reach ChatGPT and other non-developer users.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {CONTEXT_OPTIONS.map((ctx) => (
-                  <button
-                    key={ctx}
-                    type="button"
-                    onClick={() => toggleContext(ctx)}
-                    className={`text-xs px-3 py-1.5 rounded-full border transition ${
-                      contexts.includes(ctx)
-                        ? 'bg-violet-50 border-violet-200 text-primary'
-                        : 'bg-muted border-border text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    {ctx}
-                  </button>
-                ))}
-              </div>
+              <ContextTargeting
+                value={contexts}
+                onChange={setContexts}
+                broadReach={broadReach}
+                onBroadReachChange={setBroadReach}
+              />
             </div>
 
             <div>
@@ -504,7 +487,7 @@ export default function EditCampaignPage() {
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-4 border-t border-border">
               <div className="flex items-center gap-3">
-                <Button type="submit" size="lg" disabled={saving || contexts.length === 0}>
+                <Button type="submit" size="lg" disabled={saving || (!broadReach && contexts.length === 0)}>
                   {saving ? 'Saving…' : 'Save changes'}
                 </Button>
                 <Button
