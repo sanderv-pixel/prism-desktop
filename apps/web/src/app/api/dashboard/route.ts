@@ -98,13 +98,14 @@ export async function GET() {
         .select('referrer_payout_millicents, validated, payout_hold, created_at')
         .eq('referrer_user_id', user.id)
         .gte('created_at', sixtyDaysAgoIso),
-      // Last 20 impressions for the activity feed.
+      // Recent impressions for the activity feed + the earnings page list
+      // (filterable / paginated client-side, so fetch a fuller recent window).
       supabase
         .from('impressions')
         .select('*')
         .in('user_id', userIds)
         .order('created_at', { ascending: false })
-        .limit(20),
+        .limit(100),
       supabase
         .from('payouts')
         .select('*')
