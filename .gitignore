@@ -38,3 +38,7 @@ Thumbs.db
 # Testing
 .vscode-test/
 coverage/
+
+# overlay signing private key (NEVER commit)
+apps/overlay-macos/secrets/
+*.p12
