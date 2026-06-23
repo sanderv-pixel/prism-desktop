@@ -14,7 +14,7 @@ const updateCampaignRateLimiter = new RateLimiter(30, 60 * 60 * 1000)
 
 const CampaignUpdateSchema = z.object({
   title: z.string().min(1).max(120).optional(),
-  copy: z.string().min(1).max(40).optional(), // CTA — one short action, per ad-unit guidelines
+  copy: z.string().min(1).max(40).optional(), // CTA: one short action, per ad-unit guidelines
   brand_name: z.string().max(14).optional().or(z.literal('')), // brand name only, per guidelines
   url: httpUrl().optional(),
   icon_url: iconUrlSchema().optional().or(z.literal('')),
@@ -28,6 +28,7 @@ const CampaignUpdateSchema = z.object({
   frequency_window_hours: z.number().int().min(1).max(168).optional(),
   contexts: z.array(z.string().min(1).max(50)).max(50).optional(),
   target_sources: z.array(z.enum(['claude', 'cursor', 'codex', 'terminal'])).max(4).nullable().optional(),
+  target_countries: z.array(z.string().length(2)).max(60).nullable().optional(),
   // Advertisers may only pause or request re-review. Approval/rejection is admin-only.
   status: z.enum(['paused', 'pending_review']).optional(),
 })

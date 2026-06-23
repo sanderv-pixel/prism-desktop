@@ -14,7 +14,7 @@ const createCampaignRateLimiter = new RateLimiter(20, 60 * 60 * 1000)
 
 const CampaignSchema = z.object({
   title: z.string().min(1).max(120),
-  copy: z.string().min(1).max(40), // CTA — one short action, per ad-unit guidelines
+  copy: z.string().min(1).max(40), // CTA: one short action, per ad-unit guidelines
   brandName: z.string().max(14).optional(), // brand name only, per ad-unit guidelines
   url: httpUrl(),
   iconUrl: iconUrlSchema().optional().or(z.literal('')),
@@ -30,6 +30,7 @@ const CampaignSchema = z.object({
   frequencyWindowHours: z.number().int().min(1).max(168).optional(),
   contexts: z.array(z.string().min(1).max(50)).max(50).optional(),
   targetSources: z.array(z.enum(['claude', 'cursor', 'codex', 'terminal'])).max(4).optional(),
+  targetCountries: z.array(z.string().length(2)).max(60).optional(),
 })
 
 export async function GET() {
@@ -139,6 +140,7 @@ export async function POST(req: NextRequest) {
       frequencyWindowHours,
       contexts,
       targetSources,
+      targetCountries,
     } = parseResult.data
 
     if (iconUrl) {
@@ -166,8 +168,9 @@ export async function POST(req: NextRequest) {
     const initialStatus =
       objective === 'performance' && !autoApproveCampaigns ? 'pending_review' : 'active'
 
-    const { data, error } = await supabase
-      .from('campaigns')
+    // Cast: target_countries is newer than the checked-in generated Supabase types.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase.from('campaigns') as any)
       .insert({
         advertiser_id: advertiser.id,
         title,
@@ -187,6 +190,10 @@ export async function POST(req: NextRequest) {
         frequency_window_hours: frequencyWindowHours || null,
         contexts: contexts ?? [],
         target_sources: targetSources && targetSources.length > 0 ? targetSources : null,
+        target_countries:
+          targetCountries && targetCountries.length > 0
+            ? targetCountries.map((c) => c.toUpperCase())
+            : null,
         status: initialStatus,
       })
       .select()

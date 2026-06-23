@@ -7,6 +7,7 @@ import {
   rateLimitResponse,
 } from '@/lib/api/rate-limit'
 import { handleApiError, ApiError, formatZodError } from '@/lib/api/errors'
+import { getCountryCode } from '@/lib/geo'
 import { requireApiKey, getRequestDeviceUserId } from '@/lib/api/auth'
 import { isTrustedUserId } from '@/lib/api/trusted'
 import { createImpressionToken, createConversionToken } from '@/lib/api/tokens'
@@ -87,7 +88,7 @@ function predictedCtr(c: any): number {
   return Math.min(MAX_PCTR, ctr)
 }
 
-// Effective CPM (cents per 1000 impressions) — the common axis that lets CPM and
+// Effective CPM (cents per 1000 impressions), the common axis that lets CPM and
 // CPC bids compete. For CPC, expected revenue per 1000 impressions = cpc x CTR x 1000.
 function effectiveCpm(c: any): number {
   if (c.bid_type === 'cpc') {
@@ -209,6 +210,8 @@ export async function POST(req: NextRequest) {
     const { context = {}, userId = '', sessionId, hiddenAdvertisers = [], source } = parseResult.data
     const reqSource = source ?? 'unknown'
     const signals = getSignals(context)
+    // Viewer country (from the edge geo header) for country-targeted campaigns.
+    const viewerCountry = getCountryCode(req)?.toUpperCase()
 
     // Active ad campaigns: CPM awareness and CPC traffic, ranked together by eCPM.
     const now = new Date()
@@ -254,6 +257,10 @@ export async function POST(req: NextRequest) {
       // must be one of them. Untargeted (null/empty) campaigns serve everywhere.
       const targetSources: string[] = c.target_sources ?? []
       if (targetSources.length > 0 && !targetSources.includes(reqSource)) return false
+      // Country targeting: if the campaign restricts countries, the viewer's
+      // country must be one of them. Untargeted (null/empty) serves everywhere.
+      const targetCountries: string[] = c.target_countries ?? []
+      if (targetCountries.length > 0 && (!viewerCountry || !targetCountries.includes(viewerCountry))) return false
       const contexts = c.contexts ?? []
       if (contexts.length === 0) return true
       if (contexts.includes('general') || contexts.includes('general-ai')) return true
@@ -316,7 +323,7 @@ export async function POST(req: NextRequest) {
     const winner = weightedRandomByEcpm(topCandidates)
 
     // Second-price auction on the eCPM axis: winner clears at max(floor, 2nd eCPM),
-    // but never above its own eCPM — so a rotation-selected (non-top) winner falls
+    // but never above its own eCPM, so a rotation-selected (non-top) winner falls
     // back to first-price rather than overpaying.
     const secondEcpm = sorted.length > 1 ? sorted[1]._ecpm : floorCpm
     const clearingPrice = Math.max(floorCpm, Math.min(secondEcpm, winner._ecpm))
@@ -350,7 +357,7 @@ export async function POST(req: NextRequest) {
     const adBrand = creative ? creative.brand_name : winner.brand_name
 
     // The name shown in the ad is advertiser-controlled (creative/campaign brand_name).
-    // Empty means show no name — the internal account name is never exposed.
+    // Empty means show no name; the internal account name is never exposed.
     const displayName = typeof adBrand === 'string' && adBrand.trim() ? adBrand.trim() : ''
 
     // Anti-bot heartbeat seed (additive; clients that ignore it are unaffected).

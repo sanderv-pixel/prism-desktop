@@ -20,6 +20,7 @@ import { CONTEXT_OPTIONS } from '@/lib/campaign-contexts'
 import { IconUpload } from '@/components/IconUpload'
 import { AdPreview } from '@/components/AdPreview'
 import { CampaignCreatives } from '@/components/advertiser/CampaignCreatives'
+import { CountryTargeting } from '@/components/advertiser/CountryTargeting'
 
 interface Campaign {
   id: string
@@ -38,6 +39,7 @@ interface Campaign {
   frequency_window_hours: number | null
   status: string
   contexts: string[]
+  target_countries?: string[] | null
   created_at: string
 }
 
@@ -57,6 +59,7 @@ export default function EditCampaignPage() {
   const [iconUrl, setIconUrl] = useState('')
   const [contexts, setContexts] = useState<string[]>([])
   const [targetSources, setTargetSources] = useState<string[]>([])
+  const [targetCountries, setTargetCountries] = useState<string[]>([])
   const [maxBidCpm, setMaxBidCpm] = useState('12')
   const [maxBidCpc, setMaxBidCpc] = useState('0.50')
   const [dailyBudget, setDailyBudget] = useState('')
@@ -82,6 +85,7 @@ export default function EditCampaignPage() {
       setIconUrl(data.icon_url ?? '')
       setContexts(data.contexts ?? [])
       setTargetSources(data.target_sources ?? [])
+      setTargetCountries(data.target_countries ?? [])
       setMaxBidCpm(((data.max_bid_cpm ?? 1200) / 100).toString())
       setMaxBidCpc(((data.max_bid_cpc ?? 50) / 100).toString())
       setDailyBudget(data.daily_budget_cents ? (data.daily_budget_cents / 100).toString() : '')
@@ -118,6 +122,7 @@ export default function EditCampaignPage() {
         icon_url: iconUrl || null,
         contexts,
         target_sources: targetSources.length > 0 ? targetSources : null,
+        target_countries: targetCountries.length > 0 ? targetCountries : null,
       }
 
       // The pricing model is fixed at creation; only edit the relevant bid amount.
@@ -409,6 +414,8 @@ export default function EditCampaignPage() {
                 ))}
               </div>
             </div>
+
+            <CountryTargeting value={targetCountries} onChange={setTargetCountries} />
 
             <div className="grid sm:grid-cols-2 gap-5">
               {campaign?.bid_type === 'cpc' ? (

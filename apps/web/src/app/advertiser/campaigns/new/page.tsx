@@ -13,6 +13,7 @@ import { MarketContextPanel } from '@/components/MarketContextPanel'
 import { IconUpload } from '@/components/IconUpload'
 import { AdPreview } from '@/components/AdPreview'
 import { AddFundsModal } from '@/components/advertiser/AddFundsModal'
+import { CountryTargeting } from '@/components/advertiser/CountryTargeting'
 
 interface Advertiser {
   id: string
@@ -41,6 +42,7 @@ export default function NewCampaignPage() {
   const [frequencyWindow, setFrequencyWindow] = useState('24')
   const [contexts, setContexts] = useState<string[]>(['chatgpt', 'general', 'productivity'])
   const [targetSources, setTargetSources] = useState<string[]>([])
+  const [targetCountries, setTargetCountries] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [iconError, setIconError] = useState('')
@@ -131,6 +133,7 @@ export default function NewCampaignPage() {
       else body.maxBidCpm = Math.round(parseFloat(maxBidCpm) * 100)
 
       if (targetSources.length > 0) body.targetSources = targetSources
+      if (targetCountries.length > 0) body.targetCountries = targetCountries
 
       if (dailyBudget) body.dailyBudgetCents = Math.round(parseFloat(dailyBudget) * 100)
       if (startDate) body.startDate = new Date(startDate).toISOString()
@@ -519,6 +522,8 @@ export default function NewCampaignPage() {
                   Restrict delivery to specific AI tools. Leave empty to target all surfaces.
                 </p>
               </div>
+
+              <CountryTargeting value={targetCountries} onChange={setTargetCountries} />
 
               <MarketContextPanel
                 contexts={contexts}
