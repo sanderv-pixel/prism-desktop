@@ -1,0 +1,69 @@
+name: release-overlay-macos
+
+# Builds the signed macOS overlay release in CI using the ONE shared signing
+# identity (from the PRISM_SIGNING_P12 secret), so every release has the same
+# code-signing designated requirement. That is what keeps users' macOS
+# Accessibility / Screen-Recording grant across updates. Never ad-hoc.
+#
+# The produced PrismOverlay.zip is uploaded as an artifact. Publishing it to
+# apps/web/public/download/PrismOverlay.zip (what install.sh serves) stays a
+# deliberate step — download the artifact and commit it, or wire a deploy.
+
+on:
+  push:
+    paths:
+      - 'apps/overlay-macos/**'
+      - '.github/workflows/release-overlay-macos.yml'
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Import the shared signing identity into a temp keychain
+        env:
+          P12_B64: ${{ secrets.PRISM_SIGNING_P12 }}
+          P12_PASS: ${{ secrets.PRISM_SIGNING_P12_PASS }}
+        run: |
+          set -euo pipefail
+          KEYCHAIN="$RUNNER_TEMP/prism-signing.keychain-db"
+          KP="$(openssl rand -base64 18)"
+          printf '%s' "$P12_B64" | base64 --decode > "$RUNNER_TEMP/id.p12"
+          security create-keychain -p "$KP" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KP" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/id.p12" -k "$KEYCHAIN" -P "$P12_PASS" -T /usr/bin/codesign -A
+          # Let codesign use the key non-interactively, and trust the self-signed
+          # cert so the release verify step passes.
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KP" "$KEYCHAIN" >/dev/null
+          security add-trusted-cert -d -r trustRoot -p codeSign -k "$KEYCHAIN" \
+            <(security find-certificate -c "Prism Overlay Signing" -p "$KEYCHAIN") 2>/dev/null || true
+          # Make the temp keychain searchable for codesign.
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | sed s/\"//g)
+          rm -f "$RUNNER_TEMP/id.p12"
+          echo "✓ signing identity ready"
+          security find-identity -v -p codesigning "$KEYCHAIN" | grep "Prism Overlay Signing"
+
+      - name: Build signed release (stable identity, never ad-hoc)
+        working-directory: apps/overlay-macos
+        run: make release SIGN_ID="Prism Overlay Signing"
+
+      - name: Verify the artifact is stably signed
+        working-directory: apps/overlay-macos
+        run: |
+          set -euo pipefail
+          codesign -dvv build/PrismOverlay.app 2>&1 | grep -E "Identifier|Authority"
+          if codesign -dvv build/PrismOverlay.app 2>&1 | grep -qi "Signature=adhoc"; then
+            echo "::error::release is ad-hoc signed"; exit 1
+          fi
+          codesign -dr - build/PrismOverlay.app | grep "certificate leaf = H\"e1a4c5ea23b57d39d0f009ecdde61c83774c7d1e\"" \
+            && echo "✓ expected signing identity"
+
+      - name: Upload PrismOverlay.zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: PrismOverlay-macos
+          path: apps/overlay-macos/build/PrismOverlay.zip
+          if-no-files-found: error
