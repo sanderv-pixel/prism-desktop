@@ -22,31 +22,112 @@ function formatSize(bytes: number) {
   return `${(bytes / 1024).toFixed(1)} KB`
 }
 
+// Generous input cap (guards against decompression bombs); anything within it is
+// automatically downscaled below MAX_SIZE_BYTES, so the user never resizes by hand.
+const MAX_INPUT_BYTES = 12 * 1024 * 1024
+const TARGET_MAX_DIM = 256 // the icon renders tiny; 256px is crisp on retina
+
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader()
+    r.onload = () => resolve(r.result as string)
+    r.onerror = () => reject(new Error('Could not read the file.'))
+    r.readAsDataURL(file)
+  })
+}
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => resolve(img)
+    img.onerror = () => reject(new Error('Could not decode the image.'))
+    img.src = src
+  })
+}
+
+function dataUrlBytes(dataUrl: string): number {
+  const i = dataUrl.indexOf(',')
+  const b64 = i >= 0 ? dataUrl.slice(i + 1) : dataUrl
+  return Math.floor((b64.length * 3) / 4)
+}
+
+/** Downscale (and re-encode) an image to fit under maxBytes. PNG first to keep
+ *  transparency; falls back to WEBP at decreasing quality, then smaller dimensions. */
+async function resizeToFit(dataUrl: string, maxDim: number, maxBytes: number): Promise<string> {
+  const img = await loadImage(dataUrl)
+  const baseW = img.naturalWidth || maxDim
+  const baseH = img.naturalHeight || maxDim
+
+  const render = (dim: number): HTMLCanvasElement => {
+    const scale = Math.min(1, dim / Math.max(baseW, baseH))
+    const w = Math.max(1, Math.round(baseW * scale))
+    const h = Math.max(1, Math.round(baseH * scale))
+    const c = document.createElement('canvas')
+    c.width = w
+    c.height = h
+    const ctx = c.getContext('2d')
+    if (ctx) {
+      ctx.clearRect(0, 0, w, h)
+      ctx.drawImage(img, 0, 0, w, h)
+    }
+    return c
+  }
+
+  let canvas = render(maxDim)
+  let out = canvas.toDataURL('image/png')
+  if (dataUrlBytes(out) <= maxBytes) return out
+  for (const q of [0.92, 0.85, 0.75, 0.6, 0.5]) {
+    out = canvas.toDataURL('image/webp', q)
+    if (out.startsWith('data:image/webp') && dataUrlBytes(out) <= maxBytes) return out
+  }
+  for (const dim of [192, 128, 96, 64]) {
+    canvas = render(dim)
+    out = canvas.toDataURL('image/webp', 0.7)
+    if (dataUrlBytes(out) <= maxBytes) return out
+  }
+  return out
+}
+
 export function IconUpload({ value, onChange, onError, error }: IconUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragOver, setDragOver] = useState(false)
+  const [busy, setBusy] = useState(false)
 
-  function handleFile(file: File) {
+  async function handleFile(file: File) {
     if (!ALLOWED_TYPES.includes(file.type)) {
       onChange(null)
       onError?.('Icon must be PNG, SVG, JPG, WEBP, or GIF.')
       return
     }
-    if (file.size > MAX_SIZE_BYTES) {
+    if (file.size > MAX_INPUT_BYTES) {
       onChange(null)
-      onError?.(`Icon must be smaller than ${formatSize(MAX_SIZE_BYTES)}.`)
+      onError?.(`Image is too large (max ${formatSize(MAX_INPUT_BYTES)}).`)
       return
     }
 
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const result = e.target?.result as string | undefined
-      if (result) {
+    setBusy(true)
+    try {
+      const dataUrl = await fileToDataUrl(file)
+      // Vector SVGs stay crisp if already small; otherwise rasterize + shrink.
+      if (file.type === 'image/svg+xml' && dataUrlBytes(dataUrl) <= MAX_SIZE_BYTES) {
         onError?.('')
-        onChange(result)
+        onChange(dataUrl)
+        return
       }
+      const fitted = await resizeToFit(dataUrl, TARGET_MAX_DIM, MAX_SIZE_BYTES)
+      if (dataUrlBytes(fitted) > MAX_SIZE_BYTES) {
+        onChange(null)
+        onError?.('Could not compress this image enough. Try a simpler one.')
+        return
+      }
+      onError?.('')
+      onChange(fitted)
+    } catch (err) {
+      onChange(null)
+      onError?.(err instanceof Error ? err.message : 'Could not process this image.')
+    } finally {
+      setBusy(false)
     }
-    reader.readAsDataURL(file)
   }
 
   function onInputChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -121,10 +202,10 @@ export function IconUpload({ value, onChange, onError, error }: IconUploadProps)
             <Upload size={20} />
           </div>
           <p className="text-sm font-medium text-foreground">
-            Click or drag and drop an icon
+            {busy ? 'Optimizing…' : 'Click or drag and drop an icon'}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
-            PNG, SVG, JPG, WEBP, or GIF. Max {formatSize(MAX_SIZE_BYTES)}.
+            PNG, SVG, JPG, WEBP, or GIF. We resize it for you automatically.
           </p>
         </button>
       )}
