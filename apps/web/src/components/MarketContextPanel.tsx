@@ -147,9 +147,14 @@ export function MarketContextPanel({
         <div className={`rounded-xl ${comp.bg} border ${comp.border} p-4`}>
           <p className={`text-sm font-medium ${comp.color} mb-1`}>{comp.text}</p>
           <p className="text-xs text-muted-foreground">
-            At {formatCents(Math.round(bidCpm * 100))} CPM, your estimated win rate is{' '}
-            <span className="text-foreground font-medium">{data.winRateEstimate}%</span> against{' '}
-            {data.activeCampaigns} active campaign{data.activeCampaigns === 1 ? '' : 's'}.
+            {data.activeCampaigns === 0 ? (
+              <>No competing campaigns in these contexts yet, so at{' '}
+                {formatCents(Math.round(bidCpm * 100))} CPM your bid would win the available inventory.</>
+            ) : (
+              <>At {formatCents(Math.round(bidCpm * 100))} CPM, your estimated win rate is{' '}
+                <span className="text-foreground font-medium">{data.winRateEstimate}%</span> against{' '}
+                {data.activeCampaigns} active campaign{data.activeCampaigns === 1 ? '' : 's'}.</>
+            )}
           </p>
         </div>
       )}

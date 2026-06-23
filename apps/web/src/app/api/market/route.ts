@@ -76,16 +76,26 @@ export async function POST(req: NextRequest) {
   // Suggested bid is the 75th percentile, floored at the market floor.
   const suggestedBid = Math.max(floorCpm, percentile(bids, 75))
 
-  // Competitiveness is an obfuscated signal, not exact market data.
+  // Win-rate estimate: the share of competing bids your max CPM would beat in the
+  // auction. Ties (an equal max bid) are broken by predicted quality, so they count
+  // as roughly half a win instead of a loss; with no competitors your bid is
+  // uncontested. Competitiveness is derived FROM the win rate so the label and colour
+  // always agree with it (a high win rate is a low-competition, "likely to win" case).
   let competitiveness: 'low' | 'medium' | 'high' | 'very-high' = 'low'
   let winRateEstimate = 0
-  if (bidCpm > 0 && bids.length > 0) {
-    const lowerBids = bids.filter((b) => b < bidCpm).length
-    winRateEstimate = Math.round((lowerBids / bids.length) * 100)
-    if (winRateEstimate >= 80) competitiveness = 'very-high'
-    else if (winRateEstimate >= 60) competitiveness = 'high'
-    else if (winRateEstimate >= 40) competitiveness = 'medium'
-    else competitiveness = 'low'
+  if (bidCpm > 0) {
+    if (bids.length === 0) {
+      winRateEstimate = 100
+      competitiveness = 'low'
+    } else {
+      const beaten = bids.filter((b) => b < bidCpm).length
+      const tied = bids.filter((b) => b === bidCpm).length
+      winRateEstimate = Math.round(((beaten + tied * 0.5) / bids.length) * 100)
+      if (winRateEstimate >= 75) competitiveness = 'low'
+      else if (winRateEstimate >= 45) competitiveness = 'medium'
+      else if (winRateEstimate >= 20) competitiveness = 'high'
+      else competitiveness = 'very-high'
+    }
   }
 
   return NextResponse.json({
