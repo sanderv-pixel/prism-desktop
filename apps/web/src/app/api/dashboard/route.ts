@@ -149,7 +149,9 @@ export async function GET() {
     // volume. The raw `impressions` row scan above is capped at 1000 rows, which
     // silently dropped recent days (incl. today) for high-volume creators.
     // Cast: this function is newer than the checked-in generated Supabase types.
-    const rpc = admin.rpc as unknown as (
+    // `.bind(admin)` is required: a bare `admin.rpc` reference loses its `this`,
+    // so the method reads `this.rest` on undefined and throws ("reading 'rest'").
+    const rpc = admin.rpc.bind(admin) as unknown as (
       fn: string,
       args: Record<string, unknown>
     ) => Promise<{ data: unknown }>
