@@ -44,7 +44,9 @@ jobs:
           security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | sed s/\"//g)
           rm -f "$RUNNER_TEMP/id.p12"
           echo "✓ signing identity ready"
-          security find-identity -v -p codesigning "$KEYCHAIN" | grep "Prism Overlay Signing"
+          # Informational only: a self-signed cert is not "valid" (-v) in a fresh
+          # keychain, but codesign can still sign by name with it.
+          security find-identity -p codesigning "$KEYCHAIN" | grep "Prism Overlay Signing" || true
 
       - name: Build signed release (stable identity, never ad-hoc)
         working-directory: apps/overlay-macos
