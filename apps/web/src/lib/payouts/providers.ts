@@ -434,10 +434,103 @@ export const bankTransferProvider: PayoutProvider = {
   },
 }
 
+// PayPal provider: pays out to a PayPal account by email via the PayPal Payouts
+// API. Recipient setup only needs a valid email; the API credentials are
+// enforced at send time (so creators can save the method before payouts are
+// wired), mirroring how an unconfigured provider fails gracefully.
+export const paypalProvider: PayoutProvider = {
+  name: 'paypal',
+
+  validate(details) {
+    const errors: string[] = []
+    const email = details.paypalEmail
+    if (
+      typeof email !== 'string' ||
+      !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())
+    ) {
+      errors.push('A valid PayPal email is required')
+    }
+    return errors
+  },
+
+  async send({ payoutId, amountCents, currency, recipientDetails, reference }) {
+    const clientId = process.env.PAYPAL_CLIENT_ID
+    const clientSecret = process.env.PAYPAL_CLIENT_SECRET
+    const baseUrl = process.env.PAYPAL_API_URL || 'https://api-m.paypal.com'
+
+    if (!clientId || !clientSecret) {
+      throw new Error('PayPal is not configured')
+    }
+
+    const tokenRes = await fetch(`${baseUrl}/v1/oauth2/token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Authorization:
+          'Basic ' + Buffer.from(`${clientId}:${clientSecret}`).toString('base64'),
+      },
+      body: 'grant_type=client_credentials',
+    })
+
+    if (!tokenRes.ok) {
+      const text = await tokenRes.text()
+      throw new Error(`PayPal auth failed: ${text}`)
+    }
+
+    const tokenData = (await tokenRes.json()) as { access_token: string }
+
+    const payoutRes = await fetch(`${baseUrl}/v1/payments/payouts`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${tokenData.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        sender_batch_header: {
+          sender_batch_id: payoutId,
+          email_subject: 'You have a Prism payout',
+          email_message: reference || `Prism payout ${payoutId}`,
+        },
+        items: [
+          {
+            recipient_type: 'EMAIL',
+            amount: {
+              value: (amountCents / 100).toFixed(2),
+              currency: (currency || 'USD').toUpperCase(),
+            },
+            receiver: String(recipientDetails.paypalEmail),
+            sender_item_id: payoutId,
+            note: reference || `Prism payout ${payoutId}`,
+          },
+        ],
+      }),
+    })
+
+    const payoutJson = (await payoutRes.json()) as {
+      batch_header?: { payout_batch_id?: string }
+      message?: string
+    }
+
+    if (!payoutRes.ok) {
+      throw new Error(
+        `PayPal payout failed: ${payoutJson.message || JSON.stringify(payoutJson)}`
+      )
+    }
+
+    const batchId = payoutJson.batch_header?.payout_batch_id
+    if (!batchId) {
+      throw new Error('PayPal did not return a payout batch ID')
+    }
+
+    return { providerPayoutId: batchId, response: payoutJson }
+  },
+}
+
 export const payoutProviders: Record<string, PayoutProvider> = {
   wise: wiseProvider,
   payoneer: payoneerProvider,
   bank_transfer: bankTransferProvider,
+  paypal: paypalProvider,
 }
 
 export function getProvider(name?: string | null): PayoutProvider | undefined {

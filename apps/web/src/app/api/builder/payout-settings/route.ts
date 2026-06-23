@@ -8,7 +8,7 @@ import { logAudit } from '@/lib/audit'
 
 export const dynamic = 'force-dynamic'
 
-const ProviderSchema = z.enum(['wise', 'payoneer', 'bank_transfer'])
+const ProviderSchema = z.enum(['wise', 'payoneer', 'bank_transfer', 'paypal'])
 
 const PayoutSettingsSchema = z.object({
   provider: ProviderSchema,

@@ -2,29 +2,30 @@
 
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/Button'
-import { AlertCircle, CheckCircle2, Loader2, Shield } from 'lucide-react'
+import {
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  Shield,
+  Landmark,
+  CreditCard,
+  Wallet,
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import '@/components/dashboard/dashboard-dark.css'
 
-type Provider = 'bank_transfer' | 'wise' | 'payoneer'
+type Provider = 'bank_transfer' | 'payoneer' | 'paypal'
 
-const PROVIDER_LABELS: Record<Provider, string> = {
-  bank_transfer: 'Bank account',
-  wise: 'Wise (bank transfer)',
-  payoneer: 'Payoneer',
-}
+const PROVIDERS: { id: Provider; label: string; desc: string; Icon: LucideIcon }[] = [
+  { id: 'bank_transfer', label: 'Bank account', desc: 'Direct to your bank, encrypted and secure.', Icon: Landmark },
+  { id: 'payoneer', label: 'Payoneer', desc: 'Receive to your Payoneer account or bank.', Icon: CreditCard },
+  { id: 'paypal', label: 'PayPal', desc: 'Get paid to your PayPal balance by email.', Icon: Wallet },
+]
 
-const PROVIDER_DESCRIPTIONS: Record<Provider, string> = {
-  bank_transfer: 'Receive directly to your bank account. Your details are encrypted in transit and stored securely.',
-  wise: 'Receive via Wise to your bank account.',
-  payoneer: 'Receive to your Payoneer account or bank.',
-}
+const UI_PROVIDERS: Provider[] = ['bank_transfer', 'payoneer', 'paypal']
 
 function isMasked(value: string): boolean {
   return value.includes('•')
-}
-
-function maskPlaceholder(value: string): string {
-  return value
 }
 
 interface PayoutMethodFormProps {
@@ -33,10 +34,9 @@ interface PayoutMethodFormProps {
 }
 
 /**
- * Reusable payout-method setup form. Same logic and fields as before; rendered
- * both on /dashboard/payout-method and inside the dashboard "Set up payouts"
- * modal. All token-based styling, so it inherits the dark theme from its
- * `.dash-dark` wrapper.
+ * Reusable payout-method setup form. Rendered both on /dashboard/payout-method
+ * and inside the dashboard "Set up payouts" modal. Token-based styling, so it
+ * inherits the dark theme from its `.dash-dark` wrapper.
  */
 export function PayoutMethodForm({ onSaved }: PayoutMethodFormProps) {
   const [loading, setLoading] = useState(true)
@@ -53,11 +53,15 @@ export function PayoutMethodForm({ onSaved }: PayoutMethodFormProps) {
         const res = await fetch('/api/builder/payout-settings')
         if (!res.ok) throw new Error('Failed to load payout settings')
         const json = (await res.json()) as {
-          provider: Provider | null
+          provider: string | null
           recipientDetails: Record<string, unknown>
           masked?: boolean
         }
-        if (json.provider) setProvider(json.provider)
+        // Only adopt providers that are still offered in the UI (legacy "wise"
+        // accounts fall back to bank account).
+        if (json.provider && UI_PROVIDERS.includes(json.provider as Provider)) {
+          setProvider(json.provider as Provider)
+        }
         const mapped = Object.fromEntries(
           Object.entries(json.recipientDetails).map(([k, v]) => [k, String(v ?? '')])
         )
@@ -82,7 +86,7 @@ export function PayoutMethodForm({ onSaved }: PayoutMethodFormProps) {
   function getFieldProps(key: string) {
     const value = getFieldValue(key)
     if (isMasked(value)) {
-      return { value: '', placeholder: maskPlaceholder(value), onFocus: () => {} }
+      return { value: '', placeholder: value, onFocus: () => {} }
     }
     return { value, placeholder: undefined }
   }
@@ -130,24 +134,10 @@ export function PayoutMethodForm({ onSaved }: PayoutMethodFormProps) {
 
       if (provider === 'bank_transfer') {
         body.recipientDetails = buildBankTransferBody()
-      } else if (provider === 'wise') {
-        body.recipientDetails = {
-          accountHolderName: details.accountHolderName,
-          currency: details.currency?.toUpperCase() || 'USD',
-          country: details.country?.toUpperCase() || undefined,
-          iban: details.iban || undefined,
-          sortCode: details.sortCode || undefined,
-          accountNumber: details.accountNumber || undefined,
-          routingNumber: details.routingNumber || undefined,
-          swiftBic: details.swiftBic || undefined,
-          accountType: details.accountType || 'CHECKING',
-          city: details.city || undefined,
-          postCode: details.postCode || undefined,
-          state: details.state || undefined,
-          addressLine: details.addressLine || undefined,
-        }
-      } else {
+      } else if (provider === 'payoneer') {
         body.recipientDetails = { payoneerEmail: details.payoneerEmail }
+      } else {
+        body.recipientDetails = { paypalEmail: details.paypalEmail }
       }
 
       const res = await fetch('/api/builder/payout-settings', {
@@ -179,50 +169,68 @@ export function PayoutMethodForm({ onSaved }: PayoutMethodFormProps) {
   const country = details.country?.toUpperCase() || 'US'
   const inputCls =
     'w-full rounded-lg border border-border bg-input px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40'
+  const labelCls = 'block text-sm font-medium text-foreground mb-1'
 
   return (
     <>
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-600 flex items-start gap-3 mb-5">
-          <AlertCircle size={18} className="mt-0.5" />
+          <AlertCircle size={18} className="mt-0.5 shrink-0" />
           <p className="text-sm">{error}</p>
         </div>
       )}
 
       {success && (
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-600 flex items-start gap-3 mb-5">
-          <CheckCircle2 size={18} className="mt-0.5" />
+          <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
           <p className="text-sm">Payout method saved.</p>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className="block text-sm font-medium text-foreground mb-2">Payout provider</label>
-          <div className="grid sm:grid-cols-3 gap-3">
-            {(['bank_transfer', 'wise', 'payoneer'] as Provider[]).map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => {
-                  setProvider(p)
-                  setDetails({})
-                }}
-                className={`rounded-xl border p-4 text-left transition ${
-                  provider === p ? 'border-primary bg-violet-50 text-primary' : 'border-border hover:border-primary/50'
-                }`}
-              >
-                <p className="font-medium">{PROVIDER_LABELS[p]}</p>
-                <p className="text-xs text-muted-foreground mt-1">{PROVIDER_DESCRIPTIONS[p]}</p>
-              </button>
-            ))}
+          <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+            Payout method
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {PROVIDERS.map(({ id, label, desc, Icon }) => {
+              const selected = provider === id
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => {
+                    setProvider(id)
+                    setDetails({})
+                  }}
+                  className={`relative rounded-xl border p-4 text-left transition ${
+                    selected
+                      ? 'border-primary bg-violet-50'
+                      : 'border-border hover:border-primary/50 hover:bg-muted/40'
+                  }`}
+                >
+                  <div
+                    className={`w-9 h-9 rounded-lg flex items-center justify-center mb-3 transition ${
+                      selected ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    <Icon size={18} />
+                  </div>
+                  <p className="font-medium text-foreground text-sm">{label}</p>
+                  <p className="text-xs text-muted-foreground mt-1 leading-snug">{desc}</p>
+                  {selected && (
+                    <CheckCircle2 size={16} className="absolute top-3 right-3 text-primary" />
+                  )}
+                </button>
+              )
+            })}
           </div>
         </div>
 
         {provider === 'bank_transfer' && (
           <div className="space-y-4">
             <div className="flex items-start gap-3 rounded-xl bg-emerald-50 border border-emerald-100 p-4">
-              <Shield size={18} className="text-emerald-600 mt-0.5" />
+              <Shield size={18} className="text-emerald-600 mt-0.5 shrink-0" />
               <p className="text-sm text-emerald-700">
                 Your bank details are sent over HTTPS and stored encrypted at rest. Only authorized
                 admins can view full account numbers when processing a payout.
@@ -230,13 +238,13 @@ export function PayoutMethodForm({ onSaved }: PayoutMethodFormProps) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Account holder name</label>
+              <label className={labelCls}>Account holder name</label>
               <input required value={getFieldValue('accountHolderName')} onChange={(e) => updateField('accountHolderName', e.target.value)} className={inputCls} placeholder="Full name on the account" />
             </div>
 
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1">Country</label>
+                <label className={labelCls}>Country</label>
                 <select
                   required
                   value={country}
@@ -253,7 +261,7 @@ export function PayoutMethodForm({ onSaved }: PayoutMethodFormProps) {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1">Currency</label>
+                <label className={labelCls}>Currency</label>
                 <input required value={getFieldValue('currency') || 'USD'} onChange={(e) => updateField('currency', e.target.value)} className={inputCls} placeholder="USD, EUR, GBP..." />
               </div>
             </div>
@@ -262,16 +270,16 @@ export function PayoutMethodForm({ onSaved }: PayoutMethodFormProps) {
               <>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">Routing number</label>
+                    <label className={labelCls}>Routing number</label>
                     <input required {...getFieldProps('routingNumber')} onChange={(e) => updateField('routingNumber', e.target.value)} className={inputCls} placeholder="9 digits" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">Account number</label>
+                    <label className={labelCls}>Account number</label>
                     <input required {...getFieldProps('accountNumber')} onChange={(e) => updateField('accountNumber', e.target.value)} className={inputCls} placeholder="Account number" />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">Account type</label>
+                  <label className={labelCls}>Account type</label>
                   <select value={getFieldValue('accountType') || 'CHECKING'} onChange={(e) => updateField('accountType', e.target.value)} className={inputCls}>
                     <option value="CHECKING">Checking</option>
                     <option value="SAVINGS">Savings</option>
@@ -279,20 +287,20 @@ export function PayoutMethodForm({ onSaved }: PayoutMethodFormProps) {
                 </div>
                 <div className="grid sm:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">City</label>
+                    <label className={labelCls}>City</label>
                     <input value={getFieldValue('city')} onChange={(e) => updateField('city', e.target.value)} className={inputCls} />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">State</label>
+                    <label className={labelCls}>State</label>
                     <input value={getFieldValue('state')} onChange={(e) => updateField('state', e.target.value)} className={inputCls} placeholder="NY" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">ZIP</label>
+                    <label className={labelCls}>ZIP</label>
                     <input value={getFieldValue('postCode')} onChange={(e) => updateField('postCode', e.target.value)} className={inputCls} placeholder="10001" />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">Address line</label>
+                  <label className={labelCls}>Address line</label>
                   <input value={getFieldValue('addressLine')} onChange={(e) => updateField('addressLine', e.target.value)} className={inputCls} placeholder="1 Main St" />
                 </div>
               </>
@@ -301,11 +309,11 @@ export function PayoutMethodForm({ onSaved }: PayoutMethodFormProps) {
             {country === 'GB' && (
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">Sort code</label>
+                  <label className={labelCls}>Sort code</label>
                   <input required {...getFieldProps('sortCode')} onChange={(e) => updateField('sortCode', e.target.value)} className={inputCls} placeholder="12-34-56" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">Account number</label>
+                  <label className={labelCls}>Account number</label>
                   <input required {...getFieldProps('accountNumber')} onChange={(e) => updateField('accountNumber', e.target.value)} className={inputCls} placeholder="Account number" />
                 </div>
               </div>
@@ -313,7 +321,7 @@ export function PayoutMethodForm({ onSaved }: PayoutMethodFormProps) {
 
             {country === 'EU' && (
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1">IBAN</label>
+                <label className={labelCls}>IBAN</label>
                 <input required {...getFieldProps('iban')} onChange={(e) => updateField('iban', e.target.value)} className={inputCls} placeholder="IBAN" />
               </div>
             )}
@@ -321,11 +329,11 @@ export function PayoutMethodForm({ onSaved }: PayoutMethodFormProps) {
             {country === 'OTHER' && (
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">Account number</label>
+                  <label className={labelCls}>Account number</label>
                   <input required {...getFieldProps('accountNumber')} onChange={(e) => updateField('accountNumber', e.target.value)} className={inputCls} placeholder="Account number" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">SWIFT / BIC</label>
+                  <label className={labelCls}>SWIFT / BIC</label>
                   <input required {...getFieldProps('swiftBic')} onChange={(e) => updateField('swiftBic', e.target.value)} className={inputCls} placeholder="SWIFT/BIC" />
                 </div>
               </div>
@@ -333,83 +341,34 @@ export function PayoutMethodForm({ onSaved }: PayoutMethodFormProps) {
           </div>
         )}
 
-        {provider === 'wise' && (
+        {provider === 'payoneer' && (
           <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Account holder name</label>
-              <input required value={getFieldValue('accountHolderName')} onChange={(e) => updateField('accountHolderName', e.target.value)} className={inputCls} placeholder="Full name on the account" />
-            </div>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1">Recipient currency</label>
-                <input required value={getFieldValue('currency') || 'USD'} onChange={(e) => updateField('currency', e.target.value)} className={inputCls} placeholder="USD, EUR, GBP..." />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1">Country (optional)</label>
-                <input value={getFieldValue('country')} onChange={(e) => updateField('country', e.target.value)} className={inputCls} placeholder="US, GB, DE..." />
-              </div>
+            <div className="flex items-start gap-3 rounded-xl bg-violet-50 border border-violet-100 p-4">
+              <CreditCard size={18} className="text-primary mt-0.5 shrink-0" />
+              <p className="text-sm text-muted-foreground">
+                Payouts are sent to your Payoneer account by email. Use the email registered with
+                Payoneer.
+              </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">IBAN</label>
-              <input value={getFieldValue('iban')} onChange={(e) => updateField('iban', e.target.value)} className={inputCls} placeholder="For EUR, GBP, most countries" />
+              <label className={labelCls}>Payoneer email</label>
+              <input required type="email" value={getFieldValue('payoneerEmail')} onChange={(e) => updateField('payoneerEmail', e.target.value)} className={inputCls} placeholder="email@example.com" />
             </div>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1">Account number</label>
-                <input value={getFieldValue('accountNumber')} onChange={(e) => updateField('accountNumber', e.target.value)} className={inputCls} placeholder="Required if no IBAN" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1">Sort code</label>
-                <input value={getFieldValue('sortCode')} onChange={(e) => updateField('sortCode', e.target.value)} className={inputCls} placeholder="UK / NZ etc." />
-              </div>
-            </div>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1">Routing number (USD)</label>
-                <input value={getFieldValue('routingNumber')} onChange={(e) => updateField('routingNumber', e.target.value)} className={inputCls} placeholder="US ACH routing" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1">SWIFT / BIC</label>
-                <input value={getFieldValue('swiftBic')} onChange={(e) => updateField('swiftBic', e.target.value)} className={inputCls} placeholder="International wires" />
-              </div>
-            </div>
-            {getFieldValue('currency')?.toUpperCase() === 'USD' && (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">Account type</label>
-                  <select value={getFieldValue('accountType') || 'CHECKING'} onChange={(e) => updateField('accountType', e.target.value)} className={inputCls}>
-                    <option value="CHECKING">Checking</option>
-                    <option value="SAVINGS">Savings</option>
-                  </select>
-                </div>
-                <div className="grid sm:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">City</label>
-                    <input value={getFieldValue('city')} onChange={(e) => updateField('city', e.target.value)} className={inputCls} />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">State</label>
-                    <input value={getFieldValue('state')} onChange={(e) => updateField('state', e.target.value)} className={inputCls} placeholder="NY" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">ZIP</label>
-                    <input value={getFieldValue('postCode')} onChange={(e) => updateField('postCode', e.target.value)} className={inputCls} placeholder="10001" />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">Address line</label>
-                  <input value={getFieldValue('addressLine')} onChange={(e) => updateField('addressLine', e.target.value)} className={inputCls} placeholder="1 Main St" />
-                </div>
-              </>
-            )}
           </div>
         )}
 
-        {provider === 'payoneer' && (
+        {provider === 'paypal' && (
           <div className="space-y-4">
+            <div className="flex items-start gap-3 rounded-xl bg-violet-50 border border-violet-100 p-4">
+              <Wallet size={18} className="text-primary mt-0.5 shrink-0" />
+              <p className="text-sm text-muted-foreground">
+                Payouts are sent to your PayPal balance by email. Make sure it matches your PayPal
+                account.
+              </p>
+            </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Payoneer email</label>
-              <input required type="email" value={getFieldValue('payoneerEmail')} onChange={(e) => updateField('payoneerEmail', e.target.value)} className={inputCls} placeholder="email@example.com" />
+              <label className={labelCls}>PayPal email</label>
+              <input required type="email" value={getFieldValue('paypalEmail')} onChange={(e) => updateField('paypalEmail', e.target.value)} className={inputCls} placeholder="email@example.com" />
             </div>
           </div>
         )}
