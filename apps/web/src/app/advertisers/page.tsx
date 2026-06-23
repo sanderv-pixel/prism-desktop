@@ -1,3 +1,4 @@
+import { SiteShell } from '@/components/v2/SiteShell'
 import { Button } from '@/components/Button'
 import { SectionHeader } from '@/components/SectionHeader'
 import { LogoCloud } from '@/components/LogoCloud'
@@ -117,7 +118,7 @@ const reportingFeatures = [
 
 export default function AdvertisersPage() {
   return (
-    <>
+    <SiteShell>
       {/* Hero */}
       <section className="relative overflow-hidden bg-white pt-28 pb-16 md:pt-44 md:pb-28">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-violet-100/40 via-transparent to-transparent blur-3xl" />
@@ -525,6 +526,6 @@ export default function AdvertisersPage() {
           </div>
         </div>
       </section>
-    </>
+    </SiteShell>
   )
 }

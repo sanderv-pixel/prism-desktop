@@ -21,6 +21,9 @@ export function NavbarWrapper() {
     '/security',
     '/transparency',
     '/roadmap',
+    '/advertisers',
+    '/developers',
+    '/faq',
   ]
   if (
     (pathname && ownChrome.includes(pathname)) ||

@@ -85,7 +85,7 @@ export function Affiliate() {
           </div>
         </div>
         <div className="cta reveal" style={{ marginTop: 26 }}>
-          <Link className="btn btn-p" href="/developers">
+          <Link className="btn btn-p" href="/auth/sign-up?redirect=/onboarding">
             Grab your referral link →
           </Link>
         </div>

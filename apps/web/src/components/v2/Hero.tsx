@@ -31,7 +31,7 @@ export function Hero() {
               <MagneticLink className="btn btn-p" href="/auth/sign-up?redirect=/onboarding">
                 Start earning →
               </MagneticLink>
-              <Link className="btn btn-g" href="/advertisers">
+              <Link className="btn btn-g" href="/auth/sign-up?redirect=/advertiser/onboarding">
                 Start advertising
               </Link>
             </div>

@@ -1,3 +1,4 @@
+import { SiteShell } from '@/components/v2/SiteShell'
 import { SectionHeader } from '@/components/SectionHeader'
 import { FAQItem } from '@/components/FAQItem'
 import { Button } from '@/components/Button'
@@ -73,6 +74,7 @@ export const metadata = {
 
 export default function FAQPage() {
   return (
+    <SiteShell>
     <section className="section-padding pt-32 bg-muted/30">
       <div className="container-narrow px-4 sm:px-6 lg:px-8">
         <SectionHeader
@@ -95,5 +97,6 @@ export default function FAQPage() {
         </div>
       </div>
     </section>
+    </SiteShell>
   )
 }
