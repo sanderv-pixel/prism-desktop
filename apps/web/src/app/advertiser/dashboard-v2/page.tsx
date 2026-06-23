@@ -182,7 +182,7 @@ export default function AdvertiserDashboardV2() {
     <>
       {rangeSelect}
       <button className="dv-btn dv-btn-g" onClick={() => setShowAddFunds(true)}>Add funds</button>
-      <a className="dv-btn dv-btn-p" href="/advertiser/campaigns">+ New campaign</a>
+      <a className="dv-btn dv-btn-p" href="/advertiser/campaigns/new">+ New campaign</a>
     </>
   )
 
