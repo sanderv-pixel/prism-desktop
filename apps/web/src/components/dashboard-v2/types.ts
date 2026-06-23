@@ -46,6 +46,7 @@ export interface DashboardData {
     context: unknown
     validated: boolean
     paid: boolean
+    notPaidReason: string | null
     payoutCents: number
     createdAt: string
   }[]

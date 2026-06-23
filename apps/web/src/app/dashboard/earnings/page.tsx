@@ -56,21 +56,60 @@ export default function EarningsPage() {
           {recentImpressions.length === 0 ? (
             <div className="dv-empty">No ad views yet.</div>
           ) : (
-            <div className="dv-tablewrap">
-              <table className="dv-table" style={{ minWidth: 480 }}>
-                <thead><tr><th>Advertiser</th><th>Context</th><th>Status</th><th className="r">Earned</th><th className="r">When</th></tr></thead>
-                <tbody>
-                  {recentImpressions.slice(0, 20).map((imp) => (
-                    <tr key={imp.id}>
-                      <td><div className="dv-cmp"><span className="ci">{(imp.advertiserName || '?').charAt(0)}</span><div className="cn">{imp.advertiserName || imp.campaignTitle}</div></div></td>
-                      <td className="mono" style={{ color: 'var(--mut)', fontSize: 11 }}>{describeContext(imp.context, imp.campaignTitle)}</td>
-                      <td><span className={`dv-stat ${imp.validated ? 'live' : 'rev'}`}>{imp.validated ? 'Validated' : 'Pending'}</span></td>
-                      <td className="r" style={{ color: 'var(--emerald)' }}>+{formatCents(imp.payoutCents)}</td>
-                      <td className="r">{timeAgo(imp.createdAt)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {recentImpressions.slice(0, 20).map((imp, i) => {
+                const name = imp.advertiserName || imp.campaignTitle || 'Ad'
+                return (
+                  <div
+                    key={imp.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: '11px 0',
+                      borderTop: i === 0 ? 'none' : '1px solid var(--line)',
+                    }}
+                  >
+                    <span
+                      style={{
+                        flex: 'none', width: 34, height: 34, borderRadius: 10,
+                        background: imp.paid ? 'rgba(52,211,153,.13)' : 'rgba(255,255,255,.05)',
+                        color: imp.paid ? 'var(--emerald)' : 'var(--mut)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontWeight: 600, fontSize: 14,
+                      }}
+                    >
+                      {name.charAt(0).toUpperCase()}
+                    </span>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontSize: 13.5, color: '#fff', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {name}
+                      </div>
+                      <div style={{ fontSize: 11.5, color: 'var(--mut)', marginTop: 1 }}>
+                        {describeContext(imp.context, imp.campaignTitle)} · {timeAgo(imp.createdAt)}
+                      </div>
+                    </div>
+                    <div style={{ flex: 'none', maxWidth: 170, textAlign: 'right' }}>
+                      {imp.paid ? (
+                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--emerald)' }}>
+                          +{formatCents(imp.payoutCents)}
+                        </div>
+                      ) : (
+                        <span
+                          style={{
+                            display: 'inline-block', fontSize: 11, fontWeight: 600,
+                            color: '#fcd34d', background: 'rgba(251,191,36,.12)',
+                            padding: '4px 10px', borderRadius: 9, lineHeight: 1.35,
+                          }}
+                          title="Why this view did not pay"
+                        >
+                          {imp.notPaidReason || 'Not billable'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
