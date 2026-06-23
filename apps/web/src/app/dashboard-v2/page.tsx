@@ -23,6 +23,7 @@ import { ActivityFeed } from '@/components/dashboard-v2/ActivityFeed'
 import { PayoutProgress } from '@/components/dashboard-v2/PayoutProgress'
 import { ReferralCard } from '@/components/dashboard-v2/ReferralCard'
 import { DevicesCard, type DeviceInfo } from '@/components/dashboard-v2/DevicesCard'
+import { PayoutMethodForm } from '@/components/dashboard/PayoutMethodForm'
 import { formatCents, formatNumber } from '@/components/dashboard-v2/format'
 
 interface ConnectStatus {
@@ -93,6 +94,7 @@ export default function EarnerDashboardV2() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showWithdraw, setShowWithdraw] = useState(false)
+  const [showPayoutSetup, setShowPayoutSetup] = useState(false)
   const [withdrawAmount, setWithdrawAmount] = useState('')
   const [withdrawing, setWithdrawing] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -225,7 +227,7 @@ export default function EarnerDashboardV2() {
           Withdraw {formatCents(stats.balanceCents)}
         </button>
       ) : (
-        <a className="dv-btn dv-btn-p" href="/dashboard/payout-method">Set up payouts</a>
+        <button className="dv-btn dv-btn-p" onClick={() => setShowPayoutSetup(true)}>Set up payouts</button>
       )}
     </>
   )
@@ -317,6 +319,21 @@ export default function EarnerDashboardV2() {
                 {withdrawing ? 'Submitting…' : 'Withdraw'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showPayoutSetup && (
+        <div className="dv-modalbg" onClick={() => setShowPayoutSetup(false)}>
+          <div
+            className="dv-modal dash-dark"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: 600, maxHeight: '85vh', overflowY: 'auto', background: '#0c0c14', backgroundImage: 'none' }}
+          >
+            <button className="dv-modalx" onClick={() => setShowPayoutSetup(false)} aria-label="Close"><X size={18} /></button>
+            <h3>Set up your payout method</h3>
+            <p>Choose how you want to receive your earnings. Minimum payout is $20.</p>
+            <PayoutMethodForm onSaved={() => { setShowPayoutSetup(false); fetchDashboard() }} />
           </div>
         </div>
       )}
