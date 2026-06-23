@@ -5,7 +5,13 @@ import { kvGet, kvSet } from '@/lib/redis'
 // A rolling, server-derived challenge forces sequential live round-trips, defeating
 // precomputed/batched beats.
 
-export const HB_INTERVAL_MS = 1000
+// 2s cadence: heartbeats are the heaviest Redis traffic (a few commands per beat per
+// active viewer), so doubling the interval roughly halves that load and cost. The
+// interval is carried inside each impression token, so this only affects newly issued
+// tokens; in-flight 1s sessions keep validating at their own cadence. Trade-off: the
+// minimum dwell to validate a view rises from ~1s to ~2s, which is negligible for
+// thinking-state placements that typically last several seconds.
+export const HB_INTERVAL_MS = 2000
 export const HB_MIN_BEATS = 2
 export const HB_MIN_VIEW_MS = 800 // mirrors impressions MIN_ATTENTION_MS
 export const HB_TOKEN_TTL_SECONDS = 600 // ~10 min max session; also the Redis TTL

@@ -218,7 +218,13 @@ export async function POST(req: NextRequest) {
     const now = new Date()
     const { data, error } = await supabase
       .from('campaigns')
-      .select('*')
+      // Only the columns the auction actually reads, not select('*'): smaller payload
+      // and parse on the hot path as the active-campaign set grows.
+      .select(
+        'id, advertiser_id, bid_type, budget_cents, click_count, contexts, end_date, ' +
+        'frequency_cap, frequency_window_hours, impression_count, max_bid_cpc, max_bid_cpm, ' +
+        'spent_cents, start_date, target_countries, target_sources, brand_name, copy, icon_url, url'
+      )
       .eq('status', 'active')
       .in('objective', ['awareness', 'traffic'])
       .in('bid_type', ['cpm', 'cpc'])
