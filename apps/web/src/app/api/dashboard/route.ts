@@ -144,6 +144,17 @@ export async function GET() {
       return d >= sixtyDaysAgo && d < thirtyDaysAgo
     })
 
+    // The daily chart / by-tool views reflect activity as it happens: include
+    // pending (not-yet-validated) impressions so today shows up while you are
+    // actively earning. Held impressions are still excluded. Balances and the
+    // headline KPIs stay validated-only (see eligibleRecent above).
+    const chartRecent = impressions.filter(
+      (i) => !i.payout_hold && new Date(i.created_at) >= thirtyDaysAgo
+    )
+    const chartReferralRecent = referralImpressions.filter(
+      (i) => !i.payout_hold && new Date(i.created_at) >= thirtyDaysAgo
+    )
+
     // Lifetime earnings come from an uncapped SQL aggregate, not the 60-day row
     // scan above: the balance must include all-time own earnings and lifelong
     // referral commission, and must not be truncated by the 1000-row fetch cap.
@@ -206,7 +217,7 @@ export async function GET() {
       dailyImpressions[key] = 0
     }
 
-    for (const imp of eligibleRecent) {
+    for (const imp of chartRecent) {
       const key = imp.created_at.split('T')[0]
       if (dailyEarnings[key] !== undefined) {
         dailyEarnings[key] += imp.payout_millicents / 100000
@@ -214,7 +225,7 @@ export async function GET() {
       }
     }
 
-    for (const imp of eligibleReferralRecent) {
+    for (const imp of chartReferralRecent) {
       const key = imp.created_at.split('T')[0]
       if (dailyEarnings[key] !== undefined) {
         dailyEarnings[key] += imp.referrer_payout_millicents / 100000
@@ -222,7 +233,7 @@ export async function GET() {
     }
 
     const toolBreakdown: Record<string, { count: number; earnings: number }> = {}
-    for (const imp of eligibleRecent) {
+    for (const imp of chartRecent) {
       let tool = 'Unknown'
       if (typeof imp.context === 'string') {
         try {
