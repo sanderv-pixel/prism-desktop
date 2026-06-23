@@ -1229,7 +1229,7 @@
 }
 .v2-root .footgrid {
   display: grid;
-  grid-template-columns: 1.6fr 1fr 1fr 1fr;
+  grid-template-columns: 1.6fr 1fr 1fr;
   gap: 40px;
 }
 @media (max-width: 760px) {

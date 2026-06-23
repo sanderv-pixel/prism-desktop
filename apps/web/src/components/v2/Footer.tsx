@@ -1,13 +1,6 @@
 import Link from 'next/link'
 
 const FOOTER_LINKS: Record<string, { label: string; href: string }[]> = {
-  Product: [
-    { label: 'Install', href: '/onboarding' },
-    { label: 'Earn', href: '/developers' },
-    { label: 'Advertise', href: '/advertisers' },
-    { label: 'Pricing', href: '/pricing' },
-    { label: 'FAQ', href: '/faq' },
-  ],
   Resources: [
     { label: 'Security', href: '/security' },
     { label: 'Transparency', href: '/transparency' },
