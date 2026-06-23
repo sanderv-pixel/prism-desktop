@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { DashboardShell } from '@/components/dashboard/DashboardShell'
+import { useAuth } from '@/hooks/useAuth'
+import { DashboardShellV2 } from '@/components/dashboard-v2/DashboardShellV2'
+import { advertiserNav } from '@/components/dashboard-v2/advertiserNav'
 import { ArrowLeft, Download, Receipt as ReceiptIcon, ArrowDownLeft, ArrowUpRight, Plus } from 'lucide-react'
 import { AutoRechargeSettings } from '@/components/advertiser/AutoRechargeSettings'
 import { AddFundsModal } from '@/components/advertiser/AddFundsModal'
@@ -34,6 +36,9 @@ function fmtDate(iso: string) {
 
 export default function BillingPage() {
   const router = useRouter()
+  const { user } = useAuth()
+  const userName = user?.email ? user.email.split('@')[0] : 'advertiser'
+  const userEmail = user?.email ?? ''
   const [data, setData] = useState<BillingData | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [receipt, setReceipt] = useState<Txn | null>(null)
@@ -52,23 +57,23 @@ export default function BillingPage() {
 
   if (error) {
     return (
-      <DashboardShell>
+      <DashboardShellV2 view="adv" title="Billing" subtitle="Wallet, top-ups, and transactions." nav={advertiserNav('billing')} userName={userName} userEmail={userEmail}>
         <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-red-600">{error}</div>
-      </DashboardShell>
+      </DashboardShellV2>
     )
   }
   if (!data) {
     return (
-      <DashboardShell>
+      <DashboardShellV2 view="adv" title="Billing" subtitle="Wallet, top-ups, and transactions." nav={advertiserNav('billing')} userName={userName} userEmail={userEmail}>
         <div className="flex items-center justify-center h-96 text-muted-foreground">Loading…</div>
-      </DashboardShell>
+      </DashboardShellV2>
     )
   }
 
   const { summary, transactions } = data
 
   return (
-    <DashboardShell>
+    <DashboardShellV2 view="adv" title="Billing" subtitle="Wallet, top-ups, and transactions." nav={advertiserNav('billing')} userName={userName} userEmail={userEmail}>
       <button
         onClick={() => router.push('/advertiser/dashboard')}
         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
@@ -205,7 +210,7 @@ export default function BillingPage() {
       {showAddFunds && (
         <AddFundsModal onClose={() => setShowAddFunds(false)} onFunded={load} />
       )}
-    </DashboardShell>
+    </DashboardShellV2>
   )
 }
 

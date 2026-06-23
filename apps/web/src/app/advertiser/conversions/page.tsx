@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { DashboardShell } from '@/components/dashboard/DashboardShell'
+import { useAuth } from '@/hooks/useAuth'
+import { DashboardShellV2 } from '@/components/dashboard-v2/DashboardShellV2'
+import { advertiserNav } from '@/components/dashboard-v2/advertiserNav'
 import { ArrowLeft, Copy, RefreshCw, Check } from 'lucide-react'
 
 function Code({ children }: { children: string }) {
@@ -29,6 +31,9 @@ function Code({ children }: { children: string }) {
 
 export default function ConversionsPage() {
   const router = useRouter()
+  const { user } = useAuth()
+  const userName = user?.email ? user.email.split('@')[0] : 'advertiser'
+  const userEmail = user?.email ?? ''
   const [key, setKey] = useState<string | null>(null)
 
   useEffect(() => {
@@ -72,7 +77,7 @@ await fetch('${origin}/api/conversions/track', {
 })`
 
   return (
-    <DashboardShell>
+    <DashboardShellV2 view="adv" title="Conversions" subtitle="Track post-click conversions." nav={advertiserNav('conversions')} userName={userName} userEmail={userEmail}>
       <button
         onClick={() => router.push('/advertiser/dashboard')}
         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
@@ -122,6 +127,6 @@ await fetch('${origin}/api/conversions/track', {
           <Code>{curl}</Code>
         </div>
       </div>
-    </DashboardShell>
+    </DashboardShellV2>
   )
 }

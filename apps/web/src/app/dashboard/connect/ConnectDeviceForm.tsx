@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
-import { DashboardShell } from '@/components/dashboard/DashboardShell'
+import { DashboardShellV2 } from '@/components/dashboard-v2/DashboardShellV2'
+import { earnerNav } from '@/components/dashboard-v2/earnerNav'
 import { Button } from '@/components/Button'
 import { Loader2, CheckCircle2, AlertCircle, ArrowLeft } from 'lucide-react'
 
@@ -14,6 +15,8 @@ export default function ConnectDeviceForm() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
+  const userName = user?.email ? user.email.split('@')[0] : 'creator'
+  const userEmail = user?.email ?? ''
   const userId = searchParams.get('userId')
 
   const [status, setStatus] = useState<LinkStatus>('idle')
@@ -70,16 +73,16 @@ export default function ConnectDeviceForm() {
 
   if (authLoading || (!user && !error)) {
     return (
-      <DashboardShell>
+      <DashboardShellV2 view="earn" title="Connect a device" subtitle="Pair the Prism overlay with your account." nav={earnerNav('devices')} userName={userName} userEmail={userEmail}>
         <div className="flex items-center justify-center h-96">
           <Loader2 className="animate-spin text-primary" size={32} />
         </div>
-      </DashboardShell>
+      </DashboardShellV2>
     )
   }
 
   return (
-    <DashboardShell>
+    <DashboardShellV2 view="earn" title="Connect a device" subtitle="Pair the Prism overlay with your account." nav={earnerNav('devices')} userName={userName} userEmail={userEmail}>
       <div className="max-w-xl mx-auto">
         <Link
           href="/dashboard"
@@ -162,6 +165,6 @@ export default function ConnectDeviceForm() {
           </div>
         </div>
       </div>
-    </DashboardShell>
+    </DashboardShellV2>
   )
 }

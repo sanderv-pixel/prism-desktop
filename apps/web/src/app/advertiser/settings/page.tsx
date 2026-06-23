@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { DashboardShell } from '@/components/dashboard/DashboardShell'
+import { useAuth } from '@/hooks/useAuth'
+import { DashboardShellV2 } from '@/components/dashboard-v2/DashboardShellV2'
+import { advertiserNav } from '@/components/dashboard-v2/advertiserNav'
 import { Button } from '@/components/Button'
 import { ArrowLeft, CreditCard, Crosshair, AlertTriangle } from 'lucide-react'
 
@@ -33,6 +35,9 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
 
 export default function SettingsPage() {
   const router = useRouter()
+  const { user } = useAuth()
+  const userName = user?.email ? user.email.split('@')[0] : 'advertiser'
+  const userEmail = user?.email ?? ''
   const [s, setS] = useState<Settings | null>(null)
   const [name, setName] = useState('')
   const [website, setWebsite] = useState('')
@@ -101,14 +106,14 @@ export default function SettingsPage() {
 
   if (!s) {
     return (
-      <DashboardShell>
+      <DashboardShellV2 view="adv" title="Settings" subtitle="Account, brand, and notifications." nav={advertiserNav('settings')} userName={userName} userEmail={userEmail}>
         <div className="flex items-center justify-center h-96 text-muted-foreground">Loading…</div>
-      </DashboardShell>
+      </DashboardShellV2>
     )
   }
 
   return (
-    <DashboardShell>
+    <DashboardShellV2 view="adv" title="Settings" subtitle="Account, brand, and notifications." nav={advertiserNav('settings')} userName={userName} userEmail={userEmail}>
       <button
         onClick={() => router.push('/advertiser/dashboard')}
         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
@@ -246,6 +251,6 @@ export default function SettingsPage() {
           </div>
         </section>
       </div>
-    </DashboardShell>
+    </DashboardShellV2>
   )
 }

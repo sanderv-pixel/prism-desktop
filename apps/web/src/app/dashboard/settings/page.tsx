@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { DashboardShell } from '@/components/dashboard/DashboardShell'
+import { useAuth } from '@/hooks/useAuth'
+import { DashboardShellV2 } from '@/components/dashboard-v2/DashboardShellV2'
+import { earnerNav } from '@/components/dashboard-v2/earnerNav'
 import { Button } from '@/components/Button'
 import { ArrowLeft, Wallet, AlertTriangle } from 'lucide-react'
 
@@ -31,6 +33,9 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
 
 export default function CreatorSettingsPage() {
   const router = useRouter()
+  const { user } = useAuth()
+  const userName = user?.email ? user.email.split('@')[0] : 'creator'
+  const userEmail = user?.email ?? ''
   const [s, setS] = useState<Settings | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -66,14 +71,14 @@ export default function CreatorSettingsPage() {
 
   if (!s) {
     return (
-      <DashboardShell>
+      <DashboardShellV2 view="earn" title="Settings" subtitle="Account and preferences." nav={earnerNav('settings')} userName={userName} userEmail={userEmail}>
         <div className="flex items-center justify-center h-96 text-muted-foreground">Loading…</div>
-      </DashboardShell>
+      </DashboardShellV2>
     )
   }
 
   return (
-    <DashboardShell>
+    <DashboardShellV2 view="earn" title="Settings" subtitle="Account and preferences." nav={earnerNav('settings')} userName={userName} userEmail={userEmail}>
       <button
         onClick={() => router.push('/dashboard')}
         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
@@ -151,6 +156,6 @@ export default function CreatorSettingsPage() {
           </div>
         </section>
       </div>
-    </DashboardShell>
+    </DashboardShellV2>
   )
 }

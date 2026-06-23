@@ -1,6 +1,10 @@
 'use client'
 
 import Link from 'next/link'
+// Token-override + literal remaps so pages built with semantic tokens (bg-card,
+// text-foreground, etc.) render dark inside this shell, the same way they did in
+// the old DashboardShell. Applied to the content area below via `.dash-dark`.
+import '../dashboard/dashboard-dark.css'
 
 export interface NavItem {
   label: string
@@ -121,7 +125,9 @@ export function DashboardShellV2({
               {primary}
             </div>
           </div>
-          {children}
+          <div className="dash-dark" style={{ background: 'transparent', backgroundImage: 'none' }}>
+            {children}
+          </div>
         </main>
       </div>
     </div>

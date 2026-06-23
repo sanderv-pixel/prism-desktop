@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
-import { DashboardShell } from '@/components/dashboard/DashboardShell'
+import { DashboardShellV2 } from '@/components/dashboard-v2/DashboardShellV2'
+import { advertiserNav } from '@/components/dashboard-v2/advertiserNav'
 import { StatCard } from '@/components/dashboard/StatCard'
 import { LineChart } from '@/components/dashboard/LineChart'
 import { BarChart } from '@/components/dashboard/BarChart'
@@ -80,6 +81,8 @@ export default function CampaignAnalyticsPage() {
   const router = useRouter()
   const params = useParams()
   const { user, loading: authLoading } = useAuth()
+  const userName = user?.email ? user.email.split('@')[0] : 'advertiser'
+  const userEmail = user?.email ?? ''
   const id = params.id as string
 
   const [data, setData] = useState<AnalyticsData | null>(null)
@@ -108,18 +111,18 @@ export default function CampaignAnalyticsPage() {
 
   if (authLoading || loading) {
     return (
-      <DashboardShell>
+      <DashboardShellV2 view="adv" title="Campaign analytics" subtitle="Delivery and performance." nav={advertiserNav('campaigns')} userName={userName} userEmail={userEmail}>
         <div className="flex items-center justify-center h-96 text-muted-foreground">
           <Zap size={18} className="animate-pulse text-primary mr-2" />
           Loading analytics…
         </div>
-      </DashboardShell>
+      </DashboardShellV2>
     )
   }
 
   if (error || !data) {
     return (
-      <DashboardShell>
+      <DashboardShellV2 view="adv" title="Campaign analytics" subtitle="Delivery and performance." nav={advertiserNav('campaigns')} userName={userName} userEmail={userEmail}>
         <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-red-600 flex items-start gap-3">
           <AlertCircle size={20} />
           <div>
@@ -127,7 +130,7 @@ export default function CampaignAnalyticsPage() {
             <p className="text-sm opacity-80">{error}</p>
           </div>
         </div>
-      </DashboardShell>
+      </DashboardShellV2>
     )
   }
 
@@ -135,7 +138,7 @@ export default function CampaignAnalyticsPage() {
   const progress = campaign.budgetCents > 0 ? (campaign.spentCents / campaign.budgetCents) * 100 : 0
 
   return (
-    <DashboardShell>
+    <DashboardShellV2 view="adv" title="Campaign analytics" subtitle="Delivery and performance." nav={advertiserNav('campaigns')} userName={userName} userEmail={userEmail}>
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
@@ -206,7 +209,7 @@ export default function CampaignAnalyticsPage() {
         <StatCard
           icon={Target}
           label="CPA"
-          value={totals.conversions > 0 ? formatCents(totals.cpa) : '—'}
+          value={totals.conversions > 0 ? formatCents(totals.cpa) : '-'}
         />
         <StatCard
           icon={Eye}
@@ -234,7 +237,7 @@ export default function CampaignAnalyticsPage() {
           <div>
             <p className="text-sm text-muted-foreground">Bid headroom</p>
             <p className="text-xl font-medium">
-              {totals.cpm > 0 ? `${(campaign.maxBidCpm / totals.cpm).toFixed(1)}x` : '—'}
+              {totals.cpm > 0 ? `${(campaign.maxBidCpm / totals.cpm).toFixed(1)}x` : '-'}
             </p>
           </div>
         </div>
@@ -308,7 +311,7 @@ export default function CampaignAnalyticsPage() {
         </div>
       </div>
 
-      {/* Source breakdown — which app each view came from */}
+      {/* Source breakdown: which app each view came from */}
       <div className="rounded-xl border border-border bg-white p-6">
         <h3 className="text-base font-semibold text-foreground mb-1">Where views came from</h3>
         <p className="text-sm text-muted-foreground mb-6">Impressions by surface (Claude, Cursor, Codex, terminal)</p>
@@ -399,6 +402,6 @@ export default function CampaignAnalyticsPage() {
           )}
         </div>
       </div>
-    </DashboardShell>
+    </DashboardShellV2>
   )
 }

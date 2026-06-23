@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { useAuth } from '@/hooks/useAuth'
-import { DashboardShell } from '@/components/dashboard/DashboardShell'
+import { DashboardShellV2 } from '@/components/dashboard-v2/DashboardShellV2'
+import { advertiserNav } from '@/components/dashboard-v2/advertiserNav'
 import { Button } from '@/components/Button'
 import { StatusBadge } from '@/components/dashboard/StatusBadge'
 import {
@@ -44,6 +45,8 @@ export default function EditCampaignPage() {
   const router = useRouter()
   const params = useParams()
   const { user, loading: authLoading } = useAuth()
+  const userName = user?.email ? user.email.split('@')[0] : 'advertiser'
+  const userEmail = user?.email ?? ''
   const id = params.id as string
 
   const [campaign, setCampaign] = useState<Campaign | null>(null)
@@ -186,24 +189,24 @@ export default function EditCampaignPage() {
 
   if (authLoading || loading) {
     return (
-      <DashboardShell>
+      <DashboardShellV2 view="adv" title="Edit campaign" subtitle="Update creative, budget, and targeting." nav={advertiserNav('campaigns')} userName={userName} userEmail={userEmail}>
         <div className="flex items-center justify-center h-96 text-muted-foreground">
           Loading campaign…
         </div>
-      </DashboardShell>
+      </DashboardShellV2>
     )
   }
 
   if (error || !campaign) {
     return (
-      <DashboardShell>
+      <DashboardShellV2 view="adv" title="Edit campaign" subtitle="Update creative, budget, and targeting." nav={advertiserNav('campaigns')} userName={userName} userEmail={userEmail}>
         <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-600 flex items-start gap-3">
           <AlertCircle size={20} />
           <div>
             <p className="font-medium">{error}</p>
           </div>
         </div>
-      </DashboardShell>
+      </DashboardShellV2>
     )
   }
 
@@ -213,7 +216,7 @@ export default function EditCampaignPage() {
       : 0
 
   return (
-    <DashboardShell>
+    <DashboardShellV2 view="adv" title="Edit campaign" subtitle="Update creative, budget, and targeting." nav={advertiserNav('campaigns')} userName={userName} userEmail={userEmail}>
       <div className="max-w-3xl mx-auto">
         <Button variant="ghost" size="sm" href="/advertiser/dashboard" className="mb-6">
           <ArrowLeft size={16} className="mr-2" />
@@ -319,7 +322,7 @@ export default function EditCampaignPage() {
                 maxLength={14}
                 value={brandName}
                 onChange={(e) => setBrandName(e.target.value)}
-                placeholder="Brand name — leave blank to show none"
+                placeholder="Brand name (leave blank to show none)"
                 className="w-full rounded-lg border border-border bg-input px-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
               />
               <p className="text-xs text-muted-foreground mt-1.5">
@@ -523,6 +526,6 @@ export default function EditCampaignPage() {
           </div>
         </div>
       </div>
-    </DashboardShell>
+    </DashboardShellV2>
   )
 }

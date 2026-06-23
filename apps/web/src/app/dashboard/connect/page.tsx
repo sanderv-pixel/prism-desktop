@@ -1,6 +1,5 @@
 import { Suspense } from 'react'
 import { Loader2 } from 'lucide-react'
-import { DashboardShell } from '@/components/dashboard/DashboardShell'
 import ConnectDeviceForm from './ConnectDeviceForm'
 
 export const metadata = {
@@ -11,11 +10,9 @@ export default function ConnectDevicePage() {
   return (
     <Suspense
       fallback={
-        <DashboardShell>
-          <div className="flex items-center justify-center h-96">
-            <Loader2 className="animate-spin text-primary" size={32} />
-          </div>
-        </DashboardShell>
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#06060b' }}>
+          <Loader2 className="animate-spin" size={32} style={{ color: '#8b5cf6' }} />
+        </div>
       }
     >
       <ConnectDeviceForm />

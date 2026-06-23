@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useAuth } from '@/hooks/useAuth'
-import { DashboardShell } from '@/components/dashboard/DashboardShell'
+import { DashboardShellV2 } from '@/components/dashboard-v2/DashboardShellV2'
+import { advertiserNav } from '@/components/dashboard-v2/advertiserNav'
 import { StatusBadge } from '@/components/dashboard/StatusBadge'
 import { Button } from '@/components/Button'
 import {
@@ -56,6 +57,8 @@ export default function CampaignsPage() {
   const [error, setError] = useState('')
   const [filter, setFilter] = useState('all')
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const userName = user?.email ? user.email.split('@')[0] : 'advertiser'
+  const userEmail = user?.email ?? ''
 
   async function fetchData() {
     try {
@@ -115,23 +118,23 @@ export default function CampaignsPage() {
 
   if (authLoading || loading) {
     return (
-      <DashboardShell>
+      <DashboardShellV2 view="adv" title="Campaigns" subtitle="Manage and monitor your campaigns." nav={advertiserNav('campaigns')} userName={userName} userEmail={userEmail}>
         <div className="flex items-center justify-center h-96 text-muted-foreground">
           <Zap size={18} className="animate-pulse text-primary mr-2" />
           Loading campaigns…
         </div>
-      </DashboardShell>
+      </DashboardShellV2>
     )
   }
 
   if (error || !data) {
     return (
-      <DashboardShell>
+      <DashboardShellV2 view="adv" title="Campaigns" subtitle="Manage and monitor your campaigns." nav={advertiserNav('campaigns')} userName={userName} userEmail={userEmail}>
         <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-600 flex items-start gap-3">
           <AlertCircle size={20} />
           <p>{error}</p>
         </div>
-      </DashboardShell>
+      </DashboardShellV2>
     )
   }
 
@@ -142,7 +145,7 @@ export default function CampaignsPage() {
   }, {} as Record<string, number>)
 
   return (
-    <DashboardShell>
+    <DashboardShellV2 view="adv" title="Campaigns" subtitle="Manage and monitor your campaigns." nav={advertiserNav('campaigns')} userName={userName} userEmail={userEmail}>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
           <p className="eyebrow mb-2">Campaigns</p>
@@ -305,6 +308,6 @@ export default function CampaignsPage() {
           )}
         </div>
       )}
-    </DashboardShell>
+    </DashboardShellV2>
   )
 }

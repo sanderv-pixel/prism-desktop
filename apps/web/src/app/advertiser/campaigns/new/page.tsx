@@ -4,7 +4,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useAuth } from '@/hooks/useAuth'
-import { DashboardShell } from '@/components/dashboard/DashboardShell'
+import { DashboardShellV2 } from '@/components/dashboard-v2/DashboardShellV2'
+import { advertiserNav } from '@/components/dashboard-v2/advertiserNav'
 import { Button } from '@/components/Button'
 import { ArrowLeft, AlertCircle, CheckCircle2, Wallet } from 'lucide-react'
 import { CONTEXT_OPTIONS, PRESETS } from '@/lib/campaign-contexts'
@@ -22,6 +23,8 @@ interface Advertiser {
 export default function NewCampaignPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
+  const userName = user?.email ? user.email.split('@')[0] : 'advertiser'
+  const userEmail = user?.email ?? ''
   const [title, setTitle] = useState('')
   const [copy, setCopy] = useState('')
   const [brandName, setBrandName] = useState('')
@@ -88,11 +91,11 @@ export default function NewCampaignPage() {
 
   if (authLoading) {
     return (
-      <DashboardShell>
+      <DashboardShellV2 view="adv" title="New campaign" subtitle="Launch a new campaign." nav={advertiserNav('campaigns')} userName={userName} userEmail={userEmail}>
         <div className="flex items-center justify-center h-96 text-muted-foreground">
           Loading…
         </div>
-      </DashboardShell>
+      </DashboardShellV2>
     )
   }
 
@@ -159,7 +162,7 @@ export default function NewCampaignPage() {
   }
 
   return (
-    <DashboardShell>
+    <DashboardShellV2 view="adv" title="New campaign" subtitle="Launch a new campaign." nav={advertiserNav('campaigns')} userName={userName} userEmail={userEmail}>
       <div className="max-w-3xl mx-auto">
         <Button variant="ghost" size="sm" href="/advertiser/dashboard" className="mb-6">
           <ArrowLeft size={16} className="mr-2" />
@@ -559,6 +562,6 @@ export default function NewCampaignPage() {
           onFunded={loadAdvertiser}
         />
       )}
-    </DashboardShell>
+    </DashboardShellV2>
   )
 }
