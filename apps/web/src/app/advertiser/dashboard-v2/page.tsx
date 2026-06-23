@@ -186,7 +186,7 @@ export default function AdvertiserDashboardV2() {
         <div className="dv-card">
           <h3>Delivery <span className="meta">impressions · last {chartData.length} days</span></h3>
           <div className="dv-chartwrap">
-            <AreaChartV2 data={imprSeries} avg={clicksScaled} color1="#22d3ee" color2="#ec4899" emptyLabel="No delivery yet" />
+            <AreaChartV2 data={imprSeries} avg={clicksScaled} labels={chartData.map((d) => d.date)} tooltipRows={(i) => [{ label: 'Impressions', value: formatNumber(chartData[i].impressions), color: '#22d3ee' }, { label: 'Clicks', value: formatNumber(chartData[i].clicks), color: '#ec4899' }]} color1="#22d3ee" color2="#ec4899" emptyLabel="No delivery yet" />
           </div>
           <div className="dv-legend">
             <span><i style={{ background: '#22d3ee' }} /> impressions</span>

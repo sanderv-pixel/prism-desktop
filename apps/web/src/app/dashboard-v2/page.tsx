@@ -232,7 +232,7 @@ export default function EarnerDashboardV2() {
         <div className="dv-card" id="earnings" style={{ scrollMarginTop: 24 }}>
           <h3>Earnings <span className="meta">last {chartData.length || 14} days</span></h3>
           <div className="dv-chartwrap">
-            <AreaChartV2 data={earningsSeries} color1="#8b5cf6" color2="#22d3ee" emptyLabel="No earnings yet" />
+            <AreaChartV2 data={earningsSeries} labels={chartData.map((d) => d.date)} tooltipRows={(i) => [{ label: 'Earned', value: `$${chartData[i].earnings.toFixed(2)}`, color: '#8b5cf6' }, { label: 'Ad views', value: formatNumber(chartData[i].impressions), color: '#22d3ee' }]} color1="#8b5cf6" color2="#22d3ee" emptyLabel="No earnings yet" />
           </div>
           <div className="dv-legend">
             <span><i style={{ background: '#8b5cf6' }} /> daily earnings</span>

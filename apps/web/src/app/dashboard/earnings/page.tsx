@@ -46,7 +46,7 @@ export default function EarningsPage() {
 
       <div className="dv-card" style={{ marginTop: 16 }}>
         <h3>Earnings <span className="meta">last {chartData.length || 14} days</span></h3>
-        <div className="dv-chartwrap"><AreaChartV2 data={chartData.map((d) => d.earnings)} color1="#8b5cf6" color2="#22d3ee" emptyLabel="No earnings yet" /></div>
+        <div className="dv-chartwrap"><AreaChartV2 data={chartData.map((d) => d.earnings)} labels={chartData.map((d) => d.date)} tooltipRows={(i) => [{ label: 'Earned', value: `$${chartData[i].earnings.toFixed(2)}`, color: '#8b5cf6' }, { label: 'Ad views', value: formatNumber(chartData[i].impressions), color: '#22d3ee' }]} color1="#8b5cf6" color2="#22d3ee" emptyLabel="No earnings yet" /></div>
         <div className="dv-legend"><span><i style={{ background: '#8b5cf6' }} /> daily earnings</span><span><i style={{ background: '#22d3ee' }} /> 7-day avg</span></div>
       </div>
 
