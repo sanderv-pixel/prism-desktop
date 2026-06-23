@@ -6,6 +6,8 @@ import { validateProductionEnv } from '@/lib/env'
 validateProductionEnv()
 
 const protectedRoutes = [
+  '/dashboard',
+  '/onboarding',
   '/advertiser/dashboard',
   '/advertiser/onboarding',
   '/advertiser/campaigns',
