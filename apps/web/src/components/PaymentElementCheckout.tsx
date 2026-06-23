@@ -127,9 +127,13 @@ export function PaymentElementCheckout({ clientSecret, returnUrl, dark = false, 
     setSubmitting(true)
     setError(null)
 
+    // `redirect: 'if_required'` keeps card payments inline so the success path
+    // below (verify -> credit wallet -> onSuccess) actually runs. Without it,
+    // Stripe redirects to return_url on success and the wallet is never credited.
     const { error: submitError, paymentIntent } = await stripeRef.current.confirmPayment({
       elements: elementsRef.current,
       confirmParams: { return_url: returnUrl },
+      redirect: 'if_required',
     })
 
     if (submitError) {
