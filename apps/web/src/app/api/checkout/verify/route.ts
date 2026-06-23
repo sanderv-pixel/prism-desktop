@@ -109,11 +109,16 @@ export async function POST(req: NextRequest) {
 
     if (creditError) throw creditError
 
-    // Capture the saved card so auto-recharge can charge it off-session later.
+    // Capture the saved card so auto-recharge can charge it off-session later,
+    // but ONLY when the advertiser opted in at checkout (saveCard). A one-time
+    // top-up must not leave a reusable card on file.
+    const optedInToSave = paymentIntent.metadata?.saveCard === 'true'
     const savedPm =
-      typeof paymentIntent.payment_method === 'string'
-        ? paymentIntent.payment_method
-        : paymentIntent.payment_method?.id ?? null
+      optedInToSave
+        ? typeof paymentIntent.payment_method === 'string'
+          ? paymentIntent.payment_method
+          : paymentIntent.payment_method?.id ?? null
+        : null
     const advUpdate: {
       status: string
       subscription_status: string

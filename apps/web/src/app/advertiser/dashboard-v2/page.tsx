@@ -14,6 +14,7 @@ import {
 import '../../dashboard-v2/dashboard-v2.css'
 import { useAuth } from '@/hooks/useAuth'
 import { DashboardShellV2 } from '@/components/dashboard-v2/DashboardShellV2'
+import { AddFundsModal } from '@/components/advertiser/AddFundsModal'
 import { KpiCard } from '@/components/dashboard-v2/KpiCard'
 import { AreaChartV2 } from '@/components/dashboard-v2/AreaChartV2'
 import { BarBreakdown } from '@/components/dashboard-v2/BarBreakdown'
@@ -70,6 +71,7 @@ export default function AdvertiserDashboardV2() {
   const [error, setError] = useState('')
   const [range, setRange] = useState<RangeValue>(30)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [showAddFunds, setShowAddFunds] = useState(false)
 
   const fetchStats = useCallback(async () => {
     try {
@@ -160,7 +162,7 @@ export default function AdvertiserDashboardV2() {
   const primary = (
     <>
       {rangeSelect}
-      <a className="dv-btn dv-btn-g" href="/advertiser/billing">Add funds</a>
+      <button className="dv-btn dv-btn-g" onClick={() => setShowAddFunds(true)}>Add funds</button>
       <a className="dv-btn dv-btn-p" href="/advertiser/campaigns">+ New campaign</a>
     </>
   )
@@ -205,6 +207,10 @@ export default function AdvertiserDashboardV2() {
       </div>
 
       <div className="dv-ftnote">Real campaign data · {range === 'all' ? 'all time' : `last ${range} days`}</div>
+
+      {showAddFunds && (
+        <AddFundsModal onClose={() => setShowAddFunds(false)} onFunded={fetchStats} />
+      )}
     </DashboardShellV2>
   )
 }

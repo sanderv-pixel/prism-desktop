@@ -22,6 +22,9 @@ const CheckoutSchema = z.object({
   amountCents: z.number().int().min(1000).max(10000000).optional(),
   amount: z.number().int().min(1).max(10000000).optional(),
   currency: z.string().length(3).optional(),
+  // Opt-in only: when true, the card is saved for off-session auto top-ups.
+  // Defaults to false so a top-up is a one-time charge with nothing stored.
+  saveCard: z.boolean().optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -64,7 +67,7 @@ export async function POST(req: NextRequest) {
       throw new ApiError(400, message, 'INVALID_BODY', details)
     }
 
-    const { mode = 'payment', uiMode = 'hosted', amountCents, amount, currency: requestedCurrency } = parseResult.data
+    const { mode = 'payment', uiMode = 'hosted', amountCents, amount, currency: requestedCurrency, saveCard = false } = parseResult.data
 
     let customerId = advertiser.stripe_customer_id
     if (!customerId) {
@@ -129,6 +132,7 @@ export async function POST(req: NextRequest) {
       baseUsdCents: String(baseUsdCents),
       currency: currency.toUpperCase(),
       rate: String(rate),
+      saveCard: String(saveCard),
     }
 
     let clientSecret: string | null = null
@@ -140,8 +144,9 @@ export async function POST(req: NextRequest) {
         amount: depositCents,
         currency,
         automatic_payment_methods: { enabled: true },
-        // Save the card to the customer so auto-recharge can charge it off-session.
-        setup_future_usage: 'off_session',
+        // Save the card for off-session auto top-ups ONLY when the advertiser
+        // explicitly opted in. Default is a one-time charge that stores nothing.
+        ...(saveCard ? { setup_future_usage: 'off_session' as const } : {}),
         description: 'Prism campaign budget deposit',
         metadata,
       })
@@ -151,8 +156,8 @@ export async function POST(req: NextRequest) {
         customer: customerId,
         mode: 'payment',
         payment_method_types: ['card', 'link'],
-        // Save the card to the customer so auto-recharge can charge it off-session.
-        payment_intent_data: { setup_future_usage: 'off_session' },
+        // Save the card for off-session auto top-ups ONLY when opted in.
+        ...(saveCard ? { payment_intent_data: { setup_future_usage: 'off_session' as const } } : {}),
         line_items: [
           {
             price_data: {

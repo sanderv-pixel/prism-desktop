@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { DashboardShell } from '@/components/dashboard/DashboardShell'
-import { ArrowLeft, Download, Receipt as ReceiptIcon, ArrowDownLeft, ArrowUpRight } from 'lucide-react'
+import { ArrowLeft, Download, Receipt as ReceiptIcon, ArrowDownLeft, ArrowUpRight, Plus } from 'lucide-react'
 import { AutoRechargeSettings } from '@/components/advertiser/AutoRechargeSettings'
+import { AddFundsModal } from '@/components/advertiser/AddFundsModal'
 
 interface Txn {
   id: string
@@ -36,13 +37,18 @@ export default function BillingPage() {
   const [data, setData] = useState<BillingData | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [receipt, setReceipt] = useState<Txn | null>(null)
+  const [showAddFunds, setShowAddFunds] = useState(false)
 
-  useEffect(() => {
+  const load = useCallback(() => {
     fetch('/api/advertiser/billing')
       .then((r) => (r.ok ? r.json() : Promise.reject(r)))
       .then(setData)
       .catch(() => setError('Could not load billing history.'))
   }, [])
+
+  useEffect(() => {
+    load()
+  }, [load])
 
   if (error) {
     return (
@@ -70,7 +76,15 @@ export default function BillingPage() {
         <ArrowLeft size={16} /> Back to dashboard
       </button>
 
-      <h1 className="text-2xl md:text-3xl font-semibold text-foreground mb-6">Billing</h1>
+      <div className="flex items-center justify-between gap-4 mb-6">
+        <h1 className="text-2xl md:text-3xl font-semibold text-foreground">Billing</h1>
+        <button
+          onClick={() => setShowAddFunds(true)}
+          className="inline-flex items-center gap-2 rounded-lg bg-violet-600 text-white px-4 py-2.5 text-sm font-medium hover:bg-violet-700"
+        >
+          <Plus size={16} /> Add funds
+        </button>
+      </div>
 
       <div className="grid sm:grid-cols-3 gap-4 mb-8">
         <div className="rounded-xl border bg-card p-5">
@@ -136,7 +150,7 @@ export default function BillingPage() {
                         <ReceiptIcon size={13} /> View
                       </button>
                     ) : (
-                      <span className="text-muted-foreground">—</span>
+                      <span className="text-muted-foreground">-</span>
                     )}
                   </td>
                 </tr>
@@ -187,6 +201,9 @@ export default function BillingPage() {
             </div>
           </div>
         </div>
+      )}
+      {showAddFunds && (
+        <AddFundsModal onClose={() => setShowAddFunds(false)} onFunded={load} />
       )}
     </DashboardShell>
   )

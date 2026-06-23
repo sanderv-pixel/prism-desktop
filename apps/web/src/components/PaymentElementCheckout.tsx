@@ -7,9 +7,14 @@ import { Zap } from 'lucide-react'
 interface PaymentElementCheckoutProps {
   clientSecret: string
   returnUrl: string
+  /** Render the Stripe Element on a dark surface (for the dark dashboard modal). */
+  dark?: boolean
+  /** Called after a successful non-redirect payment + wallet credit, instead of
+   *  navigating to returnUrl. Lets a modal show its own success state. */
+  onSuccess?: () => void
 }
 
-export function PaymentElementCheckout({ clientSecret, returnUrl }: PaymentElementCheckoutProps) {
+export function PaymentElementCheckout({ clientSecret, returnUrl, dark = false, onSuccess }: PaymentElementCheckoutProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [ready, setReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -32,43 +37,49 @@ export function PaymentElementCheckout({ clientSecret, returnUrl }: PaymentEleme
         if (!stripe || !mounted) return
 
         stripeRef.current = stripe
+        const appearance: Record<string, unknown> = dark
+          ? {
+              theme: 'night',
+              variables: {
+                colorPrimary: '#8b5cf6',
+                colorBackground: '#0c0c14',
+                colorText: '#e6e8ee',
+                colorTextSecondary: '#9aa0ad',
+                colorDanger: '#f87171',
+                fontFamily: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
+                spacingUnit: '4px',
+                borderRadius: '10px',
+              },
+              rules: {
+                '.Tab': { border: '1px solid rgba(255,255,255,0.12)', boxShadow: 'none' },
+                '.Tab--selected': { borderColor: '#8b5cf6', boxShadow: '0 0 0 1.5px #8b5cf6' },
+                '.Input': { borderColor: 'rgba(255,255,255,0.14)', backgroundColor: 'rgba(255,255,255,0.03)', boxShadow: 'none' },
+                '.Input:focus': { borderColor: '#8b5cf6', boxShadow: '0 0 0 1px #8b5cf6' },
+              },
+            }
+          : {
+              theme: 'stripe',
+              variables: {
+                colorPrimary: '#7c3aed',
+                colorBackground: '#ffffff',
+                colorText: '#0f172a',
+                colorDanger: '#ef4444',
+                colorSuccess: '#10b981',
+                fontFamily: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
+                spacingUnit: '4px',
+                borderRadius: '10px',
+              },
+              rules: {
+                '.Tab': { border: '1px solid #e2e8f0', boxShadow: 'none' },
+                '.Tab--selected': { borderColor: '#7c3aed', boxShadow: '0 0 0 1.5px #7c3aed' },
+                '.Input': { borderColor: '#e2e8f0', boxShadow: 'none' },
+                '.Input:focus': { borderColor: '#7c3aed', boxShadow: '0 0 0 1px #7c3aed' },
+                '.CheckboxInput--checked': { backgroundColor: '#7c3aed', borderColor: '#7c3aed' },
+              },
+            }
         const elements = stripe.elements({
           clientSecret,
-          appearance: {
-            theme: 'stripe',
-            variables: {
-              colorPrimary: '#7c3aed',
-              colorBackground: '#ffffff',
-              colorText: '#0f172a',
-              colorDanger: '#ef4444',
-              colorSuccess: '#10b981',
-              fontFamily: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
-              spacingUnit: '4px',
-              borderRadius: '10px',
-            },
-            rules: {
-              '.Tab': {
-                border: '1px solid #e2e8f0',
-                boxShadow: 'none',
-              },
-              '.Tab--selected': {
-                borderColor: '#7c3aed',
-                boxShadow: '0 0 0 1.5px #7c3aed',
-              },
-              '.Input': {
-                borderColor: '#e2e8f0',
-                boxShadow: 'none',
-              },
-              '.Input:focus': {
-                borderColor: '#7c3aed',
-                boxShadow: '0 0 0 1px #7c3aed',
-              },
-              '.CheckboxInput--checked': {
-                backgroundColor: '#7c3aed',
-                borderColor: '#7c3aed',
-              },
-            },
-          },
+          appearance,
           loader: 'auto',
         })
         elementsRef.current = elements
@@ -149,6 +160,10 @@ export function PaymentElementCheckout({ clientSecret, returnUrl }: PaymentEleme
       }
     }
 
+    if (onSuccess) {
+      onSuccess()
+      return
+    }
     window.location.href = returnUrl
   }
 
@@ -156,8 +171,11 @@ export function PaymentElementCheckout({ clientSecret, returnUrl }: PaymentEleme
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="relative min-h-[220px]">
         {!ready && !error && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-white">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div
+            className="absolute inset-0 z-10 flex items-center justify-center"
+            style={{ background: dark ? '#0c0c14' : '#ffffff' }}
+          >
+            <div className={`flex items-center gap-2 text-sm ${dark ? 'text-white/70' : 'text-muted-foreground'}`}>
               <Zap size={16} className="animate-pulse text-primary" />
               Loading payment form…
             </div>
@@ -167,7 +185,13 @@ export function PaymentElementCheckout({ clientSecret, returnUrl }: PaymentEleme
       </div>
 
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+        <div
+          className={
+            dark
+              ? 'rounded-lg border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-300'
+              : 'rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600'
+          }
+        >
           {error}
         </div>
       )}
