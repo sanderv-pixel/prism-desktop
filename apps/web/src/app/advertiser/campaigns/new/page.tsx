@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useAuth } from '@/hooks/useAuth'
@@ -11,6 +11,7 @@ import { CONTEXT_OPTIONS, PRESETS } from '@/lib/campaign-contexts'
 import { MarketContextPanel } from '@/components/MarketContextPanel'
 import { IconUpload } from '@/components/IconUpload'
 import { AdPreview } from '@/components/AdPreview'
+import { AddFundsModal } from '@/components/advertiser/AddFundsModal'
 
 interface Advertiser {
   id: string
@@ -42,36 +43,48 @@ export default function NewCampaignPage() {
   const [iconError, setIconError] = useState('')
   const [success, setSuccess] = useState(false)
   const [advertiser, setAdvertiser] = useState<Advertiser | null>(null)
+  const [showAddFunds, setShowAddFunds] = useState(false)
+
+  const loadAdvertiser = useCallback(async () => {
+    try {
+      const res = await fetch('/api/advertisers')
+      if (!res.ok) {
+        if (res.status === 404) {
+          router.push('/advertiser/onboarding')
+          return
+        }
+        throw new Error('Failed to load advertiser')
+      }
+      const data = await res.json()
+      setAdvertiser({
+        id: data.id,
+        status: data.status,
+        balance_cents: data.balance_cents ?? 0,
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load advertiser'
+      setError(message)
+      toast.error(message)
+    }
+  }, [router])
 
   useEffect(() => {
-    async function loadAdvertiser() {
-      try {
-        const res = await fetch('/api/advertisers')
-        if (!res.ok) {
-          if (res.status === 404) {
-            router.push('/advertiser/onboarding')
-            return
-          }
-          throw new Error('Failed to load advertiser')
-        }
-        const data = await res.json()
-        setAdvertiser({
-          id: data.id,
-          status: data.status,
-          balance_cents: data.balance_cents ?? 0,
-        })
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to load advertiser'
-        setError(message)
-        toast.error(message)
-      }
-    }
     if (!authLoading) loadAdvertiser()
-  }, [authLoading, router])
+  }, [authLoading, loadAdvertiser])
+
+  // Refresh the balance when the tab regains focus, so a top-up made elsewhere
+  // (billing page, another tab) clears the gate without a manual reload.
+  useEffect(() => {
+    const onFocus = () => { if (!authLoading) loadAdvertiser() }
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
+  }, [authLoading, loadAdvertiser])
 
   const budgetCents = Math.round(parseFloat(budget || '0') * 100)
   const balanceCents = advertiser?.balance_cents ?? 0
-  const canAfford = advertiser?.status === 'active' && balanceCents >= budgetCents && budgetCents >= 1000
+  const budgetValid = budgetCents >= 1000
+  const fundsOk = advertiser?.status === 'active' && balanceCents >= budgetCents
+  const canAfford = budgetValid && fundsOk
 
   if (authLoading) {
     return (
@@ -262,7 +275,7 @@ export default function NewCampaignPage() {
                   maxLength={14}
                   value={brandName}
                   onChange={(e) => setBrandName(e.target.value)}
-                  placeholder="Brand name — leave blank to show none"
+                  placeholder="Brand name (leave blank to show none)"
                   className="w-full rounded-lg border border-border bg-input px-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
                 />
                 <p className="text-xs text-muted-foreground mt-1.5">
@@ -327,9 +340,9 @@ export default function NewCampaignPage() {
                   {budgetCents > balanceCents && (
                     <p className="text-xs text-red-600 mt-1.5">
                       Budget exceeds your available wallet balance.{' '}
-                      <a href="/advertiser/dashboard" className="underline">
+                      <button type="button" onClick={() => setShowAddFunds(true)} className="underline">
                         Top up
-                      </a>{' '}
+                      </button>{' '}
                       to continue.
                     </p>
                   )}
@@ -517,9 +530,15 @@ export default function NewCampaignPage() {
               )}
 
               <div className="flex items-center gap-3 pt-2">
-                <Button type="submit" size="lg" disabled={loading || contexts.length === 0 || !canAfford}>
-                  {loading ? 'Creating…' : !advertiser ? 'Loading…' : !canAfford ? 'Top up required' : objective === 'performance' ? 'Submit for review' : 'Create campaign'}
-                </Button>
+                {advertiser && budgetValid && !fundsOk ? (
+                  <Button type="button" size="lg" onClick={() => setShowAddFunds(true)}>
+                    <Wallet size={16} /> Add funds to continue
+                  </Button>
+                ) : (
+                  <Button type="submit" size="lg" disabled={loading || contexts.length === 0 || !canAfford}>
+                    {loading ? 'Creating…' : !advertiser ? 'Loading…' : !budgetValid ? 'Enter a budget (min $10)' : objective === 'performance' ? 'Submit for review' : 'Create campaign'}
+                  </Button>
+                )}
                 <Button
                   type="button"
                   variant="outline"
@@ -533,6 +552,13 @@ export default function NewCampaignPage() {
           )}
         </div>
       </div>
+
+      {showAddFunds && (
+        <AddFundsModal
+          onClose={() => setShowAddFunds(false)}
+          onFunded={loadAdvertiser}
+        />
+      )}
     </DashboardShell>
   )
 }
