@@ -12,6 +12,7 @@ static const NSInteger kMinDwellMs = 5000;          // viewable-impression thres
 static const CGFloat kPillHeight = 32.0;
 static const CGFloat kGlow = 16.0;                  // margin around the pill for the purple glow
 static const CGFloat kGapFromRow = 10.0;            // px to the right of the row
+static const int kNotVisibleAlertTicks = 24;        // ~6s of "should be showing but isn't" => guide a re-grant
 
 #pragma mark - PrismPillView (clickable surface)
 
@@ -240,6 +241,12 @@ static NSImage *PrismImageFromDataURL(NSString *s) {
 @property(nonatomic, assign) NSInteger accumulatedMs;
 @property(nonatomic, assign) BOOL impressionReported;
 @property(nonatomic, assign) NSTimeInterval lastBeatTime;   // anti-bot heartbeat cadence
+// Render-health: detect "we think we're showing but the window isn't on screen"
+// (e.g. screen access dropped after an app update) and guide a re-grant.
+@property(nonatomic, assign) int notVisibleStreak;
+@property(nonatomic, assign) NSTimeInterval lastReauthPrompt;
+@property(nonatomic, assign) BOOL promptedThisEpisode;
+- (void)requestReauthorizationOncePerEpisode;
 @end
 
 @implementation PrismController
@@ -268,11 +275,19 @@ static NSImage *PrismImageFromDataURL(NSString *s) {
 - (void)poll {
     self.tick++;
 
-    // No ads at all without a connected account, when paused, or when untrusted.
-    if (self.paused || ![self.ads isConnected] || ![PrismAX isTrustedPrompt:NO]) {
+    // No ads without a connected account or when paused.
+    if (self.paused || ![self.ads isConnected]) { [self hide]; return; }
+
+    // Screen access (Accessibility) can be silently dropped after an app update,
+    // because macOS re-keys the grant to the newly signed binary. When that
+    // happens we must draw nothing, report nothing, and actively guide the user
+    // to re-enable it once — they will not figure this out on their own.
+    if (![PrismAX isTrustedPrompt:NO]) {
         [self hide];
+        [self requestReauthorizationOncePerEpisode];
         return;
     }
+    self.promptedThisEpisode = NO;   // trusted again — re-arm the prompt for next time
 
     // Scan all supported surfaces (Claude Desktop + terminals), frontmost first.
     PrismDetection *d = [PrismAX detect];
@@ -354,6 +369,24 @@ static NSImage *PrismImageFromDataURL(NSString *s) {
 }
 
 - (void)accrueDwell {
+    // Count dwell — and therefore bill an impression — ONLY while the pill is
+    // genuinely on screen, using the window's real occlusion state rather than
+    // our own "I ordered it front" flag. This stops us charging advertisers and
+    // crediting earnings for an ad the user never actually saw (which is exactly
+    // what happened when screen access was silently lost after an update). If we
+    // keep trying to show but the window never becomes visible, treat it as a
+    // broken-render episode and guide a re-grant.
+    BOOL onScreen = (self.pill.occlusionState & NSWindowOcclusionStateVisible) != 0;
+    if (!onScreen) {
+        self.visibleSince = 0;   // pause accrual; do not report unseen impressions
+        if (++self.notVisibleStreak >= kNotVisibleAlertTicks) {
+            self.notVisibleStreak = 0;
+            [self requestReauthorizationOncePerEpisode];
+        }
+        return;
+    }
+    self.notVisibleStreak = 0;
+
     NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
     if (self.visibleSince > 0) self.accumulatedMs += (NSInteger)((now - self.visibleSince) * 1000);
     self.visibleSince = now;
@@ -362,6 +395,23 @@ static NSImage *PrismImageFromDataURL(NSString *s) {
         [self.ads reportImpression:self.currentAd durationMs:self.accumulatedMs source:self.currentSource];
     }
     [self maybeBeat:now];
+}
+
+// Guide the user to re-enable screen access after an update silently dropped it.
+// Fired at most once per untrusted/broken episode (re-armed when trust returns),
+// with a hard 30-minute floor so it can never nag.
+- (void)requestReauthorizationOncePerEpisode {
+    if (self.promptedThisEpisode) return;
+    NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
+    if (self.lastReauthPrompt > 0 && (now - self.lastReauthPrompt) < 1800) return;
+    self.promptedThisEpisode = YES;
+    self.lastReauthPrompt = now;
+    // Re-fire the native Accessibility prompt and open the pane. After an update
+    // the prior entry can be stale, so the reliable fix is the user toggling
+    // Prism in System Settings; this points them straight at it.
+    [PrismAX isTrustedPrompt:YES];
+    NSURL *u = [NSURL URLWithString:@"x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"];
+    if (u) [[NSWorkspace sharedWorkspace] openURL:u];
 }
 
 // Anti-bot: while the pill is visible, send a signed heartbeat ~every hbIntervalMs

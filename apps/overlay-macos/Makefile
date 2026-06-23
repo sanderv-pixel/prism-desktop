@@ -19,7 +19,9 @@ SOURCES    := $(wildcard Sources/*.m)
 FRAMEWORKS := -framework Cocoa -framework ApplicationServices -framework QuartzCore
 CFLAGS     := -fobjc-arc -Wall -O2
 BUNDLE_ID  := dev.goprism.overlay
-SIGN_ID    ?= -   # "-" = ad-hoc. Stable: make SIGN_ID="Prism Overlay Signing"
+# "-" = ad-hoc (dev only). Releases must use the stable identity (see `release`):
+#   make release SIGN_ID="Prism Overlay Signing"
+SIGN_ID    ?= -
 
 .PHONY: all run release reset clean notarize
 
@@ -37,9 +39,28 @@ run: all
 	@sleep 1
 	open $(APP)
 
-# Zip the signed app for distribution via install.sh. Verify the signature first.
+# Zip the signed app for distribution via install.sh.
+# Releases MUST be signed with the stable self-signed identity (not ad-hoc): the
+# user's Accessibility/Screen-Recording grant is keyed to the app's designated
+# requirement, which an ad-hoc build changes on EVERY rebuild. Ad-hoc releases =
+# the ad silently stops after every update and users churn. Use the same cert on
+# every build machine so the requirement is identical everywhere (export once
+# from Keychain Access as a .p12 and import it on the others).
 release: all
+	@if [ "$(SIGN_ID)" = "-" ]; then \
+	  echo "ERROR: refusing to cut a release with ad-hoc signing (SIGN_ID=-)."; \
+	  echo "Ad-hoc builds change identity every rebuild, so users lose their"; \
+	  echo "Accessibility/Screen-Recording grant on every update and the ad stops."; \
+	  echo "Sign with the stable self-signed identity instead:"; \
+	  echo "    scripts/setup-signing.sh                       # one-time, no Apple account"; \
+	  echo "    make release SIGN_ID=\"Prism Overlay Signing\""; \
+	  exit 1; \
+	fi
 	@codesign --verify --deep --strict $(APP) && echo "signature OK"
+	@if codesign -dvv $(APP) 2>&1 | grep -qi "Signature=adhoc"; then \
+	  echo "ERROR: release is still ad-hoc signed after signing. Aborting."; exit 1; fi
+	@echo "Signed identity (must be identical across all release builds):"; \
+	  codesign -dvv $(APP) 2>&1 | grep -E "Identifier|Authority" | sed 's/^/  /'
 	@rm -f $(ZIP)
 	ditto -c -k --keepParent $(APP) $(ZIP)
 	@echo "Release: $(ZIP)  (signed with: $(SIGN_ID))"
