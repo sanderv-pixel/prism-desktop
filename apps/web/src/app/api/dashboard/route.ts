@@ -144,16 +144,32 @@ export async function GET() {
       return d >= sixtyDaysAgo && d < thirtyDaysAgo
     })
 
-    // The daily chart / by-tool views reflect activity as it happens: include
-    // pending (not-yet-validated) impressions so today shows up while you are
-    // actively earning. Held impressions are still excluded. Balances and the
-    // headline KPIs stay validated-only (see eligibleRecent above).
-    const chartRecent = impressions.filter(
-      (i) => !i.payout_hold && new Date(i.created_at) >= thirtyDaysAgo
-    )
-    const chartReferralRecent = referralImpressions.filter(
-      (i) => !i.payout_hold && new Date(i.created_at) >= thirtyDaysAgo
-    )
+    // Daily chart, by-tool breakdown, validated/total counts, this-month total,
+    // and the deltas all come from a SQL aggregation so they stay accurate at any
+    // volume. The raw `impressions` row scan above is capped at 1000 rows, which
+    // silently dropped recent days (incl. today) for high-volume creators.
+    // Cast: this function is newer than the checked-in generated Supabase types.
+    const rpc = admin.rpc as unknown as (
+      fn: string,
+      args: Record<string, unknown>
+    ) => Promise<{ data: unknown }>
+    const { data: seriesData } = await rpc('creator_dashboard_series', {
+      p_user_ids: userIds,
+      p_referrer: user.id,
+      p_days: 30,
+    })
+    const series = (seriesData ?? {}) as {
+      daily?: { day: string; own_mc: number; ref_mc: number; impressions: number }[]
+      tools?: { tool: string; mc: number; cnt: number }[]
+      validated_impressions?: number
+      total_impressions?: number
+      own_mc_win?: number
+      own_mc_prev?: number
+      cnt_win?: number
+      cnt_prev?: number
+      ref_mc_win?: number
+      ref_mc_prev?: number
+    }
 
     // Lifetime earnings come from an uncapped SQL aggregate, not the 60-day row
     // scan above: the balance must include all-time own earnings and lifelong
@@ -166,32 +182,24 @@ export async function GET() {
     const ownEarningsCents = Number(totals.own_millicents) / 1000
     const referralEarningsCents = Number(totals.referral_millicents) / 1000
     const totalEarningsCents = ownEarningsCents + referralEarningsCents
-    const validatedImpressions = eligibleImpressions.length
-    const totalImpressions = impressions.length
+    const validatedImpressions = Number(series.validated_impressions ?? eligibleImpressions.length)
+    const totalImpressions = Number(series.total_impressions ?? impressions.length)
     const clicks = eligibleImpressions.filter((i) =>
       typeof i.context === 'string' ? i.context.includes('click') : false
     ).length
     const ctr = validatedImpressions > 0 ? (clicks / validatedImpressions) * 100 : 0
 
-    const recentEarnings = eligibleRecent.reduce((sum, i) => sum + i.payout_millicents, 0) / 1000
-    const previousEarnings = eligiblePrevious.reduce((sum, i) => sum + i.payout_millicents, 0) / 1000
-    const referralRecentEarnings = eligibleReferralRecent.reduce(
-      (sum, i) => sum + i.referrer_payout_millicents,
-      0
-    ) / 1000
-    const referralPreviousEarnings = eligibleReferralPrevious.reduce(
-      (sum, i) => sum + i.referrer_payout_millicents,
-      0
-    ) / 1000
-    const totalRecentEarnings = recentEarnings + referralRecentEarnings
-    const totalPreviousEarnings = previousEarnings + referralPreviousEarnings
+    const totalRecentEarnings =
+      (Number(series.own_mc_win ?? 0) + Number(series.ref_mc_win ?? 0)) / 1000
+    const totalPreviousEarnings =
+      (Number(series.own_mc_prev ?? 0) + Number(series.ref_mc_prev ?? 0)) / 1000
     const earningsChange =
       totalPreviousEarnings === 0
         ? 100
         : Math.round(((totalRecentEarnings - totalPreviousEarnings) / totalPreviousEarnings) * 100)
 
-    const recentCount = eligibleRecent.length
-    const previousCount = eligiblePrevious.length
+    const recentCount = Number(series.cnt_win ?? 0)
+    const previousCount = Number(series.cnt_prev ?? 0)
     const impressionsChange =
       previousCount === 0
         ? 100
@@ -208,47 +216,19 @@ export async function GET() {
     const balanceCents = totalEarningsCents - totalPayoutCents - inFlightPayoutCents
     const payoutEnabled = balanceCents >= MIN_PAYOUT_CENTS && connectStatus.configured
 
-    const dailyEarnings: Record<string, number> = {}
-    const dailyImpressions: Record<string, number> = {}
-    for (let i = 29; i >= 0; i--) {
-      const d = getStartOfDay(i)
-      const key = d.toISOString().split('T')[0]
-      dailyEarnings[key] = 0
-      dailyImpressions[key] = 0
-    }
+    // Daily series (zero-filled for p_days) and tool breakdown, from the SQL
+    // aggregation. earnings are dollars (millicents / 100000).
+    const chartData = (series.daily ?? []).map((d) => ({
+      date: d.day,
+      earnings: Number(((Number(d.own_mc) + Number(d.ref_mc)) / 100000).toFixed(4)),
+      impressions: Number(d.impressions),
+    }))
 
-    for (const imp of chartRecent) {
-      const key = imp.created_at.split('T')[0]
-      if (dailyEarnings[key] !== undefined) {
-        dailyEarnings[key] += imp.payout_millicents / 100000
-        dailyImpressions[key] += 1
-      }
-    }
-
-    for (const imp of chartReferralRecent) {
-      const key = imp.created_at.split('T')[0]
-      if (dailyEarnings[key] !== undefined) {
-        dailyEarnings[key] += imp.referrer_payout_millicents / 100000
-      }
-    }
-
-    const toolBreakdown: Record<string, { count: number; earnings: number }> = {}
-    for (const imp of chartRecent) {
-      let tool = 'Unknown'
-      if (typeof imp.context === 'string') {
-        try {
-          const parsed = JSON.parse(imp.context)
-          tool = parsed.aiTool ?? parsed.editor ?? 'Unknown'
-        } catch {
-          tool = imp.context
-        }
-      }
-      if (!toolBreakdown[tool]) {
-        toolBreakdown[tool] = { count: 0, earnings: 0 }
-      }
-      toolBreakdown[tool].count += 1
-      toolBreakdown[tool].earnings += imp.payout_millicents / 100000
-    }
+    const toolBreakdown = (series.tools ?? []).map((t) => ({
+      tool: t.tool,
+      count: Number(t.cnt),
+      earnings: Number((Number(t.mc) / 100000).toFixed(4)),
+    }))
 
     const durations = eligibleImpressions
       .filter((i) => i.duration_ms)
@@ -294,14 +274,8 @@ export async function GET() {
         referredCount: referralSnapshot.referredCount,
         referralEarningsCents,
       },
-      chartData: Object.entries(dailyEarnings).map(([date, earnings]) => ({
-        date,
-        earnings: Number(earnings.toFixed(4)),
-        impressions: dailyImpressions[date],
-      })),
-      toolBreakdown: Object.entries(toolBreakdown)
-        .map(([tool, data]) => ({ tool, ...data }))
-        .sort((a, b) => b.earnings - a.earnings),
+      chartData,
+      toolBreakdown,
       recentImpressions: recentList.map((imp) => {
         const flags: string[] = imp.fraud_flags ?? []
         // A CPC impression earns only when its ad is clicked; until then it is a
