@@ -52,7 +52,17 @@ async function getReferralSnapshot(userId: string) {
   }
 }
 
-export async function GET() {
+function isValidTimeZone(tz: string): boolean {
+  if (!tz) return false
+  try {
+    Intl.DateTimeFormat('en-US', { timeZone: tz })
+    return true
+  } catch {
+    return false
+  }
+}
+
+export async function GET(req: Request) {
   const supabase = await createClient()
   const admin = createAdminClient()
   const {
@@ -62,6 +72,10 @@ export async function GET() {
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+
+  // Viewer timezone (IANA), so "best earning times" buckets in their local time.
+  const tzParam = new URL(req.url).searchParams.get('tz') ?? ''
+  const tz = isValidTimeZone(tzParam) ? tzParam : 'UTC'
 
   try {
     const { data: identities } = await supabase
@@ -176,7 +190,7 @@ export async function GET() {
 
     // Insights aggregate (all-time): earnings by hour/day-of-week, lifetime
     // monetized wait time, eligible view count, and the highest-paying view.
-    const { data: insightsData } = await rpc('creator_insights', { p_user_ids: userIds })
+    const { data: insightsData } = await rpc('creator_insights', { p_user_ids: userIds, p_tz: tz })
     const insights = (insightsData ?? {}) as {
       hourly?: { h: number; mc: number }[]
       dow?: { d: number; mc: number }[]

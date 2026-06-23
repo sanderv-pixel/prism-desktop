@@ -11,7 +11,8 @@ export function useDashboardData() {
 
   const refetch = useCallback(async () => {
     try {
-      const res = await fetch('/api/dashboard')
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+      const res = await fetch(`/api/dashboard?tz=${encodeURIComponent(tz)}`)
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
         throw new Error(err.error ?? 'Failed to load dashboard')

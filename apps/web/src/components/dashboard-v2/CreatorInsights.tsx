@@ -70,11 +70,9 @@ export function CreatorInsights({ data }: { data: DashboardData }) {
   const cpmPrev = cpmOf(chartData.slice(-14, -7))
   const cpmTrend = cpmPrev > 0 ? Math.round(((cpmNow - cpmPrev) / cpmPrev) * 100) : 0
 
-  // earnings by hour, rotated from UTC buckets to the viewer's local time
-  const utc = new Array(24).fill(0) as number[]
-  insights.hourly.forEach(({ h, mc }) => { if (h >= 0 && h < 24) utc[h] = mc })
-  const offset = Math.round(-new Date().getTimezoneOffset() / 60)
-  const local = utc.map((_, lh) => utc[(((lh - offset) % 24) + 24) % 24])
+  // earnings by hour, already bucketed in the viewer's local timezone server-side
+  const local = new Array(24).fill(0) as number[]
+  insights.hourly.forEach(({ h, mc }) => { if (h >= 0 && h < 24) local[h] = mc })
   const maxHour = Math.max(...local, 1)
   const peakHour = local.indexOf(Math.max(...local))
   const hasHourly = local.some((v) => v > 0)
