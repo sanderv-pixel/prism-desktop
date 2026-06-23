@@ -1,6 +1,10 @@
 'use client'
 
 import Link from 'next/link'
+// The shell's own styles (.dash-v2, .dv-app, .dv-card, etc.). Imported here so
+// EVERY page using this shell is styled — not just the overview pages that
+// happened to import it directly. Without this, sub-pages render unstyled (white).
+import '../../app/dashboard-v2/dashboard-v2.css'
 // Token-override + literal remaps so pages built with semantic tokens (bg-card,
 // text-foreground, etc.) render dark inside this shell, the same way they did in
 // the old DashboardShell. Applied to the content area below via `.dash-dark`.
