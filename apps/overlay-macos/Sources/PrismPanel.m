@@ -22,7 +22,19 @@ static NSTextField *MkLabel(NSString *s, NSColor *c, CGFloat size, NSFontWeight 
     t.selectable = NO;
     return t;
 }
-static NSString *Money(double cents) { return [NSString stringWithFormat:@"$%.2f", cents / 100.0]; }
+// Dollars from cents. Keeps precision for sub-cent per-view payouts so tiny
+// amounts do not collapse to $0.00 (mirrors the web dashboard's formatPayout:
+// up to 4 decimals under a cent, 2 decimals otherwise, with grouping).
+static NSString *Money(double cents) {
+    double d = cents / 100.0;
+    double ad = fabs(d);
+    NSNumberFormatter *f = [[NSNumberFormatter alloc] init];
+    f.numberStyle = NSNumberFormatterDecimalStyle;
+    f.locale = [NSLocale localeWithLocaleIdentifier:@"en_US"];
+    f.minimumFractionDigits = 2;
+    f.maximumFractionDigits = (ad > 0 && ad < 0.01) ? 4 : 2;
+    return [NSString stringWithFormat:@"$%@", [f stringFromNumber:@(d)]];
+}
 
 #pragma mark - clickable chip / control
 
