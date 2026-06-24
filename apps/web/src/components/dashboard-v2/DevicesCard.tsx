@@ -17,17 +17,25 @@ export interface DeviceInfo {
 interface DevicesCardProps {
   devices: DeviceInfo[]
   onRevoke: (id: string) => void
+  /** Opens the in-dashboard install wizard. Falls back to the /install page if absent. */
+  onInstall?: () => void
 }
 
 /** Connected devices + disconnect. Reuses the real /api/dashboard/devices data. */
-export function DevicesCard({ devices, onRevoke }: DevicesCardProps) {
+export function DevicesCard({ devices, onRevoke, onInstall }: DevicesCardProps) {
   return (
     <div className="dv-card">
       <h3>
         Your devices
-        <Link href="/install" className="dv-devlink">
-          <Plus size={14} /> Connect a device
-        </Link>
+        {onInstall ? (
+          <button type="button" onClick={onInstall} className="dv-devlink">
+            <Plus size={14} /> Connect a device
+          </button>
+        ) : (
+          <Link href="/install" className="dv-devlink">
+            <Plus size={14} /> Connect a device
+          </Link>
+        )}
       </h3>
 
       {devices.length === 0 ? (
@@ -35,9 +43,15 @@ export function DevicesCard({ devices, onRevoke }: DevicesCardProps) {
           <Monitor size={26} style={{ opacity: 0.4 }} />
           <p style={{ fontWeight: 600, color: '#fff' }}>No device connected</p>
           <p>Install Prism on your Mac to start earning while your AI thinks.</p>
-          <Link href="/install" className="dv-btn dv-btn-p" style={{ marginTop: 14 }}>
-            <Download size={15} /> Install Prism
-          </Link>
+          {onInstall ? (
+            <button type="button" onClick={onInstall} className="dv-btn dv-btn-p" style={{ marginTop: 14 }}>
+              <Download size={15} /> Install Prism
+            </button>
+          ) : (
+            <Link href="/install" className="dv-btn dv-btn-p" style={{ marginTop: 14 }}>
+              <Download size={15} /> Install Prism
+            </Link>
+          )}
         </div>
       ) : (
         <div className="dv-devlist">

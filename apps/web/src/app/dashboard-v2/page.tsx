@@ -14,6 +14,7 @@ import { ActivityFeed } from '@/components/dashboard-v2/ActivityFeed'
 import { PayoutProgress } from '@/components/dashboard-v2/PayoutProgress'
 import { ReferralCard } from '@/components/dashboard-v2/ReferralCard'
 import { DevicesCard, type DeviceInfo } from '@/components/dashboard-v2/DevicesCard'
+import { InstallWizard } from '@/components/dashboard-v2/InstallWizard'
 import { PayoutMethodForm } from '@/components/dashboard/PayoutMethodForm'
 import { formatCents, formatNumber } from '@/components/dashboard-v2/format'
 
@@ -70,6 +71,9 @@ export default function EarnerDashboardV2() {
   const [withdrawAmount, setWithdrawAmount] = useState('')
   const [withdrawing, setWithdrawing] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [showInstall, setShowInstall] = useState(false)
+  const [installDismissed, setInstallDismissed] = useState(false)
+  const [devicesReady, setDevicesReady] = useState(false)
 
   async function fetchDashboard() {
     try {
@@ -92,6 +96,8 @@ export default function EarnerDashboardV2() {
       if (res.ok) setDevices((await res.json()).devices ?? [])
     } catch {
       // non-critical
+    } finally {
+      setDevicesReady(true)
     }
   }
 
@@ -114,6 +120,13 @@ export default function EarnerDashboardV2() {
     fetchDashboard()
     fetchDevices()
   }, [])
+
+  // Auto-launch the install wizard for a new earner with no connected device.
+  useEffect(() => {
+    if (devicesReady && !installDismissed && devices.filter((d) => !d.revoked).length === 0) {
+      setShowInstall(true)
+    }
+  }, [devicesReady, devices, installDismissed])
 
   async function handleWithdraw(amountCents?: number) {
     setWithdrawing(true)
@@ -260,10 +273,17 @@ export default function EarnerDashboardV2() {
       </div>
 
       <div id="devices" style={{ marginTop: 16, scrollMarginTop: 24 }}>
-        <DevicesCard devices={devices} onRevoke={revokeDevice} />
+        <DevicesCard devices={devices} onRevoke={revokeDevice} onInstall={() => setShowInstall(true)} />
       </div>
 
       <div className="dv-ftnote">Real data from your account · updates as your agents work</div>
+
+      {showInstall && (
+        <InstallWizard
+          onClose={() => { setShowInstall(false); setInstallDismissed(true) }}
+          onConnected={() => { setShowInstall(false); setInstallDismissed(true); fetchDevices() }}
+        />
+      )}
 
       {showWithdraw && (
         <div className="dv-modalbg" onClick={() => setShowWithdraw(false)}>
