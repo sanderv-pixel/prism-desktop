@@ -370,6 +370,14 @@ static NSImage *PrismImageFromDataURL(NSString *s) {
 
     // Scan all supported surfaces (Claude Desktop + terminals), frontmost first.
     PrismDetection *d = [PrismAX detect];
+    if (getenv("PRISM_DIAG")) {
+        fprintf(stderr, "[diag] t=%d paused=%d conn=%d found=%d fStreak=%d ad=%d pillVis=%d occ=%d panelVis=%d\n",
+                self.tick, (int)self.paused, (int)[self.ads isConnected], (int)d.found,
+                (int)self.foundStreak, (int)(self.currentAd != nil), (int)self.pillVisible,
+                (int)((self.pill.occlusionState & NSWindowOcclusionStateVisible) != 0),
+                (int)self.panel.isVisible);
+        fflush(stderr);
+    }
     if (d.found) {
         self.missStreak = 0;
         self.currentSource = d.source;   // surface the impression will be attributed to
