@@ -21,10 +21,33 @@ Unblock-File -Path $exe
 $run = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
 New-ItemProperty -Path $run -Name 'PrismOverlay' -Value "`"$exe`"" -PropertyType String -Force | Out-Null
 
+# Link this device to your account. The dashboard's personalized command sets
+# $env:PRISM_LINK_TOKEN; exchange it for an account-bound key and write it to the
+# registry the overlay reads (HKCU\Software\Prism\Overlay\ApiKey) BEFORE first launch,
+# so earnings credit your account from impression #1. Without a token it self-registers.
+$apiBase = if ($env:PRISM_API_URL) { $env:PRISM_API_URL.TrimEnd('/') } else { 'https://goprism.dev' }
+if ($env:PRISM_LINK_TOKEN) {
+  Write-Host '-> Linking this device to your Prism account...'
+  try {
+    $body = @{ token = $env:PRISM_LINK_TOKEN } | ConvertTo-Json -Compress
+    $resp = Invoke-RestMethod -Method Post -Uri "$apiBase/api/auth/link/exchange" -ContentType 'application/json' -Body $body
+    if ($resp.apiKey) {
+      New-Item -Path 'HKCU:\Software\Prism\Overlay' -Force | Out-Null
+      Set-ItemProperty -Path 'HKCU:\Software\Prism\Overlay' -Name 'ApiKey' -Value $resp.apiKey
+      Write-Host '   Linked - your earnings will credit this account automatically.'
+    } else {
+      Write-Host '   Could not link (token expired or already used); it will run unlinked.'
+    }
+  } catch {
+    Write-Host '   Could not link (token expired or already used); it will run unlinked.'
+  }
+}
+
 Write-Host '-> Launching Prism...'
 Start-Process $exe
 
 Write-Host ''
 Write-Host 'Prism is running in your system tray (look for its icon).'
-Write-Host 'Use "Connect account" to link your account for live ads + earnings.'
+Write-Host 'If you installed from your dashboard, this device is already linked.'
+Write-Host 'Otherwise, use "Connect account" to link it to your Prism account.'
 Write-Host 'Uninstall any time:  irm https://goprism.dev/uninstall.ps1 | iex'
