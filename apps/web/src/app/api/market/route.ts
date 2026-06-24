@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/utils/supabase/admin'
+import { RateLimiter, getClientIp, rateLimitResponse } from '@/lib/api/rate-limit'
 
 interface MarketContextRequest {
   contexts?: string[]
@@ -7,6 +8,9 @@ interface MarketContextRequest {
 }
 
 const FALLBACK_FLOOR_CPM = 800
+
+// Unauthenticated endpoint that runs DB aggregates; cap per-IP request volume.
+const marketRateLimiter = new RateLimiter(60, 60 * 1000)
 
 function percentile(sorted: number[], p: number): number {
   if (sorted.length === 0) return 0
@@ -19,9 +23,14 @@ function percentile(sorted: number[], p: number): number {
 }
 
 export async function POST(req: NextRequest) {
+  const rl = await marketRateLimiter.check(getClientIp(req))
+  if (!rl.success) return rateLimitResponse(rl.limit, rl.resetAt)
+
   const body: MarketContextRequest = await req.json().catch(() => ({}))
-  const contexts = Array.isArray(body.contexts) ? body.contexts : []
-  const bidCpm = body.bidCpm ?? 0
+  const contexts = (Array.isArray(body.contexts) ? body.contexts : [])
+    .filter((c): c is string => typeof c === 'string' && c.length > 0 && c.length <= 50)
+    .slice(0, 50)
+  const bidCpm = typeof body.bidCpm === 'number' && body.bidCpm > 0 ? body.bidCpm : 0
 
   const supabase = createAdminClient()
 

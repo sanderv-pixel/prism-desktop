@@ -1,3 +1,5 @@
+import { assertPublicHttpUrl } from './ssrf'
+
 export const ALLOWED_ICON_EXTENSIONS = ['svg', 'png', 'jpg', 'jpeg', 'webp', 'gif']
 export const ALLOWED_ICON_MIME_TYPES = [
   'image/png',
@@ -37,14 +39,24 @@ export async function validateIconUrl(url: string): Promise<{ ok: boolean; error
   if (!extCheck.ok) return extCheck
 
   try {
+    await assertPublicHttpUrl(url)
+  } catch {
+    return { ok: false, error: 'Icon URL must be a public http(s) image URL.' }
+  }
+
+  try {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 10000)
     const res = await fetch(url, {
       method: 'HEAD',
       signal: controller.signal,
+      redirect: 'manual',
     })
     clearTimeout(timer)
 
+    if (res.status >= 300 && res.status < 400) {
+      return { ok: false, error: 'Icon URL must be a direct image URL, not a redirect.' }
+    }
     if (!res.ok) {
       return { ok: false, error: 'Icon URL returned an error. Make sure it is publicly accessible.' }
     }
@@ -93,11 +105,20 @@ export async function validateIconDownload(url: string): Promise<{ ok: boolean; 
   if (!extCheck.ok) return extCheck
 
   try {
+    await assertPublicHttpUrl(url)
+  } catch {
+    return { ok: false, error: 'Icon URL must be a public http(s) image URL.' }
+  }
+
+  try {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 15000)
-    const res = await fetch(url, { signal: controller.signal })
+    const res = await fetch(url, { signal: controller.signal, redirect: 'manual' })
     clearTimeout(timer)
 
+    if (res.status >= 300 && res.status < 400) {
+      return { ok: false, error: 'Icon URL must be a direct image URL, not a redirect.' }
+    }
     if (!res.ok) {
       return { ok: false, error: 'Icon URL returned an error. Make sure it is publicly accessible.' }
     }
