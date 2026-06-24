@@ -38,6 +38,14 @@
     @apply bg-background text-foreground antialiased overflow-x-hidden;
   }
 
+  /* On dark-chrome pages (the landing's .v2-root and SiteShell's .dash-dark) paint
+     the body dark too, so no white shows behind the iOS status bar, over-scroll, or
+     the bottom toolbar. Light pages have neither class, so they keep the white body. */
+  body:has(.v2-root),
+  body:has(.dash-dark) {
+    background-color: #06060b;
+  }
+
   ::selection {
     background: rgba(124, 58, 237, 0.2);
     color: inherit;
