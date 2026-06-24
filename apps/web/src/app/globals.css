@@ -28,6 +28,10 @@
 
   html {
     scroll-behavior: smooth;
+    /* Dark over-scroll (iOS rubber-band) so no white edge shows past the dark site.
+       The white page body still covers content on light pages; only the bounce area
+       beyond the content reveals this. */
+    background-color: #06060b;
   }
 
   body {
