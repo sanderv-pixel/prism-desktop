@@ -85,11 +85,16 @@ export default function AdvertiserDashboardV2() {
   const [range, setRange] = useState<RangeValue>(30)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [showAddFunds, setShowAddFunds] = useState(false)
+  const [redirecting, setRedirecting] = useState(false)
 
   const fetchStats = useCallback(async () => {
     try {
       const res = await fetch(`/api/advertiser-stats?range=${range}`)
       if (res.status === 404) {
+        // No advertiser profile yet (new user): redirect to onboarding. Keep the
+        // page in a "setting up" state during navigation so we never flash the
+        // generic error screen below (which reads as a failure to advertisers).
+        setRedirecting(true)
         router.push('/advertiser/onboarding')
         return
       }
@@ -138,21 +143,31 @@ export default function AdvertiserDashboardV2() {
     </select>
   )
 
-  if (authLoading || loading) {
+  if (authLoading || loading || redirecting) {
     return (
       <DashboardShellV2 view="adv" title="Loading…" subtitle="" nav={NAV} userName={userName} userEmail={userEmail}>
-        <div className="dv-loadwrap"><Zap size={18} className="animate-pulse" /> Loading advertiser dashboard…</div>
+        <div className="dv-loadwrap"><Zap size={18} className="animate-pulse" /> {redirecting ? 'Setting up your advertiser account…' : 'Loading advertiser dashboard…'}</div>
       </DashboardShellV2>
     )
   }
 
-  if (error || !data) {
+  // Only a genuine error shows the failure screen. A null `data` without an error
+  // means we are mid-redirect or mid-load, so keep showing the loading state.
+  if (error) {
     return (
       <DashboardShellV2 view="adv" title="Campaigns overview" subtitle="" nav={NAV} userName={userName} userEmail={userEmail}>
         <div className="dv-alert">
           <AlertCircle size={20} />
           <div><p style={{ fontWeight: 600 }}>Failed to load dashboard</p><p style={{ fontSize: 13, opacity: 0.85 }}>{error}</p></div>
         </div>
+      </DashboardShellV2>
+    )
+  }
+
+  if (!data) {
+    return (
+      <DashboardShellV2 view="adv" title="Loading…" subtitle="" nav={NAV} userName={userName} userEmail={userEmail}>
+        <div className="dv-loadwrap"><Zap size={18} className="animate-pulse" /> Loading advertiser dashboard…</div>
       </DashboardShellV2>
     )
   }
