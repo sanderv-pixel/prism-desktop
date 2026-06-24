@@ -377,16 +377,21 @@ static NSImage *PrismImageFromDataURL(NSString *s) {
         if (++self.foundStreak >= kShowAfterTicks) [self showNextTo:d.frame];
     } else {
         self.foundStreak = 0;
+        // While the panel is open (hover or pinned), keep the pill + panel alive
+        // even after generation ends, so the user can finish reading / interacting
+        // (e.g. copy a code). It is dismissed explicitly (mouse-leave / Esc /
+        // click-away), after which the pill hides on the next miss.
+        if (self.panel.isVisible) return;
         if (++self.missStreak >= kHideAfterMisses) [self hide];
     }
 }
 
 - (void)showNextTo:(CGRect)rowAX {
-    // While the panel is pinned open, freeze the ad the user is reading: skip both
-    // rotation and the network refresh. The dwell/heartbeat accounting below is
-    // untouched, so the open ad still bills once at 5s exactly as it would without
-    // the panel. Rotation resumes on dismiss (lastFetchTick is reset there).
-    if (!self.panelPinned) {
+    // While the panel is open (hover or pinned), freeze the ad the user is reading:
+    // skip both rotation and the network refresh. The dwell/heartbeat accounting
+    // below is untouched, so the open ad still bills once at 5s exactly as it would
+    // without the panel. Rotation resumes on dismiss (lastFetchTick is reset there).
+    if (!self.panel.isVisible) {
         BOOL due = (self.tick - self.lastFetchTick) >= kRotateEveryTicks;
         // Rotate/first-fill the displayed ad from the local queue. This is cheap (no
         // network) so it runs every poll while we lack an ad, picking up a freshly

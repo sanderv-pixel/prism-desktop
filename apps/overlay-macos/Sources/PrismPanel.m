@@ -239,7 +239,11 @@ static const CGFloat kPanelH = 336.0;
     _saveChip.onClick = ^{ if (weakSelf.onSave) weakSelf.onSave(); };
     [_card addSubview:_saveChip];
     _copyChip = [self chipWithTitle:@"Copy code" frame:NSMakeRect(P + 118, 82, 120, 26)];
-    _copyChip.onClick = ^{ PrismPanelWindow *s = weakSelf; if (s && s.onCopyCode && s->_promoCode.length) s.onCopyCode(s->_promoCode); };
+    _copyChip.onClick = ^{
+        PrismPanelWindow *s = weakSelf; if (!s) return;
+        if (s.onCopyCode && s->_promoCode.length) s.onCopyCode(s->_promoCode);
+        [s flashCopied];
+    };
     _copyChip.hidden = YES;
     [_card addSubview:_copyChip];
 
@@ -339,6 +343,22 @@ static const CGFloat kPanelH = 336.0;
     _pauseToggle.strokeColor = _paused ? HexA(0x8b5cf6, 0.40) : HexA(0xffffff, 0.10);
     [_pauseToggle setNeedsDisplay:YES];
     if (self.onTogglePause) self.onTogglePause(_paused);
+}
+
+// Confirm a copy: flash the chip to "Copied!" (emerald) for ~1.4s, then restore.
+- (void)flashCopied {
+    [_copyChip setTitle:@"✓ Copied!"];
+    _copyChip.fillColor = HexA(0x34d399, 0.16);
+    _copyChip.strokeColor = HexA(0x34d399, 0.5);
+    [_copyChip setNeedsDisplay:YES];
+    __weak PrismPanelWindow *weakSelf = self;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.4 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        PrismPanelWindow *s = weakSelf; if (!s || s->_promoCode.length == 0) return;
+        [s->_copyChip setTitle:[NSString stringWithFormat:@"Copy code  %@", s->_promoCode]];
+        s->_copyChip.fillColor = HexA(0xffffff, 0.04);
+        s->_copyChip.strokeColor = HexA(0xffffff, 0.10);
+        [s->_copyChip setNeedsDisplay:YES];
+    });
 }
 
 - (CGFloat)renderAd:(PrismAd *)ad earnings:(PrismEarnings *)e {
