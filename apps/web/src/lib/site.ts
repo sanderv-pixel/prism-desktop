@@ -6,6 +6,5 @@
 //   2. the overlay repo (apps/overlay-macos + apps/overlay-windows) is actually public.
 //
 // While it is null, the UI renders the source link as disabled / "coming soon".
-// TODO: set to the public repo URL once published,
-//   e.g. 'https://github.com/goprism/prism-overlay'.
-export const OVERLAY_REPO_URL: string | null = null
+// Now live: the overlay clients are published and the pre-publish audit is clean.
+export const OVERLAY_REPO_URL: string | null = 'https://github.com/sanderv-pixel/prism-overlay'
