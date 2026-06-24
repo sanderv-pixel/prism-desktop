@@ -5,10 +5,11 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
 import { TurnstileWidget } from '@/components/TurnstileWidget'
+import { TURNSTILE_ENABLED } from '@/lib/turnstile-config'
 import { createClient } from '@/utils/supabase/client'
 import { AlertCircle, Mail, Lock } from 'lucide-react'
 
-const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+const TURNSTILE_SITE_KEY = TURNSTILE_ENABLED ? process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY : undefined
 
 export function SignInForm() {
   const router = useRouter()

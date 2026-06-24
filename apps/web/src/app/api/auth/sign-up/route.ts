@@ -5,6 +5,7 @@ import { createAdminClient } from '@/utils/supabase/admin'
 import { RateLimiter, getClientIp, rateLimitResponse } from '@/lib/api/rate-limit'
 import { handleApiError, ApiError, formatZodError } from '@/lib/api/errors'
 import { verifyTurnstile } from '@/lib/api/turnstile'
+import { TURNSTILE_ENABLED } from '@/lib/turnstile-config'
 
 export const dynamic = 'force-dynamic'
 
@@ -52,16 +53,18 @@ export async function POST(req: NextRequest) {
       throw new ApiError(400, 'You must agree to the Terms of Service and Privacy Policy.', 'CONSENT_REQUIRED')
     }
 
-    if (captchaToken) {
-      if (!(await verifyTurnstile(captchaToken))) {
-        throw new ApiError(400, 'CAPTCHA verification failed', 'CAPTCHA_FAILED')
-      }
-    } else {
-      // Widget could not load for this client. Allow the signup, but under a much
-      // stricter per-IP limit; email confirmation is still required downstream.
-      const noCaptcha = await noCaptchaSignUpRateLimiter.check(`signup:nocaptcha:${clientIp}`)
-      if (!noCaptcha.success) {
-        return rateLimitResponse(noCaptcha.limit, noCaptcha.resetAt)
+    if (TURNSTILE_ENABLED) {
+      if (captchaToken) {
+        if (!(await verifyTurnstile(captchaToken))) {
+          throw new ApiError(400, 'CAPTCHA verification failed', 'CAPTCHA_FAILED')
+        }
+      } else {
+        // Widget could not load for this client. Allow the signup, but under a much
+        // stricter per-IP limit; email confirmation is still required downstream.
+        const noCaptcha = await noCaptchaSignUpRateLimiter.check(`signup:nocaptcha:${clientIp}`)
+        if (!noCaptcha.success) {
+          return rateLimitResponse(noCaptcha.limit, noCaptcha.resetAt)
+        }
       }
     }
 

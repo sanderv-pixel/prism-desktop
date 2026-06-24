@@ -13,7 +13,7 @@ const WaitlistSchema = z.object({
   email: z.string().email(),
   type: z.enum(['creator', 'advertiser', 'partner']).default('creator'),
   source: z.string().max(256).default('homepage'),
-  captchaToken: z.string().min(1),
+  captchaToken: z.string().min(1).nullable().optional(),
   honeypot: z.string().max(256).optional(),
 })
 

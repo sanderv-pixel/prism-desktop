@@ -1,4 +1,5 @@
 import { ApiError } from './errors'
+import { TURNSTILE_ENABLED } from '@/lib/turnstile-config'
 
 export interface TurnstileVerifyResponse {
   success: boolean
@@ -8,7 +9,9 @@ export interface TurnstileVerifyResponse {
   action?: string
 }
 
-export async function verifyTurnstile(token: string): Promise<boolean> {
+export async function verifyTurnstile(token: string | null | undefined): Promise<boolean> {
+  if (!TURNSTILE_ENABLED) return true // captcha temporarily disabled
+  if (!token) return false
   const workerUrl = process.env.TURNSTILE_WORKER_URL
   if (!workerUrl) {
     if (process.env.NODE_ENV === 'production') {
