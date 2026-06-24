@@ -18,7 +18,7 @@ export function Faq() {
   return (
     <section>
       <div className="wrap">
-        <span className="eyebrow reveal">08 · Straight answers</span>
+        <span className="eyebrow reveal">09 · Straight answers</span>
         <h2 className="reveal">The questions you&apos;re already asking.</h2>
         <div className="faq">
           {QUESTIONS.map(({ q, a }) => (

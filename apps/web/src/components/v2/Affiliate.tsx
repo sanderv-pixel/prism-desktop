@@ -41,7 +41,7 @@ export function Affiliate() {
   return (
     <section>
       <div className="wrap">
-        <span className="eyebrow reveal">07 · Refer &amp; earn</span>
+        <span className="eyebrow reveal">08 · Refer &amp; earn</span>
         <h2 className="reveal">
           Bring a builder. Earn 10% of their earnings. For life.
         </h2>

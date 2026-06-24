@@ -1766,3 +1766,74 @@
   font-size: 13.5px;
   color: var(--txt);
 }
+
+/* ── Payouts section ───────────────────────────────────── */
+.v2-root .payout {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 28px;
+}
+.v2-root .pcard {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  padding: 26px 24px;
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(8px);
+}
+.v2-root .pcard::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.55), transparent);
+}
+.v2-root .pnum {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  margin-bottom: 16px;
+  font-family: var(--font-display), sans-serif;
+  font-weight: 600;
+  font-size: 17px;
+  color: #fff;
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  box-shadow: 0 6px 20px -6px rgba(139, 92, 246, 0.6);
+}
+.v2-root .pcard h3 {
+  font-family: var(--font-display), sans-serif;
+  font-size: 19px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 8px;
+}
+.v2-root .pcard p {
+  color: var(--txt);
+  font-size: 14.5px;
+  line-height: 1.6;
+}
+.v2-root .pfacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+.v2-root .pfacts span {
+  font-size: 12px;
+  font-family: var(--font-mono), monospace;
+  color: #c4b5fd;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.28);
+  border-radius: 999px;
+  padding: 6px 13px;
+}
+@media (max-width: 680px) {
+  .v2-root .payout {
+    grid-template-columns: 1fr;
+  }
+}

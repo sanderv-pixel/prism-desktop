@@ -4,6 +4,7 @@ import { AdAnatomy } from '@/components/v2/AdAnatomy'
 import { NativeSurfaces } from '@/components/v2/NativeSurfaces'
 import { Privacy } from '@/components/v2/Privacy'
 import { Economics } from '@/components/v2/Economics'
+import { Payouts } from '@/components/v2/Payouts'
 import { Affiliate } from '@/components/v2/Affiliate'
 import { Faq } from '@/components/v2/Faq'
 import { FinalCta } from '@/components/v2/FinalCta'
@@ -52,6 +53,7 @@ export function LandingV2() {
       <NativeSurfaces />
       <Privacy />
       <Economics />
+      <Payouts />
       <Affiliate />
       <Faq />
       <FinalCta />
