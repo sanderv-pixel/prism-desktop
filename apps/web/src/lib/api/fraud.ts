@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { kvIncr } from '@/lib/redis'
 import {
+  countOtherAccountFingerprintMatches,
   getDeviceCredentialByUserId,
   hashFingerprint,
   incrementFingerprintMismatchCount,
@@ -37,6 +38,7 @@ const MAX_IDENTICAL_CONTEXTS_PER_HOUR = 5
 // Scoring weights.
 const BLOCK_WEIGHT = 10
 const FLAG_WEIGHT = 5
+const SHARED_DEVICE_WEIGHT = 6
 const SCORE_BLOCK_THRESHOLD = 10
 
 const KNOWN_BOT_PATTERNS = [
@@ -257,13 +259,29 @@ export async function evaluateDeviceFingerprint(
     return { blocked: false, reasons: [], score: 0 }
   }
 
+  // Cross-account device dedup: one physical device feeding multiple earner accounts
+  // is the main Sybil hole, and the per-account fingerprint check above can't see it
+  // (each credential trusts the same device on its own first use). Hold (not block)
+  // such impressions for review rather than paying them out.
+  const sharedDeviceFlag = async (hash: string | null): Promise<FraudResult | null> => {
+    if (!hash) return null
+    const others = await countOtherAccountFingerprintMatches(userId, hash)
+    return others > 0
+      ? { blocked: false, reasons: ['shared_device_multi_account'], score: SHARED_DEVICE_WEIGHT }
+      : null
+  }
+
   if (!credential.fingerprint_hash) {
     // Trust on first use: establish the device fingerprint from the first
     // impression that carries one, with no penalty either way. Pairing no longer
     // stores a placeholder, so this is where a real device gets bound.
     if (fingerprint) {
       const hash = await hashFingerprint(fingerprint)
-      if (hash) await setDeviceFingerprintHash(userId, hash)
+      if (hash) {
+        await setDeviceFingerprintHash(userId, hash)
+        const shared = await sharedDeviceFlag(hash)
+        if (shared) return shared
+      }
     }
     return { blocked: false, reasons: [], score: 0 }
   }
@@ -280,6 +298,8 @@ export async function evaluateDeviceFingerprint(
 
   const providedHash = await hashFingerprint(fingerprint)
   if (providedHash === credential.fingerprint_hash) {
+    const shared = await sharedDeviceFlag(providedHash)
+    if (shared) return shared
     return { blocked: false, reasons: [], score: 0 }
   }
 

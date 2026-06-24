@@ -196,6 +196,37 @@ export async function setDeviceFingerprintHash(
     .is('fingerprint_hash', null)
 }
 
+// Anti-Sybil device dedup: how many OTHER earner accounts share this device
+// fingerprint. The earner's own auth id + builder-identity-linked anonymous ids are
+// excluded, so a single person's linked accounts don't false-flag. A non-zero result
+// means one physical device is feeding multiple accounts -> hold payouts for review.
+export async function countOtherAccountFingerprintMatches(
+  anonymousUserId: string,
+  fingerprintHash: string
+): Promise<number> {
+  if (!fingerprintHash) return 0
+  const supabase = createAdminClient()
+  const { data: linked } = await supabase
+    .from('builder_identities')
+    .select('anonymous_user_id')
+    .eq('auth_user_id', anonymousUserId)
+  const ownIds = new Set<string>([
+    anonymousUserId,
+    ...((linked ?? []).map((i) => i.anonymous_user_id)),
+  ])
+  const { data: rows } = await supabase
+    .from('device_credentials')
+    .select('anonymous_user_id')
+    .eq('fingerprint_hash', fingerprintHash)
+    .eq('revoked', false)
+  const otherAccounts = new Set(
+    (rows ?? [])
+      .map((r) => r.anonymous_user_id as string)
+      .filter((id) => !ownIds.has(id))
+  )
+  return otherAccounts.size
+}
+
 export async function incrementFingerprintMismatchCount(
   anonymousUserId: string
 ): Promise<number> {

@@ -231,7 +231,11 @@ export async function POST(req: NextRequest) {
       flagged_count: number
     }>
     const trustScore = trustRow.trust_score
-    const payoutHold = isTrusted ? false : trustRow.payout_hold
+    // One physical device feeding multiple earner accounts: record + flag the
+    // impression but hold its payout for review (do not block - could be a shared
+    // family computer). Trusted test accounts are exempt like the other gates.
+    const sharedDevice = combinedFraud.reasons.includes('shared_device_multi_account')
+    const payoutHold = isTrusted ? false : (trustRow.payout_hold || sharedDevice)
     const tokenNonce = tokenPayload.nonce
 
     // Fire non-blocking anomaly detection for operational alerting.
