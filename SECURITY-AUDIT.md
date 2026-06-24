@@ -52,3 +52,41 @@ Nothing in the threat model depends on the client being secret: impression token
 All six categories pass with no remediation required. The hard-blocker categories (1 embedded secrets, 2 content logging, 3 telemetry) are clean. **The overlay client is safe to publish.**
 
 **Remaining gate (outside this audit):** actually making the repo public and then setting `OVERLAY_REPO_URL` in `apps/web/src/lib/site.ts`. Until that constant is non-null, the whitepaper and `/security` render the source link as "coming soon".
+
+---
+
+# Round 2 - Deeper static read + dynamic capture
+
+## Deeper static read (the files round 1 only grepped)
+
+Read in full: `PrismAuth.m`, `PrismAuth.cs`, `AdClient.cs`, `Onboarding`/`PrismOnboarding`, plus a capability sweep across the whole client.
+
+- **Pairing flow (`PrismAuth`):** a device-pairing handshake - random one-time code -> opens the browser at `{origin}/link?code=...` -> polls `{base}/auth/pair?code=...` until the server returns `apiKey`, stored locally. No embedded secret; the key is minted server-side after the user authenticates in the browser.
+- **No file I/O anywhere.** Grepped `File.*`, `StreamReader/Writer`, `contentsOfFile`, `NSFileManager`, `Directory`, `Path.Combine`, `SpecialFolder`, `FileStream` - zero hits. The client reads/writes no files; persistence is only `NSUserDefaults` / registry (API key, random device id, UI flags).
+- **No command execution beyond opening a URL.** The only `Process.Start` calls open a URL with `UseShellExecute` (the pairing link and the click URL); the click URL is validated to start with `http`. No `NSTask`/`system`/`exec`.
+- **No native interop or dynamic code:** no `DllImport`/`dlopen`/`NSClassFromString`/reflection/`Assembly.Load`.
+- **No custom URL-scheme / deep-link handler** (`CFBundleURLTypes`, `openURL:`, `getURL:withReplyEvent`) - no inbound-link attack surface.
+- **Signing key is not publishable:** `apps/overlay-macos/secrets/PrismOverlaySigning.p12` is gitignored (`secrets/` + `*.p12`), untracked, and absent from git history.
+
+### One disclosed nuance (icons)
+
+For a non-`data:` `iconUrl`, the macOS client fetches the image with `dataTaskWithURL` (`PrismOverlay.m`), so an ad icon may load from a **server-supplied third-party host** (an advertiser logo CDN). This carries **no user content**, but it exposes your IP to the icon host the same way loading any web image does. The whitepaper's "all API calls go to goprism.dev" is accurate for API calls; to be fully precise, ad-icon images are the one asset that can be fetched off-Prism. Mitigation if desired: serve icons as `data:` URLs or proxy them through `goprism.dev`.
+
+## Dynamic capture (runtime proof)
+
+Pointed the signed client at a local logging server (`PRISM_API_URL=http://127.0.0.1:8799`) and exercised the full flow (ad fetch, 5s impression, heartbeats, panel earnings fetch). Every request and decrypted body was logged; process connections were monitored.
+
+**Every endpoint the client emitted (57 requests, all to the configured base, nothing else):**
+- `POST /ads` - body: `{ hiddenAdvertisers:[], sessionId, userId, context:{editor,aiTool,intent,audience,waitState}, source }`
+- `POST /impressions` - body: `{ userId, sessionId, campaignId, impressionToken, durationMs, source, context:{...}, fingerprint:{ platform:"macos", deviceId:<random per-install UUID> } }`
+- `POST /impressions/heartbeat` - body: `{ impressionToken, beatNonce, prevChallengeResponse }`
+- `GET /me/earnings` - no body
+
+**Findings:**
+- **No content in any payload.** Every field is the fixed context, a random session/device id, a server token, a duration, or a campaign id. No prompt, code, file path, AX text, or screen content ever appeared.
+- The "fingerprint" is exactly `{ platform, deviceId }` where `deviceId` is the random per-install UUID - not hardware-derived, confirming the whitepaper.
+- **No out-of-band hosts.** With API traffic pointed at the mock and the test ad carrying no icon URL, `lsof` showed no established connections to anything but loopback. The client phones home nowhere except its configured API base.
+
+## Verdict
+
+The deeper read and the runtime capture corroborate round 1: no secrets, no content logging, no file access, no excess telemetry, no hidden capabilities, and traffic confined to the configured Prism API (plus the disclosed ad-icon fetch). A reviewer doing the same source + proxy + connection checks will reach the same conclusion. This remains an internal review, not the independent third-party audit the whitepaper commits to (section 13.5); do not represent it as such.
