@@ -4,16 +4,44 @@ import { useCallback, useEffect, useState, type CSSProperties } from 'react'
 import { Monitor, X, Check, Loader2, Copy, Terminal, Sparkles } from 'lucide-react'
 import type { DeviceInfo } from './DevicesCard'
 
-const INSTALL_CMD = 'curl -fsSL https://goprism.dev/install.sh | sh'
+type Os = 'mac' | 'windows'
 
-// A self-contained instruction the user can hand to their AI coding agent
-// (Claude Code, Cursor, Codex, etc.) so it installs Prism for them. Straight quotes
-// on purpose so it pastes cleanly.
-const AGENT_PROMPT = `Install the Prism macOS app for me. Run this in my terminal:
+const COMMAND: Record<Os, string> = {
+  mac: 'curl -fsSL https://goprism.dev/install.sh | sh',
+  windows: 'irm https://goprism.dev/install.ps1 | iex',
+}
+
+// Self-contained instruction the user can hand to their AI coding agent (Claude Code,
+// Cursor, Codex, ...) so it installs Prism for them. Straight quotes so it pastes clean.
+const AGENT_PROMPT: Record<Os, string> = {
+  mac: `Install the Prism macOS app for me. Run this in my terminal:
 
 curl -fsSL https://goprism.dev/install.sh | sh
 
-It is a one-line installer that downloads the Prism overlay into /Applications and launches it. The app is unsigned (ad-hoc, there is no Apple Developer ID) and the script already strips the macOS quarantine attribute, so no extra Gatekeeper steps are needed. After it runs, tell me to enable "PrismOverlay" under System Settings > Privacy & Security > Accessibility, then click "Connect account" in the app to link it to my Prism account.`
+It is a one-line installer that downloads the Prism overlay into /Applications and launches it. The app is unsigned (ad-hoc, there is no Apple Developer ID) and the script already strips the macOS quarantine attribute, so no extra Gatekeeper steps are needed. After it runs, tell me to enable "PrismOverlay" under System Settings > Privacy & Security > Accessibility, then click "Connect account" in the app to link it to my Prism account.`,
+  windows: `Install the Prism Windows app for me. Run this in PowerShell:
+
+irm https://goprism.dev/install.ps1 | iex
+
+It is a one-line installer that downloads PrismOverlay.exe into %LOCALAPPDATA%\\Prism, unblocks it so SmartScreen does not nag, sets it to launch at login, and runs it. No admin rights and no .NET install are needed (the exe is self-contained). After it runs, tell me that Prism is now in the Windows system tray and I should click "Connect account" to link it to my Prism account.`,
+}
+
+const OS_COPY: Record<Os, { device: string; intro: string; cmdHint: string; step2Label: string; step2: string }> = {
+  mac: {
+    device: 'Connect your Mac',
+    intro: 'Install Prism to start earning while your AI thinks. About a minute, and no App Store or signed installer needed.',
+    cmdHint: 'Open Terminal (⌘+Space, type “Terminal”), paste, press Return. It downloads and installs Prism, no Apple ID required.',
+    step2Label: '2 · Grant access & connect',
+    step2: 'When the app opens, switch on “PrismOverlay” in the permission window, then click Connect account. Since you are already signed in here, it links to this account automatically.',
+  },
+  windows: {
+    device: 'Connect your Windows PC',
+    intro: 'Install Prism to start earning while your AI thinks. About a minute, and no admin rights or .NET install needed.',
+    cmdHint: 'Open PowerShell (Win+X, then “Terminal” or “Windows PowerShell”), paste, press Enter. It downloads and runs Prism, no admin required.',
+    step2Label: '2 · Open & connect',
+    step2: 'Prism appears in your Windows system tray. If SmartScreen warns, click “More info”, then “Run anyway” (the installer already unblocks it). Click Connect account to link this account; since you are signed in here, it links automatically.',
+  },
+}
 
 interface InstallWizardProps {
   onClose: () => void
@@ -31,6 +59,16 @@ export function InstallWizard({ onClose, onConnected }: InstallWizardProps) {
   const [connected, setConnected] = useState(false)
   const [copied, setCopied] = useState(false)
   const [mode, setMode] = useState<'command' | 'prompt'>('command')
+  const [os, setOs] = useState<Os>('mac')
+
+  // Best-effort OS detection (default macOS; correct to Windows on the client).
+  useEffect(() => {
+    if (/win/i.test(`${navigator.userAgent} ${navigator.platform}`)) setOs('windows')
+  }, [])
+
+  const cmd = COMMAND[os]
+  const agentPrompt = AGENT_PROMPT[os]
+  const cp = OS_COPY[os]
 
   const poll = useCallback(async () => {
     try {
@@ -60,7 +98,7 @@ export function InstallWizard({ onClose, onConnected }: InstallWizardProps) {
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(mode === 'command' ? INSTALL_CMD : AGENT_PROMPT)
+      await navigator.clipboard.writeText(mode === 'command' ? cmd : agentPrompt)
       setCopied(true)
       setTimeout(() => setCopied(false), 1800)
     } catch {
@@ -88,11 +126,8 @@ export function InstallWizard({ onClose, onConnected }: InstallWizardProps) {
             <div style={badge}>
               <Monitor size={24} />
             </div>
-            <h2 style={title}>Connect your Mac</h2>
-            <p style={sub}>
-              Install Prism to start earning while your AI thinks. About a minute, and no
-              App Store or signed installer needed.
-            </p>
+            <h2 style={title}>{cp.device}</h2>
+            <p style={sub}>{cp.intro}</p>
 
             <p style={stepLabel}>1 · Install Prism</p>
             <div style={tabRow}>
@@ -107,21 +142,18 @@ export function InstallWizard({ onClose, onConnected }: InstallWizardProps) {
             {mode === 'command' ? (
               <>
                 <div style={cmdBox}>
-                  <code style={cmdText}>{INSTALL_CMD}</code>
+                  <code style={cmdText}>{cmd}</code>
                   <button style={copyBtn} onClick={copy} aria-label="Copy command">
                     {copied ? <Check size={15} /> : <Copy size={15} />}
                     {copied ? 'Copied' : 'Copy'}
                   </button>
                 </div>
-                <p style={hint}>
-                  Open Terminal (⌘+Space, type “Terminal”), paste, press Return. It downloads and
-                  installs Prism, no Apple ID required.
-                </p>
+                <p style={hint}>{cp.cmdHint}</p>
               </>
             ) : (
               <>
                 <div style={promptBox}>
-                  <pre style={promptText}>{AGENT_PROMPT}</pre>
+                  <pre style={promptText}>{agentPrompt}</pre>
                   <button style={{ ...copyBtn, alignSelf: 'flex-start' }} onClick={copy} aria-label="Copy prompt">
                     {copied ? <Check size={15} /> : <Copy size={15} />}
                     {copied ? 'Copied' : 'Copy'}
@@ -134,12 +166,8 @@ export function InstallWizard({ onClose, onConnected }: InstallWizardProps) {
               </>
             )}
 
-            <p style={stepLabel}>2 · Grant access &amp; connect</p>
-            <p style={hint}>
-              When the app opens, switch on “PrismOverlay” in the permission window, then click
-              <b style={{ color: '#cbd2e0' }}> Connect account</b>. Since you are already signed in
-              here, it links to this account automatically.
-            </p>
+            <p style={stepLabel}>{cp.step2Label}</p>
+            <p style={hint}>{cp.step2}</p>
 
             <div style={waitBox}>
               <Loader2 size={16} className="animate-spin" style={{ flex: 'none' }} />
