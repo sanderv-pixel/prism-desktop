@@ -21,6 +21,9 @@ export interface FraudResult {
   blocked: boolean
   reasons: string[]
   score: number
+  // Set only on a shared_device_multi_account flag: how many OTHER earner accounts
+  // share this device fingerprint (signal strength for the admin review queue).
+  sharedDeviceAccounts?: number
 }
 
 const FRAUD_WINDOW_SECONDS = 60
@@ -267,7 +270,12 @@ export async function evaluateDeviceFingerprint(
     if (!hash) return null
     const others = await countOtherAccountFingerprintMatches(userId, hash)
     return others > 0
-      ? { blocked: false, reasons: ['shared_device_multi_account'], score: SHARED_DEVICE_WEIGHT }
+      ? {
+          blocked: false,
+          reasons: ['shared_device_multi_account'],
+          score: SHARED_DEVICE_WEIGHT,
+          sharedDeviceAccounts: others,
+        }
       : null
   }
 

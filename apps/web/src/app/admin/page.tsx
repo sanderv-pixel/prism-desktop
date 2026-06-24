@@ -37,6 +37,7 @@ interface Metrics {
   clicks: { today: number; total: number }
   conversions: { today: number; total: number; valueToday: number; valueTotal: number }
   anomalies: { total: number; bySeverity: Record<string, number> }
+  review?: { sharedDeviceHeldImpressions: number }
 }
 
 interface AuditLog {
@@ -296,6 +297,13 @@ export default function AdminDashboardPage() {
           value={formatCents(metrics.revenue.held)}
           sub={`${formatCents(metrics.revenue.spend)} spent on ads`}
           icon={CreditCard}
+        />
+        <MetricCard
+          label="Held: shared device"
+          value={formatNumber(metrics.review?.sharedDeviceHeldImpressions ?? 0)}
+          sub="Impressions held for review"
+          icon={AlertTriangle}
+          href="/admin/anomalies"
         />
       </div>
 

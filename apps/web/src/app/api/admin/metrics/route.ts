@@ -58,6 +58,17 @@ async function fetchRevenueMetrics(adminClient: ReturnType<typeof createAdminCli
   }
 }
 
+// Anti-Sybil review queue: impressions held because one device fingerprint is feeding
+// multiple earner accounts. payout_hold alone is not a useful signal (it is true for
+// every unvalidated impression), so we count the shared_device_multi_account flag.
+async function fetchReviewMetrics(adminClient: ReturnType<typeof createAdminClient>) {
+  const { count } = await adminClient
+    .from('impressions')
+    .select('id', { count: 'exact', head: true })
+    .contains('fraud_flags', ['shared_device_multi_account'])
+  return { sharedDeviceHeldImpressions: count ?? 0 }
+}
+
 const ACTIVE_VISIT_WINDOW_MS = 15 * 60 * 1000 // 15 minutes
 
 async function fetchInternalVisitTotals(adminClient: ReturnType<typeof createAdminClient>) {
@@ -170,10 +181,12 @@ export async function GET(req: NextRequest) {
       { data: metricsData, error: metricsError },
       visitMetrics,
       revenueMetrics,
+      reviewMetrics,
     ] = await Promise.all([
       adminClient.rpc('get_admin_metrics'),
       fetchVisitMetrics(adminClient),
       fetchRevenueMetrics(adminClient),
+      fetchReviewMetrics(adminClient),
     ])
     if (metricsError) throw metricsError
 
@@ -192,6 +205,7 @@ export async function GET(req: NextRequest) {
     const metrics = (metricsData ?? {}) as Record<string, unknown>
     metrics.visits = visitMetrics
     metrics.revenue = revenueMetrics
+    metrics.review = reviewMetrics
 
     const responsePayload = { metrics, auditLogs }
 

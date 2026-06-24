@@ -13,6 +13,7 @@ export type AnomalyType =
   | 'rapid_budget_drain'
   | 'heartbeat_coverage_low'
   | 'ip_multi_account'
+  | 'shared_device_multi_account'
 
 export type AnomalySeverity = 'low' | 'medium' | 'high' | 'critical'
 
@@ -36,6 +37,7 @@ const THRESHOLDS: Record<AnomalyType, number> = {
   rapid_budget_drain: 1, // Fired once when >50% of budget spent in 1 hour.
   heartbeat_coverage_low: 10, // 10 missing/short-heartbeat impressions / hour / identity.
   ip_multi_account: 20, // 20 multi-account-flagged impressions from one IP in 1 hour.
+  shared_device_multi_account: 1, // Raised on the first held impression per account / hour.
 }
 
 // Sybil watch: an IP that keeps producing impressions flagged as belonging to
@@ -51,6 +53,26 @@ export async function recordSybilIpAnomaly(clientIp: string): Promise<void> {
       type: 'ip_multi_account',
       severity: 'medium',
       details: { clientIp, flaggedImpressions: count, windowSeconds: 3600 },
+    })
+  }
+}
+
+// Cross-account device dedup watch: one physical device fingerprint feeding multiple
+// earner accounts. The impression is already held for payout; raise one event per
+// account per hour for the admin review queue (medium = surfaced, not emailed, since a
+// shared family computer is a legitimate case worth a human look, not an auto-ban).
+// Fire-and-forget from the impressions path.
+export async function recordSharedDeviceAnomaly(
+  userId: string,
+  otherAccountsOnDevice: number
+): Promise<void> {
+  if (!userId) return
+  const count = await kvIncr(`anomaly:shareddev:${userId}`, 60 * 60)
+  if (count === THRESHOLDS.shared_device_multi_account) {
+    await recordAnomaly({
+      type: 'shared_device_multi_account',
+      severity: 'medium',
+      details: { userId, otherAccountsOnDevice, windowSeconds: 3600 },
     })
   }
 }

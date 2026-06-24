@@ -18,6 +18,7 @@ import {
   detectBudgetDrainAnomaly,
   recordHeartbeatCoverageAnomaly,
   recordSybilIpAnomaly,
+  recordSharedDeviceAnomaly,
 } from '@/lib/anomaly'
 import {
   loadHbState,
@@ -249,6 +250,11 @@ export async function POST(req: NextRequest) {
     // Sybil watch: surface IPs producing impressions tied to many distinct accounts.
     if (clientIp && combinedFraud.reasons.includes('multiple_users_on_ip')) {
       recordSybilIpAnomaly(clientIp).catch(() => {})
+    }
+
+    // Cross-account device dedup watch: surface one device feeding multiple accounts.
+    if (sharedDevice) {
+      recordSharedDeviceAnomaly(userId, fingerprintResult.sharedDeviceAccounts ?? 0).catch(() => {})
     }
 
     if (combinedFraud.blocked && !isTrusted) {
