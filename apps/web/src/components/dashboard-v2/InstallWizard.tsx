@@ -1,10 +1,19 @@
 'use client'
 
 import { useCallback, useEffect, useState, type CSSProperties } from 'react'
-import { Monitor, X, Check, Loader2, Copy, Terminal } from 'lucide-react'
+import { Monitor, X, Check, Loader2, Copy, Terminal, Sparkles } from 'lucide-react'
 import type { DeviceInfo } from './DevicesCard'
 
 const INSTALL_CMD = 'curl -fsSL https://goprism.dev/install.sh | sh'
+
+// A self-contained instruction the user can hand to their AI coding agent
+// (Claude Code, Cursor, Codex, etc.) so it installs Prism for them. Straight quotes
+// on purpose so it pastes cleanly.
+const AGENT_PROMPT = `Install the Prism macOS app for me. Run this in my terminal:
+
+curl -fsSL https://goprism.dev/install.sh | sh
+
+It is a one-line installer that downloads the Prism overlay into /Applications and launches it. The app is unsigned (ad-hoc, there is no Apple Developer ID) and the script already strips the macOS quarantine attribute, so no extra Gatekeeper steps are needed. After it runs, tell me to enable "PrismOverlay" under System Settings > Privacy & Security > Accessibility, then click "Connect account" in the app to link it to my Prism account.`
 
 interface InstallWizardProps {
   onClose: () => void
@@ -21,6 +30,7 @@ interface InstallWizardProps {
 export function InstallWizard({ onClose, onConnected }: InstallWizardProps) {
   const [connected, setConnected] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [mode, setMode] = useState<'command' | 'prompt'>('command')
 
   const poll = useCallback(async () => {
     try {
@@ -50,7 +60,7 @@ export function InstallWizard({ onClose, onConnected }: InstallWizardProps) {
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(INSTALL_CMD)
+      await navigator.clipboard.writeText(mode === 'command' ? INSTALL_CMD : AGENT_PROMPT)
       setCopied(true)
       setTimeout(() => setCopied(false), 1800)
     } catch {
@@ -84,19 +94,45 @@ export function InstallWizard({ onClose, onConnected }: InstallWizardProps) {
               App Store or signed installer needed.
             </p>
 
-            <p style={stepLabel}>1 · Paste this in Terminal</p>
-            <div style={cmdBox}>
-              <Terminal size={15} style={{ color: '#8b5cf6', flex: 'none' }} />
-              <code style={cmdText}>{INSTALL_CMD}</code>
-              <button style={copyBtn} onClick={copy} aria-label="Copy command">
-                {copied ? <Check size={15} /> : <Copy size={15} />}
-                {copied ? 'Copied' : 'Copy'}
+            <p style={stepLabel}>1 · Install Prism</p>
+            <div style={tabRow}>
+              <button type="button" style={mode === 'command' ? tabActive : tab} onClick={() => setMode('command')}>
+                <Terminal size={13} /> Terminal command
+              </button>
+              <button type="button" style={mode === 'prompt' ? tabActive : tab} onClick={() => setMode('prompt')}>
+                <Sparkles size={13} /> AI agent prompt
               </button>
             </div>
-            <p style={hint}>
-              Open Terminal (⌘+Space, type “Terminal”), paste, press Return. It downloads and
-              installs Prism, no Apple ID required. Or hand the line to your coding agent.
-            </p>
+
+            {mode === 'command' ? (
+              <>
+                <div style={cmdBox}>
+                  <code style={cmdText}>{INSTALL_CMD}</code>
+                  <button style={copyBtn} onClick={copy} aria-label="Copy command">
+                    {copied ? <Check size={15} /> : <Copy size={15} />}
+                    {copied ? 'Copied' : 'Copy'}
+                  </button>
+                </div>
+                <p style={hint}>
+                  Open Terminal (⌘+Space, type “Terminal”), paste, press Return. It downloads and
+                  installs Prism, no Apple ID required.
+                </p>
+              </>
+            ) : (
+              <>
+                <div style={promptBox}>
+                  <pre style={promptText}>{AGENT_PROMPT}</pre>
+                  <button style={{ ...copyBtn, alignSelf: 'flex-start' }} onClick={copy} aria-label="Copy prompt">
+                    {copied ? <Check size={15} /> : <Copy size={15} />}
+                    {copied ? 'Copied' : 'Copy'}
+                  </button>
+                </div>
+                <p style={hint}>
+                  Paste this into your AI coding agent (Claude Code, Cursor, Codex…) and it installs
+                  Prism for you, no Terminal needed.
+                </p>
+              </>
+            )}
 
             <p style={stepLabel}>2 · Grant access &amp; connect</p>
             <p style={hint}>
@@ -148,6 +184,25 @@ const cmdText: CSSProperties = {
 const copyBtn: CSSProperties = {
   flex: 'none', display: 'flex', alignItems: 'center', gap: 5, padding: '6px 10px', borderRadius: 8,
   background: '#7c3aed', color: '#fff', border: 0, fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
+}
+const tabRow: CSSProperties = {
+  display: 'flex', gap: 6, marginBottom: 11, background: '#0b0d13',
+  border: '1px solid rgba(255,255,255,.08)', borderRadius: 9, padding: 3,
+}
+const tabBase: CSSProperties = {
+  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '7px 6px',
+  borderRadius: 6, border: 0, background: 'transparent', color: '#8a92a3', fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
+}
+const tab = tabBase
+const tabActive: CSSProperties = { ...tabBase, background: '#23272f', color: '#fff' }
+const promptBox: CSSProperties = {
+  display: 'flex', alignItems: 'flex-start', gap: 10, background: '#0b0d13',
+  border: '1px solid rgba(255,255,255,.1)', borderRadius: 10, padding: '11px 12px',
+}
+const promptText: CSSProperties = {
+  flex: 1, minWidth: 0, margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+  fontFamily: 'var(--font-mono), monospace', fontSize: 11.5, lineHeight: 1.5, color: '#cbd2e0',
+  maxHeight: 168, overflowY: 'auto',
 }
 const hint: CSSProperties = { margin: '9px 0 0', fontSize: 12.5, lineHeight: 1.55, color: '#7a8294' }
 const waitBox: CSSProperties = {
