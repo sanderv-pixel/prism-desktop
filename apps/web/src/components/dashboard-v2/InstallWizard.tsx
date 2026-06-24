@@ -6,24 +6,37 @@ import type { DeviceInfo } from './DevicesCard'
 
 type Os = 'mac' | 'windows'
 
-const COMMAND: Record<Os, string> = {
-  mac: 'curl -fsSL https://goprism.dev/install.sh | sh',
-  windows: 'irm https://goprism.dev/install.ps1 | iex',
+// The install command carries a one-time link token (PRISM_LINK_TOKEN) minted for the
+// signed-in account, so install.sh binds the device to this account before first launch
+// — earnings credit automatically, with no separate "connect" step. Falls back to the
+// plain command (anonymous self-register, linkable later) if the token isn't ready.
+function buildCommand(os: Os, token: string | null): string {
+  if (os === 'windows') {
+    return token
+      ? `$env:PRISM_LINK_TOKEN='${token}'; irm https://goprism.dev/install.ps1 | iex`
+      : 'irm https://goprism.dev/install.ps1 | iex'
+  }
+  return token
+    ? `curl -fsSL https://goprism.dev/install.sh | PRISM_LINK_TOKEN=${token} sh`
+    : 'curl -fsSL https://goprism.dev/install.sh | sh'
 }
 
 // Self-contained instruction the user can hand to their AI coding agent (Claude Code,
 // Cursor, Codex, ...) so it installs Prism for them. Straight quotes so it pastes clean.
-const AGENT_PROMPT: Record<Os, string> = {
-  mac: `Install the Prism macOS app for me. Run this in my terminal:
+function buildAgentPrompt(os: Os, token: string | null): string {
+  const cmd = buildCommand(os, token)
+  if (os === 'windows') {
+    return `Install the Prism Windows app for me. Run this in PowerShell:
 
-curl -fsSL https://goprism.dev/install.sh | sh
+${cmd}
 
-It is a one-line installer that downloads the Prism overlay into /Applications and launches it. The app is unsigned (ad-hoc, there is no Apple Developer ID) and the script already strips the macOS quarantine attribute, so no extra Gatekeeper steps are needed. After it runs, tell me to enable "PrismOverlay" under System Settings > Privacy & Security > Accessibility, then click "Connect account" in the app to link it to my Prism account.`,
-  windows: `Install the Prism Windows app for me. Run this in PowerShell:
+It is a one-line installer that downloads PrismOverlay.exe into %LOCALAPPDATA%\\Prism, unblocks it so SmartScreen does not nag, sets it to launch at login, and runs it. No admin rights and no .NET install are needed (the exe is self-contained). After it runs, tell me that Prism is now in the Windows system tray. It is already linked to my Prism account.`
+  }
+  return `Install the Prism macOS app for me. Run this in my terminal:
 
-irm https://goprism.dev/install.ps1 | iex
+${cmd}
 
-It is a one-line installer that downloads PrismOverlay.exe into %LOCALAPPDATA%\\Prism, unblocks it so SmartScreen does not nag, sets it to launch at login, and runs it. No admin rights and no .NET install are needed (the exe is self-contained). After it runs, tell me that Prism is now in the Windows system tray and I should click "Connect account" to link it to my Prism account.`,
+It is a one-line installer that downloads the Prism overlay into /Applications and launches it. The app is unsigned (ad-hoc, there is no Apple Developer ID) and the script already strips the macOS quarantine attribute, so no extra Gatekeeper steps are needed. After it runs, tell me to enable "PrismOverlay" under System Settings > Privacy & Security > Accessibility. It is already linked to my Prism account.`
 }
 
 const OS_COPY: Record<Os, { device: string; intro: string; cmdHint: string; step2Label: string; step2: string }> = {
@@ -31,15 +44,15 @@ const OS_COPY: Record<Os, { device: string; intro: string; cmdHint: string; step
     device: 'Connect your Mac',
     intro: 'Install Prism to start earning while your AI thinks. About a minute, and no App Store or signed installer needed.',
     cmdHint: 'Open Terminal (⌘+Space, type “Terminal”), paste, press Return. It downloads and installs Prism, no Apple ID required.',
-    step2Label: '2 · Grant access & connect',
-    step2: 'When the app opens, switch on “PrismOverlay” in the permission window, then click Connect account. Since you are already signed in here, it links to this account automatically.',
+    step2Label: '2 · Grant access',
+    step2: 'When the app opens, switch on “PrismOverlay” in the permission window. The command above already linked the device to this account, so your earnings start crediting as soon as your AI is thinking — no extra step.',
   },
   windows: {
     device: 'Connect your Windows PC',
     intro: 'Install Prism to start earning while your AI thinks. About a minute, and no admin rights or .NET install needed.',
     cmdHint: 'Open PowerShell (Win+X, then “Terminal” or “Windows PowerShell”), paste, press Enter. It downloads and runs Prism, no admin required.',
-    step2Label: '2 · Open & connect',
-    step2: 'Prism appears in your Windows system tray. If SmartScreen warns, click “More info”, then “Run anyway” (the installer already unblocks it). Click Connect account to link this account; since you are signed in here, it links automatically.',
+    step2Label: '2 · Open',
+    step2: 'Prism appears in your Windows system tray. If SmartScreen warns, click “More info”, then “Run anyway” (the installer already unblocks it). The command above already linked the device to this account — nothing else to do.',
   },
 }
 
@@ -60,14 +73,35 @@ export function InstallWizard({ onClose, onConnected }: InstallWizardProps) {
   const [copied, setCopied] = useState(false)
   const [mode, setMode] = useState<'command' | 'prompt'>('command')
   const [os, setOs] = useState<Os>('mac')
+  const [linkToken, setLinkToken] = useState<string | null>(null)
 
   // Best-effort OS detection (default macOS; correct to Windows on the client).
   useEffect(() => {
     if (/win/i.test(`${navigator.userAgent} ${navigator.platform}`)) setOs('windows')
   }, [])
 
-  const cmd = COMMAND[os]
-  const agentPrompt = AGENT_PROMPT[os]
+  // Mint a one-time link token for this account so the install command binds the new
+  // device to it automatically. Best-effort: if it fails, the plain command still works
+  // (the device self-registers anonymously and can be linked from the dashboard later).
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch('/api/auth/link/token', { method: 'POST' })
+        if (!res.ok) return
+        const { token } = await res.json()
+        if (!cancelled && typeof token === 'string') setLinkToken(token)
+      } catch {
+        // Network blip — fall back to the unlinked command.
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const cmd = buildCommand(os, linkToken)
+  const agentPrompt = buildAgentPrompt(os, linkToken)
   const cp = OS_COPY[os]
 
   const poll = useCallback(async () => {

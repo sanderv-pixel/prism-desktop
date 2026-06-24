@@ -24,6 +24,26 @@ ditto -x -k "$TMP/prism.zip" /Applications
 # Belt-and-suspenders: strip quarantine if any tooling added it.
 xattr -dr com.apple.quarantine "$DEST" 2>/dev/null || true
 
+# Link this device to your account. The dashboard's personalized install command sets
+# PRISM_LINK_TOKEN; we exchange it for an account-bound device key and seed it BEFORE
+# first launch, so the overlay reports to your account from impression #1 (no browser
+# round-trip, no app changes). Without a token the overlay self-registers anonymously.
+API_BASE="${PRISM_API_URL:-https://goprism.dev}"
+if [ -n "${PRISM_LINK_TOKEN:-}" ]; then
+  echo "→ Linking this device to your Prism account…"
+  LINK_RESP="$(curl -fsS -X POST -H 'Content-Type: application/json' \
+    -d "{\"token\":\"$PRISM_LINK_TOKEN\"}" "$API_BASE/api/auth/link/exchange" 2>/dev/null || true)"
+  API_KEY="$(printf '%s' "$LINK_RESP" | sed -n 's/.*"apiKey":"\([^"]*\)".*/\1/p')"
+  if [ -n "$API_KEY" ]; then
+    defaults write dev.goprism.overlay PrismApiKey "$API_KEY"
+    defaults write dev.goprism.overlay PrismDeviceId "$(uuidgen | tr -d '-')"
+    echo "  ✓ Linked — your earnings will credit this account automatically."
+  else
+    echo "  ⚠ Couldn't link automatically (token expired or already used)."
+    echo "    Prism will still run; link this device later from your dashboard."
+  fi
+fi
+
 echo "→ Enabling launch-at-login…"
 PLIST="$HOME/Library/LaunchAgents/dev.goprism.overlay.plist"
 mkdir -p "$HOME/Library/LaunchAgents"
