@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import '../v2/v2.css'
 import { useAuth } from '@/hooks/useAuth'
@@ -82,6 +82,18 @@ const INSTALL_OPTIONS: InstallOption[] = [
   },
 ]
 
+// Inject the one-time account link token into an install command so the device binds
+// to this account on first launch. Handles shell pipes (| bash / | sh) and PowerShell
+// (irm | iex, or the Cursor scriptblock form). Commands without an interpreter pipe
+// (e.g. the Claude Code status-line script) are returned unchanged.
+function withLinkToken(command: string, token: string | null): string {
+  if (!token) return command
+  if (command.startsWith('irm ') || command.startsWith('& (')) {
+    return `$env:PRISM_LINK_TOKEN='${token}'; ${command}`
+  }
+  return command.replace(/\|\s*(bash|sh)\b/, `| PRISM_LINK_TOKEN=${token} $1`)
+}
+
 function InstallCommand({ command }: { command: string }) {
   const [copied, setCopied] = useState(false)
 
@@ -120,6 +132,28 @@ function InstallCommand({ command }: { command: string }) {
 export default function OnboardingPage() {
   const { user, loading: authLoading } = useAuth()
   const [selectedTool, setSelectedTool] = useState<Tool | null>(null)
+  const [linkToken, setLinkToken] = useState<string | null>(null)
+
+  // Once signed in, mint a one-time link token so the install command binds the new
+  // device to this account automatically. Best-effort; falls back to an unlinked
+  // command (anonymous self-register, linkable later from the dashboard).
+  useEffect(() => {
+    if (!user) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch('/api/auth/link/token', { method: 'POST' })
+        if (!res.ok) return
+        const { token } = await res.json()
+        if (!cancelled && typeof token === 'string') setLinkToken(token)
+      } catch {
+        // Network blip — leave the command unlinked.
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [user])
 
   const selected = INSTALL_OPTIONS.find((t) => t.id === selectedTool)
 
@@ -218,12 +252,12 @@ export default function OnboardingPage() {
 
               <div>
                 <label className="oblabel">Run this command in your terminal</label>
-                <InstallCommand command={selected.command} />
+                <InstallCommand command={withLinkToken(selected.command, linkToken)} />
 
                 {selected.windowsCommand && (
                   <>
                     <label className="oblabel">Windows PowerShell</label>
-                    <InstallCommand command={selected.windowsCommand} />
+                    <InstallCommand command={withLinkToken(selected.windowsCommand, linkToken)} />
                   </>
                 )}
               </div>
