@@ -159,7 +159,7 @@ static NSString *Money(double cents) {
     NSTextField *_balanceHdr, *_balanceVal;
     PPProgressView *_progress;
     NSTextField *_progressMeta;
-    PPClickView *_splitChip, *_upChip, *_downChip, *_fewerChip;
+    PPClickView *_upChip, *_downChip, *_fewerChip;
     PPClickView *_pauseToggle;
     NSTextField *_pauseLabel;
     NSTextField *_footer;
@@ -282,18 +282,13 @@ static const CGFloat kPanelH = 336.0;
     _progressMeta.frame = NSMakeRect(P, 198, W, 14);
     [_card addSubview:_progressMeta];
 
-    // Chips row: split + feedback.
-    _splitChip = [self chipWithTitle:@"You keep 50%" frame:NSMakeRect(P, 224, 104, 24)];
-    _splitChip.fillColor = HexA(0x8b5cf6, 0.16);
-    _splitChip.strokeColor = HexA(0x8b5cf6, 0.40);
-    _splitChip.titleField.textColor = Hex(0xc4b5fd);
-    _upChip = [self chipWithTitle:@"\U0001F44D" frame:NSMakeRect(P + 110, 224, 44, 24)];
+    // Chips row: feedback controls.
+    _upChip = [self chipWithTitle:@"\U0001F44D" frame:NSMakeRect(P, 224, 44, 24)];
     _upChip.onClick = ^{ [weakSelf flagFeedback:@"up"]; };
-    _downChip = [self chipWithTitle:@"\U0001F44E" frame:NSMakeRect(P + 160, 224, 44, 24)];
+    _downChip = [self chipWithTitle:@"\U0001F44E" frame:NSMakeRect(P + 50, 224, 44, 24)];
     _downChip.onClick = ^{ [weakSelf flagFeedback:@"down"]; };
-    _fewerChip = [self chipWithTitle:@"Fewer like this" frame:NSMakeRect(P + 210, 224, W - 210, 24)];
+    _fewerChip = [self chipWithTitle:@"Fewer like this" frame:NSMakeRect(P + 100, 224, W - 100, 24)];
     _fewerChip.onClick = ^{ [weakSelf flagFeedback:@"fewer"]; };
-    [_card addSubview:_splitChip];
     [_card addSubview:_upChip];
     [_card addSubview:_downChip];
     [_card addSubview:_fewerChip];
@@ -388,7 +383,6 @@ static const CGFloat kPanelH = 336.0;
         double threshold = e.payoutThresholdCents > 0 ? e.payoutThresholdCents : 2000;
         _progress.fraction = (CGFloat)(e.balanceCents / threshold);
         _progressMeta.stringValue = [NSString stringWithFormat:@"%@ of %@ to payout", Money(e.balanceCents), Money(threshold)];
-        [_splitChip setTitle:[NSString stringWithFormat:@"You keep %ld%%", (long)e.splitPercent]];
     } else {
         _earnedHdr.hidden = YES;
         _earnedVal.hidden = YES;
