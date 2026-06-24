@@ -91,6 +91,7 @@ export default function NewCampaignPage() {
   const [title, setTitle] = useState('')
   const [copy, setCopy] = useState('')
   const [brandName, setBrandName] = useState('')
+  const [promoCode, setPromoCode] = useState('')
   const [url, setUrl] = useState('')
   const [iconUrl, setIconUrl] = useState('')
   const [objective, setObjective] = useState<'awareness' | 'traffic' | 'performance'>('awareness')
@@ -168,6 +169,7 @@ export default function NewCampaignPage() {
         title,
         copy,
         brandName: brandName.trim() || undefined,
+        promoCode: promoCode.trim() || undefined,
         url,
         iconUrl: iconUrl || undefined,
         objective,
@@ -267,6 +269,11 @@ export default function NewCampaignPage() {
                     <p className="text-xs text-muted-foreground mt-1.5">Brand name only, up to 14 characters.</p>
                   </div>
                   <div>
+                    <label className="block text-sm font-medium text-foreground/80 mb-1.5">Promo code <span className="text-muted-foreground font-normal">(optional)</span></label>
+                    <input type="text" maxLength={64} value={promoCode} onChange={(e) => setPromoCode(e.target.value)} placeholder="e.g. PRISM20 (shown in the expanded ad panel)" className={inputCls} />
+                    <p className="text-xs text-muted-foreground mt-1.5">Shown as a Copy code button in the expanded ad panel. Leave blank for none.</p>
+                  </div>
+                  <div>
                     <label className="block text-sm font-medium text-foreground/80 mb-1.5">Destination URL</label>
                     <input type="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://railway.app" className={inputCls} />
                     {url.trim() && !urlValid && <p className="text-xs text-red-500 mt-1.5">Enter a full URL (https://…).</p>}
@@ -278,7 +285,7 @@ export default function NewCampaignPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-foreground/80 mb-1.5">Live preview</label>
-                      <AdPreview copy={copy} url={url} iconUrl={iconUrl || null} brandName={brandName} />
+                      <AdPreview copy={copy} url={url} iconUrl={iconUrl || null} brandName={brandName} variant="expanded" promoCode={promoCode || null} />
                     </div>
                   </div>
                 </div>

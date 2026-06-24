@@ -31,6 +31,7 @@ const CampaignSchema = z.object({
   contexts: z.array(z.string().min(1).max(50)).max(50).optional(),
   targetSources: z.array(z.enum(['claude', 'cursor', 'codex', 'terminal'])).max(4).optional(),
   targetCountries: z.array(z.string().length(2)).max(60).optional(),
+  promoCode: z.string().max(64).optional(), // optional code shown in the expanded ad panel
 })
 
 export async function GET() {
@@ -141,6 +142,7 @@ export async function POST(req: NextRequest) {
       contexts,
       targetSources,
       targetCountries,
+      promoCode,
     } = parseResult.data
 
     if (iconUrl) {
@@ -178,6 +180,7 @@ export async function POST(req: NextRequest) {
         brand_name: brandName?.trim() || null,
         url,
         icon_url: iconUrl || null,
+        promo_code: promoCode?.trim() || null,
         objective,
         bid_type: bidType,
         max_bid_cpm: maxBidCpm ?? 0,

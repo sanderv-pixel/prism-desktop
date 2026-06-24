@@ -45,4 +45,17 @@ internal static class Settings
         get => Get("OnboardingDone") == "1";
         set => Set("OnboardingDone", value ? "1" : "0");
     }
+
+    // Expanded ad panel feature flag. Mirrors the macOS PrismAdPillExpanded gate:
+    // env PRISM_ADPILL_EXPANDED=1/0 wins, else registry, else OFF (prod-safe).
+    public static bool AdPillExpanded
+    {
+        get
+        {
+            var env = Environment.GetEnvironmentVariable("PRISM_ADPILL_EXPANDED");
+            if (env == "1") return true;
+            if (env == "0") return false;
+            return Get("AdPillExpanded") == "1";
+        }
+    }
 }

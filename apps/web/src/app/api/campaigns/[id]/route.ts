@@ -16,6 +16,7 @@ const CampaignUpdateSchema = z.object({
   title: z.string().min(1).max(120).optional(),
   copy: z.string().min(1).max(40).optional(), // CTA: one short action, per ad-unit guidelines
   brand_name: z.string().max(14).optional().or(z.literal('')), // brand name only, per guidelines
+  promo_code: z.string().max(64).optional().or(z.literal('')), // optional code for the expanded ad panel
   url: httpUrl().optional(),
   icon_url: iconUrlSchema().optional().or(z.literal('')),
   max_bid_cpm: z.number().int().min(8).max(10000).optional(),

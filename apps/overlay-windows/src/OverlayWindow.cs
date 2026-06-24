@@ -2,6 +2,17 @@ using System.Drawing.Drawing2D;
 
 namespace PrismOverlay;
 
+// TODO(adpill-expanded): Windows parity for the expanded hover panel is not built
+// yet (macOS shipped first behind PrismAdPillExpanded). When Settings.AdPillExpanded
+// is on, mirror PrismPanelWindow from apps/overlay-macos: a SEPARATE borderless
+// WS_EX_NOACTIVATE topmost Form anchored under this pill, shown on MouseEnter +
+// click-to-pin, dismissed on leave/Esc/click-outside. It must render earnings from
+// a new AdClient.GetEarnings() (GET /api/me/earnings, cached) + payout progress +
+// the 50% split + up/down/fewer (AdClient.SendFeedback -> POST /api/ads/feedback) +
+// pause + Copy code (Ad.PromoCode). Critically, keep it a SEPARATE window so this
+// pill's impression dwell/heartbeat/rotation are untouched, and pause rotation while
+// pinned. The resting pill below (OnPaint) must stay byte-identical.
+
 /// The floating ad pill: borderless, topmost, non-activating, clickable.
 public sealed class OverlayWindow : Form
 {
