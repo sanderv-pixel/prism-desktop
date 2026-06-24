@@ -4,6 +4,9 @@
 @implementation PrismAd
 @end
 
+@implementation PrismEarnings
+@end
+
 // Context we report to the API. Honest + minimal: editor + tool + wait state.
 // No source code, prompts, or file contents — by design.
 static NSDictionary *AdContext(void) {
@@ -41,6 +44,7 @@ static NSColor *ColorHex(uint32_t rgb) {
 @property(nonatomic, copy) NSString *sessionId;
 @property(nonatomic, strong) NSArray<PrismAd *> *queue;   // immutable; replaced wholesale
 @property(nonatomic, assign) NSUInteger cursor;
+@property(nonatomic, strong, nullable) PrismEarnings *cachedEarnings;   // last /api/me/earnings
 @end
 
 @implementation PrismAdClient
@@ -131,6 +135,9 @@ static NSColor *ColorHex(uint32_t rgb) {
     // Anti-bot heartbeat seed (additive; absent on older servers -> no beats sent).
     ad.hbChallenge = [d[@"hbChallenge"] isKindOfClass:[NSString class]] ? d[@"hbChallenge"] : nil;
     ad.hbIntervalMs = [d[@"hbIntervalMs"] isKindOfClass:[NSNumber class]] ? [d[@"hbIntervalMs"] integerValue] : 0;
+    // Expanded-panel metadata (additive; campaign-derived only).
+    ad.promoCode = ([d[@"promoCode"] isKindOfClass:[NSString class]] && [d[@"promoCode"] length]) ? d[@"promoCode"] : nil;
+    ad.why = [d[@"why"] isKindOfClass:[NSString class]] ? d[@"why"] : nil;
     ad.color = ColorHex(0x8B5CF6);  // brand violet per ad-unit guidelines
     return ad;
 }
@@ -178,6 +185,49 @@ static NSColor *ColorHex(uint32_t rgb) {
     if (url && ([url.scheme isEqualToString:@"https"] || [url.scheme isEqualToString:@"http"])) {
         [[NSWorkspace sharedWorkspace] openURL:url];
     }
+}
+
+#pragma mark - Expanded panel: earnings + feedback (best-effort)
+
+- (NSMutableURLRequest *)getFrom:(NSString *)path {
+    NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@/%@", self.baseURL, path]];
+    NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL:url];
+    req.HTTPMethod = @"GET";
+    NSString *key = [self currentApiKey];
+    if (key.length) [req setValue:key forHTTPHeaderField:@"X-Prism-Api-Key"];
+    req.timeoutInterval = 4.0;
+    return req;
+}
+
+- (void)fetchEarnings:(nullable void (^)(PrismEarnings *_Nullable))completion {
+    if (![self isConnected]) { if (completion) completion(nil); return; }
+    [[[NSURLSession sharedSession] dataTaskWithRequest:[self getFrom:@"me/earnings"]
+        completionHandler:^(NSData *data, NSURLResponse *resp, NSError *err) {
+            PrismEarnings *e = nil;
+            if (!err && data) {
+                id json = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
+                if ([json isKindOfClass:[NSDictionary class]]) {
+                    NSDictionary *d = json;
+                    e = [PrismEarnings new];
+                    e.balanceCents = [d[@"balanceCents"] isKindOfClass:[NSNumber class]] ? [d[@"balanceCents"] doubleValue] : 0;
+                    e.earnedTodayCents = [d[@"earnedTodayCents"] isKindOfClass:[NSNumber class]] ? [d[@"earnedTodayCents"] doubleValue] : 0;
+                    e.payoutThresholdCents = [d[@"payoutThresholdCents"] isKindOfClass:[NSNumber class]] ? [d[@"payoutThresholdCents"] doubleValue] : 2000;
+                    e.splitPercent = [d[@"splitPercent"] isKindOfClass:[NSNumber class]] ? [d[@"splitPercent"] integerValue] : 50;
+                    e.perViewCents = [d[@"perViewCents"] isKindOfClass:[NSNumber class]] ? d[@"perViewCents"] : nil;
+                }
+            }
+            dispatch_async(dispatch_get_main_queue(), ^{
+                if (e) self.cachedEarnings = e;   // keep last-known cache on failure
+                if (completion) completion(e);
+            });
+        }] resume];
+}
+
+- (void)sendFeedbackForCampaign:(NSString *)campaignId signal:(NSString *)signal {
+    if (!campaignId.length || !signal.length) return;
+    NSDictionary *body = @{ @"campaignId": campaignId, @"signal": signal };
+    [[[NSURLSession sharedSession] dataTaskWithRequest:[self postTo:@"ads/feedback" body:body]
+        completionHandler:^(NSData *d, NSURLResponse *r, NSError *e) { /* fire and forget */ }] resume];
 }
 
 @end

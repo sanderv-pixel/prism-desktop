@@ -20,6 +20,20 @@ NS_ASSUME_NONNULL_BEGIN
 // nextChallenge. hbIntervalMs is how often to beat (0 = server omitted it).
 @property(nonatomic, copy, nullable) NSString *hbChallenge;
 @property(nonatomic, assign) NSInteger hbIntervalMs;
+// Expanded-panel metadata (additive; nil on older servers). Privacy-safe: derived
+// from campaign metadata only, never from editor content.
+@property(nonatomic, copy, nullable) NSString *promoCode;   // shown as "Copy code" when set
+@property(nonatomic, copy, nullable) NSString *why;         // "Why this ad?" explanation
+@end
+
+// Earnings snapshot for the expanded panel (from GET /api/me/earnings). All money
+// in cents. perViewCents is nil when there is no credited view yet.
+@interface PrismEarnings : NSObject
+@property(nonatomic, assign) double balanceCents;
+@property(nonatomic, assign) double earnedTodayCents;
+@property(nonatomic, assign) double payoutThresholdCents;
+@property(nonatomic, assign) NSInteger splitPercent;
+@property(nonatomic, strong, nullable) NSNumber *perViewCents;
 @end
 
 @interface PrismAdClient : NSObject
@@ -53,6 +67,21 @@ NS_ASSUME_NONNULL_BEGIN
 /// Register a click: opens the ad's click URL, which records the click
 /// server-side and redirects the user to the advertiser.
 - (void)registerClick:(PrismAd *)ad;
+
+#pragma mark - Expanded panel (additive; never reads editor content)
+
+/// Last earnings snapshot fetched from GET /api/me/earnings, or nil if none yet.
+/// The panel renders from this cache instantly and refreshes on open.
+@property(nonatomic, strong, readonly, nullable) PrismEarnings *cachedEarnings;
+
+/// Fetch the earnings snapshot (best-effort, key-authed). Updates `cachedEarnings`
+/// and calls `completion` on the main queue (with the new snapshot, or nil on
+/// failure - keep showing the cache). Never blocks the UI.
+- (void)fetchEarnings:(nullable void (^)(PrismEarnings *_Nullable))completion;
+
+/// Send a panel control signal for an ad (best-effort, fire-and-forget). Body is
+/// only { campaignId, signal } - never any user content. signal in up/down/fewer/hidden.
+- (void)sendFeedbackForCampaign:(NSString *)campaignId signal:(NSString *)signal;
 
 @end
 

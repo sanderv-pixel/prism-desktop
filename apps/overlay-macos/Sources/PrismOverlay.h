@@ -16,6 +16,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)animateEntranceAt:(NSPoint)origin;
 /// Invoked when the user clicks the pill.
 @property(nonatomic, copy, nullable) void (^onClick)(void);
+/// Invoked when the pointer enters / leaves the pill (drives the expanded panel).
+/// Additive: does not affect the resting pill's size, position, or click contract.
+@property(nonatomic, copy, nullable) void (^onHoverEnter)(void);
+@property(nonatomic, copy, nullable) void (^onHoverExit)(void);
 @end
 
 /// Ties everything together. Polls Accessibility, shows the pill next to Claude's

@@ -1,5 +1,6 @@
 #import "PrismOverlay.h"
 #import "PrismAX.h"
+#import "PrismPanel.h"
 #import <QuartzCore/QuartzCore.h>
 
 #pragma mark - Tunables
@@ -14,10 +15,29 @@ static const CGFloat kGlow = 16.0;                  // margin around the pill fo
 static const CGFloat kGapFromRow = 10.0;            // px to the right of the row
 static const int kNotVisibleAlertTicks = 24;        // ~6s of "should be showing but isn't" => guide a re-grant
 
+// Expanded ad panel feature flag. Default OFF (prod-safe); opt in for dev via
+// env PRISM_ADPILL_EXPANDED=1 or `defaults write dev.goprism.overlay PrismAdPillExpanded -bool YES`.
+// When off, the panel window is never created and the resting pill is identical.
+static BOOL PrismAdPillExpandedEnabled(void) {
+    NSString *env = NSProcessInfo.processInfo.environment[@"PRISM_ADPILL_EXPANDED"];
+    if ([env isEqualToString:@"1"]) return YES;
+    if ([env isEqualToString:@"0"]) return NO;
+    if ([[NSUserDefaults standardUserDefaults] objectForKey:@"PrismAdPillExpanded"] != nil)
+        return [[NSUserDefaults standardUserDefaults] boolForKey:@"PrismAdPillExpanded"];
+#ifdef DEBUG
+    return YES;
+#else
+    return NO;
+#endif
+}
+
 #pragma mark - PrismPillView (clickable surface)
 
 @interface PrismPillView : NSView
 @property(nonatomic, copy, nullable) void (^onClick)(void);
+@property(nonatomic, copy, nullable) void (^onHoverEnter)(void);
+@property(nonatomic, copy, nullable) void (^onHoverExit)(void);
+@property(nonatomic, strong) NSTrackingArea *hoverArea;
 @end
 
 @implementation PrismPillView
@@ -25,6 +45,17 @@ static const int kNotVisibleAlertTicks = 24;        // ~6s of "should be showing
 - (void)resetCursorRects { [self addCursorRect:self.bounds cursor:[NSCursor pointingHandCursor]]; }
 // Register the click even when the (accessory) app isn't the active one.
 - (BOOL)acceptsFirstMouse:(NSEvent *)event { return YES; }
+// Hover tracking for the expanded panel (additive; does not alter the pill itself).
+- (void)updateTrackingAreas {
+    [super updateTrackingAreas];
+    if (self.hoverArea) [self removeTrackingArea:self.hoverArea];
+    self.hoverArea = [[NSTrackingArea alloc] initWithRect:self.bounds
+                                                  options:(NSTrackingMouseEnteredAndExited | NSTrackingActiveAlways)
+                                                    owner:self userInfo:nil];
+    [self addTrackingArea:self.hoverArea];
+}
+- (void)mouseEntered:(NSEvent *)event { if (self.onHoverEnter) self.onHoverEnter(); }
+- (void)mouseExited:(NSEvent *)event { if (self.onHoverExit) self.onHoverExit(); }
 @end
 
 #pragma mark - PrismOverlayWindow
@@ -63,6 +94,8 @@ static const int kNotVisibleAlertTicks = 24;        // ~6s of "should be showing
     PrismPillView *cv = [[PrismPillView alloc] initWithFrame:NSMakeRect(kGlow, kGlow, r.size.width - 2 * kGlow, kPillHeight)];
     __weak PrismOverlayWindow *weakSelf = self;
     cv.onClick = ^{ if (weakSelf.onClick) weakSelf.onClick(); };
+    cv.onHoverEnter = ^{ if (weakSelf.onHoverEnter) weakSelf.onHoverEnter(); };
+    cv.onHoverExit = ^{ if (weakSelf.onHoverExit) weakSelf.onHoverExit(); };
     cv.wantsLayer = YES;
     // Solid dark glass surface (white-on-dark), 10px radius, hairline border.
     // masksToBounds NO so the glow renders past the pill.
@@ -247,6 +280,12 @@ static NSImage *PrismImageFromDataURL(NSString *s) {
 @property(nonatomic, assign) NSTimeInterval lastReauthPrompt;
 @property(nonatomic, assign) BOOL promptedThisEpisode;
 - (void)requestReauthorizationOncePerEpisode;
+// Expanded panel (nil + inert when the feature flag is off).
+@property(nonatomic, strong, nullable) PrismPanelWindow *panel;
+@property(nonatomic, assign) BOOL expandedEnabled;
+@property(nonatomic, assign) BOOL panelPinned;        // pinned panels survive mouse-leave
+@property(nonatomic, assign) int dismissGen;          // cancels a scheduled hover-dismiss
+@property(nonatomic, strong, nullable) id escMonitor; // Esc / click-outside dismissal
 @end
 
 @implementation PrismController
@@ -257,9 +296,49 @@ static NSImage *PrismImageFromDataURL(NSString *s) {
         _ads = [PrismAdClient new];
         __weak PrismController *weakSelf = self;
         _pill.onClick = ^{ [weakSelf handleClick]; };
+
+        _expandedEnabled = PrismAdPillExpandedEnabled();
+        if (_expandedEnabled) [self setUpExpandedPanel];
+
         [_ads refresh:nil];
     }
     return self;
+}
+
+// Build the expanded panel + wire hover, dismissal, and control callbacks. All of
+// this is additive UI; it never reports impressions, beats, or rotates ads.
+- (void)setUpExpandedPanel {
+    __weak PrismController *weakSelf = self;
+    self.panel = [[PrismPanelWindow alloc] initPanel];
+
+    // Hover the pill -> show; leave -> schedule a dismiss the panel can cancel by
+    // being entered (so crossing the pill -> panel gap does not flicker it closed).
+    self.pill.onHoverEnter = ^{ PrismController *s = weakSelf; [s cancelScheduledDismiss]; [s showPanel]; };
+    self.pill.onHoverExit  = ^{ [weakSelf scheduleDismiss]; };
+    self.panel.onMouseEntered = ^{ [weakSelf cancelScheduledDismiss]; };
+    self.panel.onMouseExited  = ^{ [weakSelf scheduleDismiss]; };
+
+    // Controls. Each pins the panel so an accidental mouse-leave does not close it
+    // mid-interaction; Esc / click-outside dismisses. Bodies carry no user content.
+    self.panel.onFeedback = ^(NSString *signal) {
+        PrismController *s = weakSelf; if (!s) return;
+        s.panelPinned = YES;
+        if (s.currentAd.adId.length) [s.ads sendFeedbackForCampaign:s.currentAd.adId signal:signal];
+    };
+    self.panel.onTogglePause = ^(BOOL paused) {
+        PrismController *s = weakSelf; if (!s) return;
+        s.paused = paused;                  // reuses the existing poll gate
+        if (paused) [s dismissPanel];       // no ads this session; pill hides next poll
+    };
+    self.panel.onSave = ^{ [weakSelf saveCurrentAd]; };
+    self.panel.onCopyCode = ^(NSString *code) {
+        PrismController *s = weakSelf; if (!s) return;
+        s.panelPinned = YES;
+        NSPasteboard *pb = [NSPasteboard generalPasteboard];
+        [pb clearContents];
+        [pb setString:code forType:NSPasteboardTypeString];
+    };
+    self.panel.onWhy = ^(NSString *why) { /* explanation shown via the chip's tooltip */ };
 }
 
 - (void)handleClick {
@@ -303,25 +382,33 @@ static NSImage *PrismImageFromDataURL(NSString *s) {
 }
 
 - (void)showNextTo:(CGRect)rowAX {
-    BOOL due = (self.tick - self.lastFetchTick) >= kRotateEveryTicks;
-    // Rotate/first-fill the displayed ad from the local queue. This is cheap (no
-    // network) so it runs every poll while we lack an ad, picking up a freshly
-    // prefetched ad within one tick.
-    if (!self.currentAd || due) {
-        PrismAd *next = [self.ads nextAd];
-        if (next) {
-            [self flushImpression];       // close out the previous ad's dwell
-            self.currentAd = next;
-            [self resetDwell];
+    // While the panel is pinned open, freeze the ad the user is reading: skip both
+    // rotation and the network refresh. The dwell/heartbeat accounting below is
+    // untouched, so the open ad still bills once at 5s exactly as it would without
+    // the panel. Rotation resumes on dismiss (lastFetchTick is reset there).
+    if (!self.panelPinned) {
+        BOOL due = (self.tick - self.lastFetchTick) >= kRotateEveryTicks;
+        // Rotate/first-fill the displayed ad from the local queue. This is cheap (no
+        // network) so it runs every poll while we lack an ad, picking up a freshly
+        // prefetched ad within one tick.
+        if (!self.currentAd || due) {
+            PrismAd *next = [self.ads nextAd];
+            if (next) {
+                [self flushImpression];       // close out the previous ad's dwell
+                self.currentAd = next;
+                [self resetDwell];
+            }
         }
-    }
-    // Throttle the network prefetch to at most once per rotation window — even
-    // when inventory is empty — so a long work session with no ad (e.g. when ads
-    // are frequency-capped) doesn't hammer /api/ads every 0.25s poll and exhaust
-    // the per-key rate limit, which would kill the pill on every surface.
-    if (due || self.lastFetchTick == 0) {
-        self.lastFetchTick = self.tick;
-        [self.ads refresh:self.currentSource];
+        // Throttle the network prefetch to at most once per rotation window — even
+        // when inventory is empty — so a long work session with no ad (e.g. when ads
+        // are frequency-capped) doesn't hammer /api/ads every 0.25s poll and exhaust
+        // the per-key rate limit, which would kill the pill on every surface.
+        if (due || self.lastFetchTick == 0) {
+            self.lastFetchTick = self.tick;
+            [self.ads refresh:self.currentSource];
+            // Piggyback a lazy earnings refresh onto the ad cycle while the panel is open.
+            if (self.panel.isVisible) [self refreshPanelEarnings];
+        }
     }
     if (!self.currentAd) { [self hide]; return; }   // connected but no inventory yet
     [self.pill renderAd:self.currentAd];
@@ -349,6 +436,7 @@ static NSImage *PrismImageFromDataURL(NSString *s) {
         [self.pill orderFrontRegardless];
     }
 
+    if (self.panel.isVisible) [self positionPanel];   // keep the panel glued to the pill
     [self accrueDwell];
 }
 
@@ -357,6 +445,102 @@ static NSImage *PrismImageFromDataURL(NSString *s) {
     [self.pill orderOut:nil];
     [self flushImpression];
     [self resetDwell];
+    [self dismissPanel];   // the panel never outlives its pill
+}
+
+#pragma mark - Expanded panel (UI only; never touches billing/heartbeat/rotation)
+
+- (void)showPanel {
+    if (!self.expandedEnabled || !self.panel || !self.currentAd) return;
+    [self.panel renderAd:self.currentAd earnings:self.ads.cachedEarnings];   // instant from cache
+    [self positionPanel];
+    [self.panel orderFrontRegardless];
+    [self installDismissMonitor];
+    [self refreshPanelEarnings];   // lazy refresh on open
+}
+
+- (void)refreshPanelEarnings {
+    __weak PrismController *weakSelf = self;
+    [self.ads fetchEarnings:^(PrismEarnings *e) {
+        PrismController *s = weakSelf;
+        if (!s || !s.panel.isVisible || !s.currentAd) return;
+        [s.panel renderAd:s.currentAd earnings:s.ads.cachedEarnings];
+    }];
+}
+
+// Anchor the panel under the visible pill (10px gap), flipping above if it would
+// fall off the bottom, and clamping horizontally. Never resizes the pill window.
+- (void)positionPanel {
+    if (!self.panel) return;
+    NSRect pf = self.pill.frame;                     // window frame (pill inset by kGlow)
+    NSRect screen = [NSScreen screens].firstObject.frame;
+    CGFloat ph = self.panel.frame.size.height, pw = self.panel.frame.size.width;
+    CGFloat visLeft = pf.origin.x + kGlow;
+    CGFloat visBottom = pf.origin.y + kGlow;
+    CGFloat visTop = visBottom + kPillHeight;
+
+    CGFloat x = visLeft;
+    if (x + pw > screen.size.width - 8) x = screen.size.width - 8 - pw;
+    if (x < 8) x = 8;
+    CGFloat y = visBottom - 10 - ph;                 // below the pill
+    if (y < 8) y = visTop + 10;                      // not enough room: place above
+    [self.panel setFrameOrigin:NSMakePoint(x, y)];
+}
+
+- (void)scheduleDismiss {
+    if (!self.panel.isVisible || self.panelPinned) return;
+    self.dismissGen++;
+    int gen = self.dismissGen;
+    __weak PrismController *weakSelf = self;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.25 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        PrismController *s = weakSelf;
+        if (!s || s.dismissGen != gen || s.panelPinned) return;   // canceled or pinned
+        [s dismissPanel];
+    });
+}
+
+- (void)cancelScheduledDismiss { self.dismissGen++; }
+
+- (void)dismissPanel {
+    if (!self.panel) return;
+    self.panelPinned = NO;
+    [self.panel orderOut:nil];
+    [self removeDismissMonitor];
+    // Resume rotation from a fresh window so dismissing does not trigger an
+    // immediate rotate/flush of the ad that was just on screen.
+    self.lastFetchTick = self.tick;
+}
+
+// Esc or a click in another app dismisses the panel. Clicks inside our own panel
+// are local events and do not reach a global monitor, so they never self-dismiss.
+- (void)installDismissMonitor {
+    if (self.escMonitor) return;
+    __weak PrismController *weakSelf = self;
+    self.escMonitor = [NSEvent addGlobalMonitorForEventsMatchingMask:
+                          (NSEventMaskKeyDown | NSEventMaskLeftMouseDown | NSEventMaskRightMouseDown)
+                                                             handler:^(NSEvent *e) {
+        PrismController *s = weakSelf; if (!s) return;
+        if (e.type == NSEventTypeKeyDown) { if (e.keyCode == 53) [s dismissPanel]; }   // 53 = Esc
+        else { [s dismissPanel]; }
+    }];
+}
+
+- (void)removeDismissMonitor {
+    if (self.escMonitor) { [NSEvent removeMonitor:self.escMonitor]; self.escMonitor = nil; }
+}
+
+// Save-for-later: local-only for now. TODO: persist server-side once an endpoint
+// exists (no schema this pass). Stores campaign ids in NSUserDefaults.
+- (void)saveCurrentAd {
+    self.panelPinned = YES;
+    NSString *adId = self.currentAd.adId;
+    if (!adId.length) return;
+    NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+    NSMutableArray *saved = [([ud arrayForKey:@"PrismSavedAds"] ?: @[]) mutableCopy];
+    if (![saved containsObject:adId]) {
+        [saved addObject:adId];
+        [ud setObject:saved forKey:@"PrismSavedAds"];
+    }
 }
 
 #pragma mark - Viewable-impression accounting
