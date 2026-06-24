@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { createClient } from '@/utils/supabase/server'
 import { createAdminClient } from '@/utils/supabase/admin'
+import { sendSignupConfirmationEmail } from '@/lib/email/auth'
 import { RateLimiter, getClientIp, rateLimitResponse } from '@/lib/api/rate-limit'
 import { handleApiError, ApiError, formatZodError } from '@/lib/api/errors'
 import { verifyTurnstile } from '@/lib/api/turnstile'
@@ -68,30 +68,42 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const supabase = await createClient()
     const adminClient = createAdminClient()
     const origin = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://goprism.dev'
     const acceptedAt = new Date().toISOString()
-    const { data: signUpData, error } = await supabase.auth.signUp({
+
+    // Create the (unconfirmed) user and mint a token_hash confirmation link WITHOUT
+    // triggering Supabase's built-in mailer, then send the branded email ourselves
+    // via Resend (same provider + templating as our other transactional emails).
+    const { data: linkData, error } = await adminClient.auth.admin.generateLink({
+      type: 'signup',
       email,
       password,
       options: {
-        emailRedirectTo: `${origin}/auth/confirm?next=${encodeURIComponent(redirect)}`,
         data: {
           accepted_terms_at: acceptedAt,
           accepted_privacy_at: acceptedAt,
         },
+        redirectTo: `${origin}/auth/confirm?next=${encodeURIComponent(redirect)}`,
       },
     })
 
     if (error) {
-      const message = error.message.includes('already registered')
-        ? 'An account with this email already exists. Sign in instead.'
-        : error.message
+      const lower = error.message.toLowerCase()
+      const message =
+        lower.includes('already') || lower.includes('registered') || lower.includes('exists')
+          ? 'An account with this email already exists. Sign in instead.'
+          : error.message
       throw new ApiError(400, message, 'SIGNUP_FAILED')
     }
 
-    const newUserId = signUpData.user?.id
+    const hashedToken = linkData.properties?.hashed_token
+    if (hashedToken) {
+      const confirmUrl = `${origin}/auth/confirm?token_hash=${hashedToken}&type=signup&next=${encodeURIComponent(redirect)}`
+      await sendSignupConfirmationEmail(email, confirmUrl)
+    }
+
+    const newUserId = linkData.user?.id
     if (newUserId && referralCode) {
       const { data: referrer } = await adminClient
         .from('referrals')
