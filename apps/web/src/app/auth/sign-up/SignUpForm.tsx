@@ -6,6 +6,7 @@ import Link from 'next/link'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
 import { TurnstileWidget } from '@/components/TurnstileWidget'
 import { TURNSTILE_ENABLED } from '@/lib/turnstile-config'
+import { OAuthButtons } from '@/components/auth/OAuthButtons'
 import { AlertCircle, CheckCircle2, Mail, Lock } from 'lucide-react'
 
 const TURNSTILE_SITE_KEY = TURNSTILE_ENABLED ? process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY : undefined
@@ -123,6 +124,8 @@ export function SignUpForm() {
             <p>We sent a confirmation link to {email}.</p>
           </div>
         ) : (
+          <>
+          <OAuthButtons mode="signup" redirect={redirect} />
           <form onSubmit={handleSubmit} style={{ position: 'relative' }}>
             <div className="v2field">
               <label>Email</label>
@@ -265,6 +268,7 @@ export function SignUpForm() {
               {loading ? 'Creating account…' : 'Create account'}
             </button>
           </form>
+          </>
         )}
 
         <p className="v2formlink">

@@ -7,6 +7,7 @@ import type { TurnstileInstance } from '@marsidev/react-turnstile'
 import { TurnstileWidget } from '@/components/TurnstileWidget'
 import { TURNSTILE_ENABLED } from '@/lib/turnstile-config'
 import { createClient } from '@/utils/supabase/client'
+import { OAuthButtons } from '@/components/auth/OAuthButtons'
 import { AlertCircle, Mail, Lock } from 'lucide-react'
 
 const TURNSTILE_SITE_KEY = TURNSTILE_ENABLED ? process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY : undefined
@@ -141,6 +142,8 @@ export function SignInForm() {
             </div>
           </div>
         )}
+
+        <OAuthButtons mode="signin" redirect={redirect} />
 
         <form onSubmit={handleSubmit} style={{ position: 'relative' }}>
           <div className="v2field">

@@ -1837,3 +1837,23 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* OAuth (Google / GitHub) buttons on sign-in + sign-up */
+.v2-root .oauthwrap { display: flex; flex-direction: column; gap: 10px; }
+.v2-root .oauthbtn {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; padding: 11px 14px; border-radius: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.04);
+  color: #e9edf5; font-size: 14px; font-weight: 600; cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.v2-root .oauthbtn:hover { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.22); }
+.v2-root .oauthbtn:disabled { opacity: 0.6; cursor: default; }
+.v2-root .oauthico { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; }
+.v2-root .oautherr { margin-top: 2px; font-size: 12.5px; color: #fca5a5; text-align: center; }
+.v2-root .oauthconsent { margin-top: 6px; font-size: 11.5px; line-height: 1.5; color: #8b94a7; text-align: center; }
+.v2-root .oauthconsent a { color: #a78bfa; text-decoration: none; }
+.v2-root .oauthconsent a:hover { text-decoration: underline; }
+.v2-root .oauthdivider { display: flex; align-items: center; text-align: center; margin: 16px 0 14px; color: #6b7280; font-size: 11.5px; }
+.v2-root .oauthdivider::before, .v2-root .oauthdivider::after { content: ""; flex: 1; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+.v2-root .oauthdivider span { padding: 0 12px; white-space: nowrap; }
