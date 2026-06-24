@@ -408,11 +408,13 @@ static void DumpRecurse(AXUIElementRef el, int depth, NSMutableString *out) {
 + (PrismDetection *)detectWorkRow:(AXUIElementRef)app {
     PrismDetection *d = [PrismDetection new];
     if (!app) return d;
-    // Cowork/Code: the work-indicator row (live timer + token count + thinking verb).
-    RecurseClass(app, 0, d, ^BOOL(NSString *c) { return IsClaudeWorkRow(c); });
-    // Plain chat has no timer row, so fall back to the composer "Stop" button, which
-    // is present only while a turn is generating (covers chat + cowork alike).
-    if (!d.found) FindClaudeStop(app, 0, d);
+    // Prefer the composer "Stop" button: present during any generating turn (regular
+    // chat + cowork) at a stable, well-placed spot (bottom of the input), rather than
+    // the mid-conversation token-count footnote, which sits over the message text,
+    // grows as it streams, and reads as misplaced.
+    FindClaudeStop(app, 0, d);
+    // Fall back to the Cowork/Code work-indicator row if no Stop button is exposed.
+    if (!d.found) RecurseClass(app, 0, d, ^BOOL(NSString *c) { return IsClaudeWorkRow(c); });
     return d;
 }
 
