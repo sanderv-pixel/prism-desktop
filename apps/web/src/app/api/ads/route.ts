@@ -98,6 +98,16 @@ function effectiveCpm(c: any): number {
   return c.max_bid_cpm ?? 0
 }
 
+// Privacy-safe targeting explanation for the panel's "Why this ad?" affordance.
+// Derived ONLY from the campaign's own targeting metadata + the surface it served
+// on. Never references editor content (code, prompts, file names, terminal).
+function buildWhy(c: any, source: string): string {
+  const ctx: string[] = Array.isArray(c.contexts) ? c.contexts.slice(0, 3) : []
+  const where = source && source !== 'unknown' ? source : 'AI tools'
+  const audience = ctx.length ? ctx.join(', ') : 'developers'
+  return `Shown to developers working with ${audience} on ${where}. Matched on general context only; Prism never reads your code, prompts, or files.`
+}
+
 function weightedRandomByEcpm(candidates: any[]): any {
   const totalWeight = candidates.reduce((sum, c) => sum + (c._ecpm ?? 0), 0)
   if (totalWeight <= 0) return candidates[0]
@@ -223,7 +233,7 @@ export async function POST(req: NextRequest) {
       .select(
         'id, advertiser_id, bid_type, budget_cents, click_count, contexts, end_date, ' +
         'frequency_cap, frequency_window_hours, impression_count, max_bid_cpc, max_bid_cpm, ' +
-        'spent_cents, start_date, target_countries, target_sources, brand_name, copy, icon_url, url'
+        'spent_cents, start_date, target_countries, target_sources, brand_name, copy, icon_url, url, promo_code'
       )
       .eq('status', 'active')
       .in('objective', ['awareness', 'traffic'])
@@ -250,6 +260,22 @@ export async function POST(req: NextRequest) {
       ])
     )
 
+    // Advertisers the user has hidden / thumbed-down from the overlay panel are
+    // suppressed in future auctions. One indexed lookup; only when key-authed.
+    const deviceUserId = await getRequestDeviceUserId(req)
+    const suppressedAdvertiserIds = new Set<string>()
+    if (deviceUserId) {
+      // Cast: overlay_ad_feedback is newer than the generated Supabase types.
+      const { data: fb } = await (supabase as any)
+        .from('overlay_ad_feedback')
+        .select('advertiser_id')
+        .eq('user_id', deviceUserId)
+        .in('signal', ['hidden', 'down'])
+      for (const r of ((fb as { advertiser_id: string | null }[]) ?? [])) {
+        if (r.advertiser_id) suppressedAdvertiserIds.add(r.advertiser_id)
+      }
+    }
+
     const eligible = campaigns.filter((c) => {
       if (c.spent_cents >= c.budget_cents) return false
       if (c.start_date && new Date(c.start_date) > now) return false
@@ -260,6 +286,7 @@ export async function POST(req: NextRequest) {
       // resumes automatically once they top up.
       if (advertiser.balanceCents <= 0) return false
       if (advertiser.name && hiddenAdvertisers.includes(advertiser.name)) return false
+      if (suppressedAdvertiserIds.has(c.advertiser_id)) return false
       // Surface targeting: if the campaign restricts surfaces, the request's surface
       // must be one of them. Untargeted (null/empty) campaigns serve everywhere.
       const targetSources: string[] = c.target_sources ?? []
@@ -281,7 +308,6 @@ export async function POST(req: NextRequest) {
     // Attribute to the connected account (the device key's anonymous_user_id,
     // which equals the auth user id) so earnings reach the creator dashboard.
     // Fall back to the client-supplied id only for non-device-key callers.
-    const deviceUserId = await getRequestDeviceUserId(req)
     const resolvedUserId = deviceUserId || userId || session
 
     // Frequency-cap filter: do not serve the same campaign to the same device
@@ -398,6 +424,9 @@ export async function POST(req: NextRequest) {
         clickUrl,
         iconUrl: getIconUrl(adUrl, adIconUrl),
         advertiserName: displayName,
+        // Expanded-panel fields (additive; ignored by older overlays).
+        promoCode: typeof winner.promo_code === 'string' && winner.promo_code.trim() ? winner.promo_code.trim() : null,
+        why: buildWhy(winner, reqSource),
         impressionToken,
         conversionToken,
         userId: resolvedUserId,
