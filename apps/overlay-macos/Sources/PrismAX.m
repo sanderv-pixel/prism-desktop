@@ -151,6 +151,42 @@ static NSString *AXStringValue(AXUIElementRef el) {
     return s;
 }
 
+// Read an arbitrary string attribute (title/description). Release-scope sibling of
+// the debug-only AXStr.
+static NSString *AXAttrStr(AXUIElementRef el, CFStringRef attr) {
+    CFTypeRef v = NULL;
+    NSString *s = @"";
+    if (AXUIElementCopyAttributeValue(el, attr, &v) == kAXErrorSuccess && v) {
+        if (CFGetTypeID(v) == CFStringGetTypeID()) s = [(__bridge NSString *)v copy];
+        CFRelease(v);
+    }
+    return s;
+}
+
+// Claude chat + cowork: while a turn is generating, the composer's send control
+// becomes a "Stop" button (AXButton labelled "Stop"), present only during the turn.
+// Plain chat has no Cowork/Code timer row, so this button is the reliable "is
+// working" anchor there (same pattern as Cursor/Codex). Returns the button's frame.
+static void FindClaudeStop(AXUIElementRef el, int depth, PrismDetection *out) {
+    if (depth > kMaxDepth || out.found) return;
+    if ([AXRole(el) isEqualToString:(__bridge NSString *)kAXButtonRole]) {
+        NSString *name = AXAttrStr(el, kAXTitleAttribute);
+        if (name.length == 0) name = AXAttrStr(el, kAXDescriptionAttribute);
+        if ([name isEqualToString:@"Stop"]) {
+            CGRect f = AXFrameOf(el);
+            if (f.size.width > 0 && f.size.height > 0) { out.found = YES; out.frame = f; return; }
+        }
+    }
+    CFTypeRef kids = NULL;
+    if (AXUIElementCopyAttributeValue(el, kAXChildrenAttribute, &kids) == kAXErrorSuccess && kids) {
+        CFArrayRef arr = (CFArrayRef)kids;
+        for (CFIndex i = 0; i < CFArrayGetCount(arr) && !out.found; i++) {
+            FindClaudeStop((AXUIElementRef)CFArrayGetValueAtIndex(arr, i), depth + 1, out);
+        }
+        CFRelease(kids);
+    }
+}
+
 // The terminal buffer is exposed as one large AXTextArea; pick the one with the
 // longest value (the main scrollback, not a small accessory field). Retains the
 // winner — caller must CFRelease it.
@@ -371,7 +407,12 @@ static void DumpRecurse(AXUIElementRef el, int depth, NSMutableString *out) {
 
 + (PrismDetection *)detectWorkRow:(AXUIElementRef)app {
     PrismDetection *d = [PrismDetection new];
-    if (app) RecurseClass(app, 0, d, ^BOOL(NSString *c) { return IsClaudeWorkRow(c); });
+    if (!app) return d;
+    // Cowork/Code: the work-indicator row (live timer + token count + thinking verb).
+    RecurseClass(app, 0, d, ^BOOL(NSString *c) { return IsClaudeWorkRow(c); });
+    // Plain chat has no timer row, so fall back to the composer "Stop" button, which
+    // is present only while a turn is generating (covers chat + cowork alike).
+    if (!d.found) FindClaudeStop(app, 0, d);
     return d;
 }
 
