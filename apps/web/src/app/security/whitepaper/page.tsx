@@ -31,7 +31,7 @@ export default function SecurityWhitepaperPage() {
   const markdown = loadWhitepaper()
   return (
     <SiteShell>
-      <section className="section-padding bg-white">
+      <section className="section-padding">
         <div className="container-tight max-w-3xl">
           <article className="prose prose-slate max-w-none whitepaper-prose">
             <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>

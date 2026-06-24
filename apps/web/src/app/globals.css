@@ -82,7 +82,28 @@
   }
 
   /* Security whitepaper: readable light-theme markdown + highlighted code blocks.
-     Scoped to .whitepaper-prose so it changes nothing globally. */
+     Scoped to .whitepaper-prose so it changes nothing globally. Forces a white
+     document card with dark text so it stays readable inside SiteShell's dark
+     chrome (.dash-dark would otherwise push the prose colors light). */
+  .whitepaper-prose {
+    background: #ffffff;
+    color: #1e293b;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 2.5rem 2rem;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+    --tw-prose-body: #1e293b;
+    --tw-prose-headings: #0f172a;
+    --tw-prose-links: #7c3aed;
+    --tw-prose-bold: #0f172a;
+    --tw-prose-counters: #64748b;
+    --tw-prose-bullets: #cbd5e1;
+    --tw-prose-quotes: #334155;
+    --tw-prose-quote-borders: #7c3aed;
+    --tw-prose-hr: #e2e8f0;
+    --tw-prose-th-borders: #e2e8f0;
+    --tw-prose-td-borders: #e2e8f0;
+  }
   .whitepaper-prose pre {
     background: #f6f8fa;
     border: 1px solid #e2e8f0;
