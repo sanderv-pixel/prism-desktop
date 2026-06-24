@@ -81,6 +81,55 @@
     @apply bg-card border border-border rounded-2xl shadow-sm;
   }
 
+  /* Security whitepaper: readable light-theme markdown + highlighted code blocks.
+     Scoped to .whitepaper-prose so it changes nothing globally. */
+  .whitepaper-prose pre {
+    background: #f6f8fa;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.84rem;
+    line-height: 1.6;
+  }
+  .whitepaper-prose pre code {
+    background: transparent;
+    padding: 0;
+    font-weight: 400;
+    color: #24292e;
+  }
+  .whitepaper-prose :not(pre) > code {
+    background: #f1f5f9;
+    color: #b91c1c;
+    padding: 0.12em 0.36em;
+    border-radius: 0.3rem;
+    font-size: 0.875em;
+    font-weight: 500;
+  }
+  .whitepaper-prose :not(pre) > code::before,
+  .whitepaper-prose :not(pre) > code::after {
+    content: '';
+  }
+  .whitepaper-prose table {
+    display: block;
+    overflow-x: auto;
+    width: 100%;
+    font-size: 0.9rem;
+  }
+  .whitepaper-prose th,
+  .whitepaper-prose td {
+    border: 1px solid #e2e8f0;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+  }
+  .whitepaper-prose blockquote {
+    border-left: 3px solid #7c3aed;
+    background: #faf5ff;
+    color: #475569;
+    font-style: normal;
+    border-radius: 0 0.4rem 0.4rem 0;
+  }
+
   /* Dark anchor section: breaks the all-white rhythm and signals "the product". */
   .section-dark {
     @apply relative overflow-hidden bg-[#0f0f17] text-white;

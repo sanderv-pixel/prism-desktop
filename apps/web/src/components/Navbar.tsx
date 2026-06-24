@@ -12,6 +12,7 @@ const navLinks = [
   { label: 'Earn', href: '/developers' },
   { label: 'Advertise', href: '/advertisers' },
   { label: 'Pricing', href: '/pricing' },
+  { label: 'Security', href: '/security' },
   { label: 'FAQ', href: '/faq' },
 ]
 

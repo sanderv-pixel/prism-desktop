@@ -1,6 +1,7 @@
 import { SiteShell } from '@/components/v2/SiteShell'
 import { SectionHeader } from '@/components/SectionHeader'
 import { FeatureCard } from '@/components/FeatureCard'
+import { OVERLAY_REPO_URL } from '@/lib/site'
 import {
   Shield,
   Lock,
@@ -9,6 +10,30 @@ import {
   Fingerprint,
   FileCheck,
 } from 'lucide-react'
+
+// Each claim cites the exact overlay file a reader can verify it in.
+const verifyHighlights = [
+  {
+    claim:
+      'A detection result has no field that can hold your text; it carries only a boolean, an on-screen rectangle, and a one-word source label.',
+    file: 'PrismAX.h',
+  },
+  {
+    claim:
+      'What leaves your device is a fixed, content-free context (editor, AI tool, and wait state). No code, prompts, or file paths.',
+    file: 'PrismAd.m',
+  },
+  {
+    claim:
+      'The functions that could read arbitrary screen text are debug-only and compiled out of every release build.',
+    file: 'PrismAX.h · #if DEBUG',
+  },
+  {
+    claim:
+      'A fully content-blind detection mode ships and can be switched on; it never reads the accessibility tree or any text.',
+    file: 'PrismAX.m · detectOSSignal',
+  },
+]
 
 export const metadata = {
   title: 'Security — Prism',
@@ -21,7 +46,7 @@ const securityFeatures = [
     icon: EyeOff,
     title: 'No prompt or code access',
     description:
-      'Prism never reads your prompts, code, designs, model outputs, or conversations. Context signals are computed locally on your device and only a lightweight fingerprint is sent to match ads.',
+      'Prism never reads your prompts, code, designs, model outputs, or conversations. To match ads it sends only a fixed, content-free context (editor, AI tool, and wait state), never your content.',
     accent: 'violet' as const,
   },
   {
@@ -94,7 +119,7 @@ export default function SecurityPage() {
               'We do not read, store, or transmit your prompts, code, or model outputs.',
               'We do not sell personal data to advertisers or third parties.',
               'We do not track you across the web or outside of Prism wait states.',
-              'We do not use cookies for ad targeting beyond the local context fingerprint.',
+              'We do not use cookies for ad targeting; the only signal sent is a fixed, content-free wait-state context.',
               'We do not auto-approve high-value payouts without human review.',
             ].map((item) => (
               <div
@@ -115,6 +140,53 @@ export default function SecurityPage() {
                 <p className="text-foreground/90 leading-relaxed">{item}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="section-padding bg-white border-t border-border">
+        <div className="container-tight max-w-4xl">
+          <SectionHeader
+            eyebrow="Verify it yourself"
+            title="Every privacy claim is backed by real source"
+            description="We do not ask you to take our word for it. Prism's overlay clients are the only code that touches your machine, and each claim below cites the exact file you can read."
+            align="center"
+          />
+          <div className="grid sm:grid-cols-2 gap-4 mt-12">
+            {verifyHighlights.map((h) => (
+              <div key={h.file} className="rounded-2xl card p-5">
+                <p className="text-foreground/90 leading-relaxed mb-3">{h.claim}</p>
+                <code className="inline-block font-mono text-xs text-primary bg-violet-50 rounded px-2 py-1">
+                  {h.file}
+                </code>
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-12">
+            <a
+              href="/security/whitepaper"
+              className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-violet-700 transition"
+            >
+              Read the security whitepaper
+            </a>
+            {OVERLAY_REPO_URL ? (
+              <a
+                href={OVERLAY_REPO_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center rounded-lg border border-border px-6 py-3 text-sm font-medium text-foreground hover:bg-muted transition"
+              >
+                Read the source
+              </a>
+            ) : (
+              <span
+                aria-disabled="true"
+                title="The overlay source is being prepared for public release."
+                className="inline-flex items-center justify-center rounded-lg border border-dashed border-border px-6 py-3 text-sm font-medium text-muted-foreground cursor-not-allowed"
+              >
+                Source coming soon
+              </span>
+            )}
           </div>
         </div>
       </section>

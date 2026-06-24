@@ -19,6 +19,7 @@ export function NavbarWrapper() {
     '/payout-policy',
     '/advertiser-policy',
     '/security',
+    '/security/whitepaper',
     '/transparency',
     '/roadmap',
     '/advertisers',
