@@ -1,10 +1,10 @@
 #!/bin/sh
-# Prism Overlay — one-line installer for macOS.
+# Prism Overlay - one-line installer for macOS.
 #
 #   curl -fsSL https://goprism.dev/install.sh | sh
 #
 # Files fetched with curl are NOT quarantined, so the (ad-hoc/self-signed) app
-# launches with no Gatekeeper prompt — no Apple Developer account required.
+# launches with no Gatekeeper prompt - no Apple Developer account required.
 set -eu
 
 APP_NAME="PrismOverlay.app"
@@ -37,7 +37,7 @@ if [ -n "${PRISM_LINK_TOKEN:-}" ]; then
   if [ -n "$API_KEY" ]; then
     defaults write dev.goprism.overlay PrismApiKey "$API_KEY"
     defaults write dev.goprism.overlay PrismDeviceId "$(uuidgen | tr -d '-')"
-    echo "  ✓ Linked — your earnings will credit this account automatically."
+    echo "  ✓ Linked - your earnings will credit this account automatically."
   else
     echo "  ⚠ Couldn't link automatically (token expired or already used)."
     echo "    Prism will still run; link this device later from your dashboard."
@@ -71,7 +71,7 @@ cat <<'DONE'
 
 ✓ Prism is installed and runs automatically at login (look for ◆ in your menu bar).
 
-Next: when it asks, click "Enable" to grant Accessibility — that's the one
+Next: when it asks, click "Enable" to grant Accessibility - that's the one
 permission it needs to place the sponsored line next to Claude's activity.
 Prism only reads the macOS Accessibility tree; it never modifies Claude.
 

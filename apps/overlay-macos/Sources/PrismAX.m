@@ -189,7 +189,7 @@ static void FindClaudeStop(AXUIElementRef el, int depth, PrismDetection *out) {
 
 // The terminal buffer is exposed as one large AXTextArea; pick the one with the
 // longest value (the main scrollback, not a small accessory field). Retains the
-// winner — caller must CFRelease it.
+// winner - caller must CFRelease it.
 static void FindBestTextArea(AXUIElementRef el, int depth, AXUIElementRef *best, NSUInteger *bestLen) {
     if (depth > kMaxDepth) return;
     if ([AXRole(el) isEqualToString:(__bridge NSString *)kAXTextAreaRole]) {
@@ -501,7 +501,7 @@ static void DumpRecurse(AXUIElementRef el, int depth, NSMutableString *out) {
     NSString *value = @"(no AXTextArea found)";
     if (ta) { value = AXStringValue(ta); CFRelease(ta); }
     CFRelease(app);
-    // The live status line sits at the bottom — keep only the last lines.
+    // The live status line sits at the bottom - keep only the last lines.
     NSArray<NSString *> *lines = [value componentsSeparatedByString:@"\n"];
     NSUInteger keep = 24;
     if (lines.count > keep) lines = [lines subarrayWithRange:NSMakeRange(lines.count - keep, keep)];

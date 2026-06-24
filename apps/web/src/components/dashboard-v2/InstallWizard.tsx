@@ -8,7 +8,7 @@ type Os = 'mac' | 'windows'
 
 // The install command carries a one-time link token (PRISM_LINK_TOKEN) minted for the
 // signed-in account, so install.sh binds the device to this account before first launch
-// — earnings credit automatically, with no separate "connect" step. Falls back to the
+// - earnings credit automatically, with no separate "connect" step. Falls back to the
 // plain command (anonymous self-register, linkable later) if the token isn't ready.
 function buildCommand(os: Os, token: string | null): string {
   if (os === 'windows') {
@@ -45,14 +45,14 @@ const OS_COPY: Record<Os, { device: string; intro: string; cmdHint: string; step
     intro: 'Install Prism to start earning while your AI thinks. About a minute, and no App Store or signed installer needed.',
     cmdHint: 'Open Terminal (⌘+Space, type “Terminal”), paste, press Return. It downloads and installs Prism, no Apple ID required.',
     step2Label: '2 · Grant access',
-    step2: 'When the app opens, switch on “PrismOverlay” in the permission window. The command above already linked the device to this account, so your earnings start crediting as soon as your AI is thinking — no extra step.',
+    step2: 'When the app opens, switch on “PrismOverlay” in the permission window. The command above already linked the device to this account, so your earnings start crediting as soon as your AI is thinking - no extra step.',
   },
   windows: {
     device: 'Connect your Windows PC',
     intro: 'Install Prism to start earning while your AI thinks. About a minute, and no admin rights or .NET install needed.',
     cmdHint: 'Open PowerShell (Win+X, then “Terminal” or “Windows PowerShell”), paste, press Enter. It downloads and runs Prism, no admin required.',
     step2Label: '2 · Open',
-    step2: 'Prism appears in your Windows system tray. If SmartScreen warns, click “More info”, then “Run anyway” (the installer already unblocks it). The command above already linked the device to this account — nothing else to do.',
+    step2: 'Prism appears in your Windows system tray. If SmartScreen warns, click “More info”, then “Run anyway” (the installer already unblocks it). The command above already linked the device to this account - nothing else to do.',
   },
 }
 
@@ -92,7 +92,7 @@ export function InstallWizard({ onClose, onConnected }: InstallWizardProps) {
         const { token } = await res.json()
         if (!cancelled && typeof token === 'string') setLinkToken(token)
       } catch {
-        // Network blip — fall back to the unlinked command.
+        // Network blip - fall back to the unlinked command.
       }
     })()
     return () => {

@@ -1,4 +1,4 @@
-# Prism Overlay — one-line installer for Windows.
+# Prism Overlay - one-line installer for Windows.
 #
 #   irm https://goprism.dev/install.ps1 | iex
 #

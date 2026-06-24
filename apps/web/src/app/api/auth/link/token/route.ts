@@ -9,7 +9,7 @@ import { LINK_TOKEN_PREFIX, LINK_TTL_SECONDS } from '@/lib/api/link-tokens'
 // Mints a one-time link token bound to the signed-in account. The dashboard embeds
 // it in the personalized install command (PRISM_LINK_TOKEN=…); install.sh later
 // exchanges it via /api/auth/link/exchange for an account-bound device key, so the
-// overlay credits earnings to this account from the first impression — no browser
+// overlay credits earnings to this account from the first impression - no browser
 // round-trip and no native app changes (install.sh seeds the key into the overlay's
 // prefs before first launch).
 export const dynamic = 'force-dynamic'

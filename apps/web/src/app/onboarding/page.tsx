@@ -147,7 +147,7 @@ export default function OnboardingPage() {
         const { token } = await res.json()
         if (!cancelled && typeof token === 'string') setLinkToken(token)
       } catch {
-        // Network blip — leave the command unlinked.
+        // Network blip - leave the command unlinked.
       }
     })()
     return () => {
@@ -286,7 +286,7 @@ export default function OnboardingPage() {
                 </a>
                 <Link className="btn btn-p" href="/dashboard">
                   <CheckCircle2 size={18} />
-                  I installed it — go to dashboard
+                  I installed it - go to dashboard
                 </Link>
               </div>
             </div>

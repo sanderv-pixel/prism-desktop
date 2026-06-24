@@ -107,7 +107,7 @@ static BOOL PrismAdPillExpandedEnabled(void) {
     [host addSubview:cv];
     _pillView = cv;
 
-    // A: brand icon tile — 17×17, radius 5, #8b5cf6 (set per-ad in renderAd).
+    // A: brand icon tile - 17×17, radius 5, #8b5cf6 (set per-ad in renderAd).
     _badge = [[NSView alloc] initWithFrame:NSMakeRect(9, 8, 17, 17)];
     _badge.wantsLayer = YES;
     _badge.layer.cornerRadius = 5;
@@ -117,7 +117,7 @@ static BOOL PrismAdPillExpandedEnabled(void) {
     _badgeLabel.font = [NSFont boldSystemFontOfSize:10];
     _badgeLabel.textColor = [NSColor whiteColor];
     [_badge addSubview:_badgeLabel];
-    // Advertiser icon — shown when the ad has a loadable icon, otherwise we fall
+    // Advertiser icon - shown when the ad has a loadable icon, otherwise we fall
     // back to the coloured initial badge.
     _badgeIcon = [[NSImageView alloc] initWithFrame:NSMakeRect(0, 0, 17, 17)];
     _badgeIcon.imageScaling = NSImageScaleProportionallyUpOrDown;
@@ -138,7 +138,7 @@ static BOOL PrismAdPillExpandedEnabled(void) {
     f.bezeled = NO; f.editable = NO; f.selectable = NO; f.drawsBackground = NO;
 }
 
-// Decode an icon from a data: URL (handles base64 and SVG — NSImage renders SVG
+// Decode an icon from a data: URL (handles base64 and SVG - NSImage renders SVG
 // data on macOS 11+).
 static NSImage *PrismImageFromDataURL(NSString *s) {
     NSRange comma = [s rangeOfString:@","];
@@ -199,19 +199,19 @@ static NSImage *PrismImageFromDataURL(NSString *s) {
     [self loadBadgeIcon:ad.iconUrl color:ad.color];
 
     NSMutableAttributedString *as = [NSMutableAttributedString new];
-    // B: advertiser/brand name — semibold 12.5, white. Only when set.
+    // B: advertiser/brand name - semibold 12.5, white. Only when set.
     if (name.length) {
         [as appendAttributedString:[[NSAttributedString alloc] initWithString:name
             attributes:@{ NSForegroundColorAttributeName: [NSColor whiteColor],
                           NSFontAttributeName: [NSFont systemFontOfSize:12.5 weight:NSFontWeightSemibold] }]];
         [as appendAttributedString:[[NSAttributedString alloc] initWithString:@"  " attributes:@{}]];
     }
-    // C: CTA / copy — 12.5, muted #cbd5e1, underlined.
+    // C: CTA / copy - 12.5, muted #cbd5e1, underlined.
     [as appendAttributedString:[[NSAttributedString alloc] initWithString:ad.tagline
         attributes:@{ NSForegroundColorAttributeName: [NSColor colorWithRed:0.796 green:0.835 blue:0.882 alpha:1],
                       NSFontAttributeName: [NSFont systemFontOfSize:12.5],
                       NSUnderlineStyleAttributeName: @(NSUnderlineStyleSingle) }]];
-    // D: "Ad" label — JetBrains Mono-style 9, bold, uppercase, muted #64748b, tracked.
+    // D: "Ad" label - JetBrains Mono-style 9, bold, uppercase, muted #64748b, tracked.
     [as appendAttributedString:[[NSAttributedString alloc] initWithString:@"   AD"
         attributes:@{ NSForegroundColorAttributeName: [NSColor colorWithRed:0.392 green:0.455 blue:0.545 alpha:1],
                       NSFontAttributeName: [NSFont monospacedSystemFontOfSize:9 weight:NSFontWeightBold],
@@ -356,13 +356,13 @@ static NSImage *PrismImageFromDataURL(NSString *s) {
     // Screen access (Accessibility) can be silently dropped after an app update,
     // because macOS re-keys the grant to the newly signed binary. When that
     // happens we must draw nothing, report nothing, and actively guide the user
-    // to re-enable it once — they will not figure this out on their own.
+    // to re-enable it once - they will not figure this out on their own.
     if (![PrismAX isTrustedPrompt:NO]) {
         [self hide];
         [self requestReauthorizationOncePerEpisode];
         return;
     }
-    self.promptedThisEpisode = NO;   // trusted again — re-arm the prompt for next time
+    self.promptedThisEpisode = NO;   // trusted again - re-arm the prompt for next time
 
     // Scan all supported surfaces (Claude Desktop + terminals), frontmost first.
     PrismDetection *d = [PrismAX detect];
@@ -408,8 +408,8 @@ static NSImage *PrismImageFromDataURL(NSString *s) {
                 [self resetDwell];
             }
         }
-        // Throttle the network prefetch to at most once per rotation window — even
-        // when inventory is empty — so a long work session with no ad (e.g. when ads
+        // Throttle the network prefetch to at most once per rotation window - even
+        // when inventory is empty - so a long work session with no ad (e.g. when ads
         // are frequency-capped) doesn't hammer /api/ads every 0.25s poll and exhaust
         // the per-key rate limit, which would kill the pill on every surface.
         if (due || self.lastFetchTick == 0) {
@@ -562,7 +562,7 @@ static NSImage *PrismImageFromDataURL(NSString *s) {
 }
 
 - (void)accrueDwell {
-    // Count dwell — and therefore bill an impression — ONLY while the pill is
+    // Count dwell - and therefore bill an impression - ONLY while the pill is
     // genuinely on screen, using the window's real occlusion state rather than
     // our own "I ordered it front" flag. This stops us charging advertisers and
     // crediting earnings for an ad the user never actually saw (which is exactly
