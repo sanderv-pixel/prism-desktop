@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter, JetBrains_Mono, Space_Grotesk } from 'next/font/google'
 import './globals.css'
 import { NavbarWrapper } from '@/components/NavbarWrapper'
@@ -30,6 +30,12 @@ const spaceGrotesk = Space_Grotesk({
   variable: '--font-display',
   display: 'swap',
 })
+
+// Color the mobile browser chrome (iOS Safari top status + bottom toolbar, Android
+// address bar) to match the site's dark surface instead of defaulting to white.
+export const viewport: Viewport = {
+  themeColor: '#06060b',
+}
 
 export const metadata: Metadata = {
   title: {
