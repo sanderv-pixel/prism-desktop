@@ -15,8 +15,8 @@ static const CGFloat kGlow = 16.0;                  // margin around the pill fo
 static const CGFloat kGapFromRow = 10.0;            // px to the right of the row
 static const int kNotVisibleAlertTicks = 24;        // ~6s of "should be showing but isn't" => guide a re-grant
 
-// Expanded ad panel feature flag. Default OFF (prod-safe); opt in for dev via
-// env PRISM_ADPILL_EXPANDED=1 or `defaults write dev.goprism.overlay PrismAdPillExpanded -bool YES`.
+// Expanded ad panel feature flag. Default ON; disable per-machine with
+// env PRISM_ADPILL_EXPANDED=0 or `defaults write dev.goprism.overlay PrismAdPillExpanded -bool NO`.
 // When off, the panel window is never created and the resting pill is identical.
 static BOOL PrismAdPillExpandedEnabled(void) {
     NSString *env = NSProcessInfo.processInfo.environment[@"PRISM_ADPILL_EXPANDED"];
@@ -24,11 +24,7 @@ static BOOL PrismAdPillExpandedEnabled(void) {
     if ([env isEqualToString:@"0"]) return NO;
     if ([[NSUserDefaults standardUserDefaults] objectForKey:@"PrismAdPillExpanded"] != nil)
         return [[NSUserDefaults standardUserDefaults] boolForKey:@"PrismAdPillExpanded"];
-#ifdef DEBUG
-    return YES;
-#else
-    return NO;
-#endif
+    return YES; // on by default for all builds; env / NSUserDefaults above can still disable
 }
 
 #pragma mark - PrismPillView (clickable surface)
